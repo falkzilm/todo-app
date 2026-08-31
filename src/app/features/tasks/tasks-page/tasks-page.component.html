@@ -1,0 +1,25 @@
+<app-page-header title="Aufgaben" subtitle="Offene Aufgaben: {{ openCount() }}" />
+
+<form class="task-form" (ngSubmit)="addTask()">
+  <input
+    type="text"
+    name="newTask"
+    placeholder="Neue Aufgabe hinzufügen"
+    [(ngModel)]="newTaskTitle"
+  />
+  <button type="submit">Hinzufügen</button>
+</form>
+
+<ul class="task-list">
+  @for (task of tasks(); track task.id) {
+    <li class="task-list__item" [class.task-list__item--done]="task.done">
+      <label>
+        <input type="checkbox" [checked]="task.done" (change)="toggleTask(task.id)" />
+        {{ task.title }}
+      </label>
+      <button type="button" (click)="removeTask(task.id)">Löschen</button>
+    </li>
+  } @empty {
+    <li>Keine Aufgaben vorhanden.</li>
+  }
+</ul>

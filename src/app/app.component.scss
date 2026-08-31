@@ -1,0 +1,31 @@
+:host {
+  display: block;
+  font-family: system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+nav {
+  display: flex;
+  gap: 1rem;
+
+  a {
+    text-decoration: none;
+    color: #333;
+
+    &.is-active {
+      font-weight: 600;
+      color: #1a56db;
+    }
+  }
+}
+
+main {
+  padding: 1.5rem;
+}

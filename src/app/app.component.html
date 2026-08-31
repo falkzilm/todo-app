@@ -1,0 +1,11 @@
+<header>
+  <h1>{{ title() }}</h1>
+  <nav>
+    <a routerLink="/tasks" routerLinkActive="is-active">Aufgaben</a>
+    <a routerLink="/calendar" routerLinkActive="is-active">Kalender</a>
+  </nav>
+</header>
+
+<main>
+  <router-outlet />
+</main>
