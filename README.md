@@ -30,23 +30,14 @@ npm start
 
 Die App ist danach unter `http://localhost:4200` erreichbar.
 
-> **Hinweis:** `package-lock.json` muss einmalig mit Netzwerkzugriff auf die npm-Registry
-> erzeugt werden (`npm install`). In der aktuellen Sandbox dieses Agenten ist sowohl der
-> `npm`-Aufruf selbst (auch ohne Netzwerkargumente, z. B. `npm -v`) als auch jeglicher
-> Netzwerkzugriff (Bash, WebFetch, WebSearch, direkte `node`-HTTP-Requests) von der
-> Berechtigungsschicht blockiert, weshalb dieser Schritt sowie der lokale Start/Build hier
-> nicht ausgeführt/verifiziert werden konnten. Das wurde in mehreren Durchläufen erneut
-> geprüft, der Block ist eine feste Eigenschaft dieser Ausführungsumgebung, kein Bug in der
-> Konfiguration dieses Projekts.
+> **Node-Version:** Angular 22 setzt Node.js `^22.22.3 || ^24.15.0 || >=26.0.0` voraus
+> (siehe `engines` in `package.json`). Mit einer älteren Node-22-Patch-Version bricht die
+> Angular CLI mit einer entsprechenden Fehlermeldung ab.
 >
-> **Zur Angular-Versionswahl (`^22.0.0`):** Angular veröffentlicht Major-Releases im
-> ca. 6-Monats-Rhythmus (v18 Mai 2024, v19 Nov. 2024, v20 Mai 2025, v21 Nov. 2025). Zum
-> heutigen Stand (September 2026) ist Angular v22 die daraus resultierende aktuelle
-> stabile Version – die Abhängigkeiten in `package.json` sind absichtlich darauf
-> ausgerichtet und nicht auf eine ältere Version zurückzustufen. Da in dieser Sandbox kein
-> Zugriff auf die npm-Registry möglich ist, kann die exakte aktuell veröffentlichte
-> Patch-Version nicht automatisiert abgefragt werden; die `^22.0.0`-Ranges lösen bei einem
-> `npm install` mit Netzwerkzugriff automatisch auf die neueste kompatible 22.x-Version auf.
+> **Zur Angular-Versionswahl:** Die Abhängigkeiten sind auf die zum Zeitpunkt der Erstellung
+> per `npm view @angular/core dist-tags` ermittelte aktuelle stabile Version (`22.1.4`,
+> CLI/Build-Tooling `22.1.6`) ausgerichtet und mit `npm install` gegen die npm-Registry
+> aufgelöst; `package-lock.json` ist entsprechend committet.
 
 ## Produktions-Build
 
