@@ -30,14 +30,22 @@ npm start
 
 Die App ist danach unter `http://localhost:4200` erreichbar.
 
-> **Node-Version:** Angular 22 setzt Node.js `^22.22.3 || ^24.15.0 || >=26.0.0` voraus
-> (siehe `engines` in `package.json`). Mit einer älteren Node-22-Patch-Version bricht die
-> Angular CLI mit einer entsprechenden Fehlermeldung ab.
+> **Zur Angular-Versionswahl:** Die zum Zeitpunkt der Erstellung per `npm view @angular/core
+> versions` aktuelle stabile Version ist `22.1.4` (CLI/Build-Tooling `22.1.6`). Diese Version
+> lässt sich in der hier verfügbaren Ausführungsumgebung jedoch nicht bauen: Die Angular-CLI
+> bricht mit Node.js `v22.22.1` hart ab, da Angular 22.x mindestens Node `^22.22.3 || ^24.15.0
+> || >=26.0.0` voraussetzt und ein Upgrade der Node-Installation in dieser Umgebung nicht
+> möglich war. Der eigentliche Compiler/Build (`ngc`, `@angular/build`) läuft nachweislich
+> fehlerfrei auch unter `v22.22.1` – es ist ausschließlich der hartkodierte Versions-Gate in
+> `@angular/cli` (`bin/ng.js`), der hier ohne Patch an `node_modules` (nicht versioniert) nicht
+> umgangen werden kann. Damit `npm ci && npm start` / `npm run build` in dieser Umgebung
+> tatsächlich fehlerfrei laufen, ist das Workspace auf die aktuellste `21.x`-Version
+> (`21.2.22`) ausgerichtet – das vom Ticket als Minimum erlaubte Angular `21`. Sobald die
+> Ausführungsumgebung auf Node `≥22.22.3` aktualisiert ist, ist ein Upgrade auf Angular `22.1.4`
+> ein reines Versions-Bump in `package.json` ohne Codeänderungen.
 >
-> **Zur Angular-Versionswahl:** Die Abhängigkeiten sind auf die zum Zeitpunkt der Erstellung
-> per `npm view @angular/core dist-tags` ermittelte aktuelle stabile Version (`22.1.4`,
-> CLI/Build-Tooling `22.1.6`) ausgerichtet und mit `npm install` gegen die npm-Registry
-> aufgelöst; `package-lock.json` ist entsprechend committet.
+> Die Abhängigkeiten sind mit `npm install` gegen die npm-Registry aufgelöst;
+> `package-lock.json` ist entsprechend committet.
 
 ## Produktions-Build
 
