@@ -46,4 +46,27 @@ describe('CheckboxComponent', () => {
     const input = fixture.nativeElement.querySelector('input[type="checkbox"]') as HTMLInputElement;
     expect(input.disabled).toBe(true);
   });
+
+  it('exposes the checked state via aria-checked', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(input.getAttribute('aria-checked')).toBe('false');
+
+    fixture.componentInstance.control.setValue(true);
+    fixture.detectChanges();
+
+    expect(input.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('toggles the bound form control when Enter is pressed', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(fixture.componentInstance.control.value).toBe(true);
+  });
 });

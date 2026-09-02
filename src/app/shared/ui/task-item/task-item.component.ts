@@ -22,6 +22,18 @@ export class TaskItemComponent {
     this.toggleCompleted.emit();
   }
 
+  /** The checkbox and delete button already toggle/act on their own; avoid double-emitting when their click bubbles up. */
+  protected onRowClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (
+      target.closest('.app-task-item__checkbox') ||
+      target.closest('.app-task-item__actions')
+    ) {
+      return;
+    }
+    this.onToggle();
+  }
+
   protected onRemove(): void {
     this.remove.emit();
   }

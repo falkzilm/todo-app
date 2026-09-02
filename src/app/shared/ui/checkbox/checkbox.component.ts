@@ -52,4 +52,16 @@ export class CheckboxComponent implements ControlValueAccessor {
   protected onBlur(): void {
     this.onTouchedFn();
   }
+
+  /** Native checkboxes toggle on Space by default; Enter needs to be wired up explicitly. */
+  protected onKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' || this.disabled) {
+      return;
+    }
+
+    event.preventDefault();
+    const input = event.target as HTMLInputElement;
+    input.checked = !input.checked;
+    input.dispatchEvent(new Event('change'));
+  }
 }

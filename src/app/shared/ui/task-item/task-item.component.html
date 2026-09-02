@@ -1,4 +1,10 @@
-<li class="app-task-item" [class.app-task-item--completed]="task().completed">
+<!-- The checkbox inside is the focusable, keyboard-operable control; the row click is a mouse-only convenience that mirrors it. -->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+<li
+  class="app-task-item"
+  [class.app-task-item--completed]="task().completed"
+  (click)="onRowClick($event)"
+>
   <app-checkbox
     class="app-task-item__checkbox"
     [ngModel]="task().completed"

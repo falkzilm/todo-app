@@ -89,4 +89,38 @@ describe('TaskItemComponent', () => {
 
     expect(fixture.componentInstance.removeCount).toBe(1);
   });
+
+  it('does not emit toggleCompleted when clicking the remove action', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const removeButton = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    removeButton.click();
+
+    expect(fixture.componentInstance.toggleCount).toBe(0);
+  });
+
+  it('emits toggleCompleted exactly once when the row content is clicked', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const content = fixture.nativeElement.querySelector(
+      '.app-task-item__content',
+    ) as HTMLElement;
+    content.click();
+
+    expect(fixture.componentInstance.toggleCount).toBe(1);
+  });
+
+  it('does not double-emit toggleCompleted when the click originates from the checkbox', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const checkbox = fixture.nativeElement.querySelector(
+      'input[type="checkbox"]',
+    ) as HTMLInputElement;
+    checkbox.click();
+
+    expect(fixture.componentInstance.toggleCount).toBe(1);
+  });
 });
