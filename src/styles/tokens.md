@@ -139,3 +139,14 @@ sind bewusst ausgelassen, um die Skala klein und konsistent zu halten.
 | `--motion-duration-base`       | `200ms`                            |
 | `--motion-duration-slow`       | `320ms`                            |
 | `--motion-easing-standard`     | `cubic-bezier(0.4, 0, 0.2, 1)`     |
+
+## Layout
+
+| Token                          | Wert            | Verwendung                                  |
+| ------------------------------- | ---------------- | --------------------------------------------- |
+| `--layout-content-max-width`    | `48rem` (768px)  | Maximalbreite der zentrierten Inhaltsspalte  |
+
+Header- und Hauptbereich der App-Shell teilen sich diese Maximalbreite
+und werden per `margin-inline: auto` zentriert; auf schmalen Viewports
+(z. B. 360px) füllt die Inhaltsspalte die volle Breite abzüglich des
+seitlichen `--space-6`-Abstands.

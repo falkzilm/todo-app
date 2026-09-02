@@ -1,11 +1,15 @@
-<header>
-  <h1>{{ title() }}</h1>
-  <nav>
-    <a routerLink="/tasks" routerLinkActive="is-active">Aufgaben</a>
-    <a routerLink="/calendar" routerLinkActive="is-active">Kalender</a>
-  </nav>
+<header class="app-shell__header">
+  <div class="app-shell__container">
+    <h1>{{ title() }}</h1>
+    <nav>
+      <a routerLink="/heute" routerLinkActive="is-active" ariaCurrentWhenActive="page">Heute</a>
+      <a routerLink="/kalender" routerLinkActive="is-active" ariaCurrentWhenActive="page"
+        >Kalender</a
+      >
+    </nav>
+  </div>
 </header>
 
-<main>
+<main class="app-shell__container">
   <router-outlet />
 </main>

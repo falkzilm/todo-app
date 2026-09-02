@@ -3,16 +3,27 @@
   font-family: var(--font-family-base);
 }
 
-header {
+.app-shell__header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-shell__container {
+  max-width: var(--layout-content-max-width);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+.app-shell__header .app-shell__container {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-6);
-  padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--color-border);
+  padding-block: var(--space-4);
 }
 
 nav {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-4);
 
   a {
@@ -27,5 +38,5 @@ nav {
 }
 
 main {
-  padding: var(--space-6);
+  padding-block: var(--space-6);
 }
