@@ -4,6 +4,7 @@ import {
   CreateTaskInput,
   Task,
   createTask,
+  isCalendarDate,
   todayAsCalendarDate,
 } from '../models/task.model';
 
@@ -80,6 +81,12 @@ export class TaskStoreService {
     const title = changes.title !== undefined ? changes.title.trim() : task.title;
     if (!title) {
       throw new Error('Task title must not be empty.');
+    }
+
+    if (changes.dueDate != null && !isCalendarDate(changes.dueDate)) {
+      throw new Error(
+        `Task dueDate must be a calendar date string (YYYY-MM-DD), got "${changes.dueDate}".`,
+      );
     }
 
     return {

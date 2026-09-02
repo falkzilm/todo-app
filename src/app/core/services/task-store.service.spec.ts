@@ -88,6 +88,20 @@ describe('TaskStoreService', () => {
 
       expect(() => store.update(task.id, { title: '   ' })).toThrow();
     });
+
+    it('throws when the dueDate is not a valid calendar date string', () => {
+      const task = store.add({ title: 'Aufgabe' });
+
+      expect(() => store.update(task.id, { dueDate: '2026-09-02T10:00:00Z' })).toThrow();
+      expect(() => store.update(task.id, { dueDate: 'not-a-date' })).toThrow();
+    });
+
+    it('does not change the task when the dueDate update is invalid', () => {
+      const task = store.add({ title: 'Aufgabe', dueDate: '2026-09-01' });
+
+      expect(() => store.update(task.id, { dueDate: 'invalid' })).toThrow();
+      expect(store.tasks()[0].dueDate).toBe('2026-09-01');
+    });
   });
 
   describe('toggleCompleted', () => {

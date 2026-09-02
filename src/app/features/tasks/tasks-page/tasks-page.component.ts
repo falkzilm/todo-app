@@ -1,7 +1,7 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
-import { Task } from './task.model';
 
 @Component({
   selector: 'app-tasks-page',
@@ -11,16 +11,13 @@ import { Task } from './task.model';
   styleUrl: './tasks-page.component.scss',
 })
 export class TasksPageComponent {
-  protected readonly tasks = signal<Task[]>([
-    { id: 1, title: 'Angular-Workspace einrichten', done: true },
-    { id: 2, title: 'Aufgabenliste anzeigen', done: false },
-  ]);
+  private readonly taskStore = inject(TaskStoreService);
 
-  protected readonly openCount = computed(() => this.tasks().filter((task) => !task.done).length);
+  protected readonly tasks = this.taskStore.tasks;
+
+  protected readonly openCount = computed(() => this.taskStore.openTasks().length);
 
   protected newTaskTitle = '';
-
-  private nextId = 3;
 
   protected addTask(): void {
     const title = this.newTaskTitle.trim();
@@ -28,17 +25,15 @@ export class TasksPageComponent {
       return;
     }
 
-    this.tasks.update((tasks) => [...tasks, { id: this.nextId++, title, done: false }]);
+    this.taskStore.add({ title });
     this.newTaskTitle = '';
   }
 
-  protected toggleTask(id: number): void {
-    this.tasks.update((tasks) =>
-      tasks.map((task) => (task.id === id ? { ...task, done: !task.done } : task)),
-    );
+  protected toggleTask(id: string): void {
+    this.taskStore.toggleCompleted(id);
   }
 
-  protected removeTask(id: number): void {
-    this.tasks.update((tasks) => tasks.filter((task) => task.id !== id));
+  protected removeTask(id: string): void {
+    this.taskStore.remove(id);
   }
 }

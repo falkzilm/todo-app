@@ -12,9 +12,9 @@
 
 <ul class="task-list">
   @for (task of tasks(); track task.id) {
-    <li class="task-list__item" [class.task-list__item--done]="task.done">
+    <li class="task-list__item" [class.task-list__item--done]="task.completed">
       <label>
-        <input type="checkbox" [checked]="task.done" (change)="toggleTask(task.id)" />
+        <input type="checkbox" [checked]="task.completed" (change)="toggleTask(task.id)" />
         {{ task.title }}
       </label>
       <button type="button" (click)="removeTask(task.id)">Löschen</button>
