@@ -13,10 +13,49 @@
   />
 
   <div class="app-task-item__content">
-    <span class="app-task-item__title">{{ task().title }}</span>
+    <div class="app-task-item__title-field">
+      @if (editingTitle()) {
+        <input
+          #titleInput
+          class="app-task-item__title-input"
+          type="text"
+          [(ngModel)]="titleDraft"
+          (blur)="commitTitle()"
+          (keydown)="onTitleKeydown($event)"
+        />
+      } @else {
+        <button type="button" class="app-task-item__title" (click)="startEditingTitle()">
+          {{ task().title }}
+        </button>
+      }
+    </div>
+
     @if (task().dueDate) {
       <span class="app-task-item__due-date">{{ task().dueDate | date: 'dd.MM.yyyy' }}</span>
     }
+
+    <div class="app-task-item__notes-field">
+      @if (editingNotes()) {
+        <input
+          #notesInput
+          class="app-task-item__notes-input"
+          type="text"
+          placeholder="Notiz hinzufügen"
+          [(ngModel)]="notesDraft"
+          (blur)="commitNotes()"
+          (keydown)="onNotesKeydown($event)"
+        />
+      } @else {
+        <button
+          type="button"
+          class="app-task-item__notes"
+          [class.app-task-item__notes--empty]="!task().notes"
+          (click)="startEditingNotes()"
+        >
+          {{ task().notes || 'Notiz hinzufügen' }}
+        </button>
+      }
+    </div>
   </div>
 
   <div class="app-task-item__actions">

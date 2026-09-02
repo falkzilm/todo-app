@@ -14,14 +14,72 @@
     min-width: 0;
   }
 
-  &__title {
+  &__title,
+  &__title-input {
+    font: inherit;
+    width: 100%;
     color: var(--color-text);
+  }
+
+  &__title {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
     transition: color var(--motion-duration-fast) var(--motion-easing-standard);
+
+    &:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  &__title-input {
+    padding: var(--space-1) 0;
+    border: none;
+    border-bottom: 1px solid var(--color-accent);
+    background: none;
+    outline: none;
   }
 
   &__due-date {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
+  }
+
+  &__notes,
+  &__notes-input {
+    font-size: var(--font-size-sm);
+    width: 100%;
+    color: var(--color-text-muted);
+  }
+
+  &__notes {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+
+    &--empty {
+      font-style: italic;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  &__notes-input {
+    padding: var(--space-1) 0;
+    border: none;
+    border-bottom: 1px solid var(--color-accent);
+    background: none;
+    outline: none;
   }
 
   &__actions {
