@@ -19,6 +19,13 @@ set -euo pipefail
 # Hintergruende zum SPA-Fallback und weitere Hosting-Ziele.
 
 BASE_HREF="${1:-/}"
+
+# Ein Pfad-Base-Href muss mit "/" beginnen und enden, sonst loest der Browser
+# relative Bundle-URLs am falschen Ort auf (z. B. "/todo-app" statt
+# "/todo-app/"). Normalisieren, statt eine kaputte Konfiguration zuzulassen.
+[[ "${BASE_HREF}" == /* ]] || BASE_HREF="/${BASE_HREF}"
+[[ "${BASE_HREF}" == */ ]] || BASE_HREF="${BASE_HREF}/"
+
 OUTPUT_DIR="dist/todo-app/browser"
 
 echo "Baue Produktionsbuild mit base-href=${BASE_HREF} ..."
