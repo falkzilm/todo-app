@@ -16,13 +16,11 @@
 
 <ul class="task-list">
   @for (task of tasks(); track task.id) {
-    <li class="task-list__item" [class.task-list__item--done]="task.completed">
-      <label>
-        <input type="checkbox" [checked]="task.completed" (change)="toggleTask(task.id)" />
-        {{ task.title }}
-      </label>
-      <button type="button" (click)="removeTask(task.id)">Löschen</button>
-    </li>
+    <app-task-item
+      [task]="task"
+      (toggleCompleted)="toggleTask(task.id)"
+      (remove)="removeTask(task.id)"
+    />
   } @empty {
     <li>Keine Aufgaben vorhanden.</li>
   }

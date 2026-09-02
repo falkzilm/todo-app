@@ -6,7 +6,9 @@
     [checked]="checked"
     [disabled]="disabled"
     [attr.aria-label]="ariaLabel()"
+    [attr.aria-checked]="checked"
     (change)="onInputChange($event)"
+    (keydown)="onKeydown($event)"
     (blur)="onBlur()"
   />
   <span class="app-checkbox__box" aria-hidden="true"></span>

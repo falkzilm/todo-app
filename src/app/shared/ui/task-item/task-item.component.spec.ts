@@ -89,4 +89,14 @@ describe('TaskItemComponent', () => {
 
     expect(fixture.componentInstance.removeCount).toBe(1);
   });
+
+  it('does not emit toggleCompleted when clicking the remove action', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const removeButton = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    removeButton.click();
+
+    expect(fixture.componentInstance.toggleCount).toBe(0);
+  });
 });
