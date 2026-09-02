@@ -372,6 +372,27 @@ describe('TaskStoreService', () => {
     });
   });
 
+  describe('todayTotalCount and todayCompletedCount', () => {
+    it('counts all tasks due today regardless of completion state', () => {
+      const today = todayAsCalendarDate();
+      const open = store.add({ title: 'Offen', dueDate: today });
+      const done = store.add({ title: 'Erledigt', dueDate: today });
+      store.toggleCompleted(done.id);
+      store.add({ title: 'Anderer Tag', dueDate: '2099-01-01' });
+
+      expect(store.todayTotalCount()).toBe(2);
+      expect(store.todayCompletedCount()).toBe(1);
+      expect(open).toBeTruthy();
+    });
+
+    it('is zero for both when no tasks are due today', () => {
+      store.add({ title: 'Anderer Tag', dueDate: '2099-01-01' });
+
+      expect(store.todayTotalCount()).toBe(0);
+      expect(store.todayCompletedCount()).toBe(0);
+    });
+  });
+
   describe('overdueTasks', () => {
     it('returns open tasks with a due date in the past', () => {
       const overdue = store.add({ title: 'Überfällig', dueDate: '2020-01-01' });
