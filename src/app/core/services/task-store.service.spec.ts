@@ -309,5 +309,41 @@ describe('TaskStoreService', () => {
       const raw = storage.getItem('todo-app.tasks');
       expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [task] });
     });
+
+    it('flushes an outstanding debounced write synchronously when the page is hidden', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const setItemSpy = vi.spyOn(storage, 'setItem');
+
+      const task = store.add({ title: 'Aufgabe' });
+      TestBed.tick();
+
+      expect(setItemSpy).not.toHaveBeenCalled();
+
+      window.dispatchEvent(new Event('pagehide'));
+
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+      const raw = storage.getItem('todo-app.tasks');
+      expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [task] });
+
+      vi.runAllTimers();
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('flushes an outstanding debounced write synchronously when the tab becomes hidden', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const setItemSpy = vi.spyOn(storage, 'setItem');
+
+      const task = store.add({ title: 'Aufgabe' });
+      TestBed.tick();
+
+      vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+      const raw = storage.getItem('todo-app.tasks');
+      expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [task] });
+    });
   });
 });

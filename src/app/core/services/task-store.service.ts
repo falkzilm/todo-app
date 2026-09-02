@@ -1,4 +1,4 @@
-import { Injectable, Signal, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, Signal, computed, effect, inject, signal } from '@angular/core';
 import {
   CalendarDate,
   CreateTaskInput,
@@ -42,6 +42,10 @@ export class TaskStoreService {
     );
   });
 
+  /** Latest tasks not yet written to storage; cleared once a write completes. */
+  private pendingTasks: Task[] | null = null;
+  private saveTimeoutId?: ReturnType<typeof setTimeout>;
+
   constructor() {
     effect((onCleanup) => {
       const tasks = this.tasks();
@@ -51,12 +55,41 @@ export class TaskStoreService {
         return;
       }
 
-      const timeoutId = setTimeout(() => {
-        this.persistence.save(tasks);
-      }, SAVE_DEBOUNCE_MS);
+      this.pendingTasks = tasks;
+      this.saveTimeoutId = setTimeout(() => this.flushPendingSave(), SAVE_DEBOUNCE_MS);
 
-      onCleanup(() => clearTimeout(timeoutId));
+      onCleanup(() => clearTimeout(this.saveTimeoutId));
     });
+
+    // A debounced write can still be pending when the page is closed or backgrounded;
+    // flush it synchronously so no change is lost on reload.
+    window.addEventListener('pagehide', this.handlePageHide);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+
+    inject(DestroyRef).onDestroy(() => {
+      window.removeEventListener('pagehide', this.handlePageHide);
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    });
+  }
+
+  private readonly handlePageHide = (): void => {
+    this.flushPendingSave();
+  };
+
+  private readonly handleVisibilityChange = (): void => {
+    if (document.visibilityState === 'hidden') {
+      this.flushPendingSave();
+    }
+  };
+
+  private flushPendingSave(): void {
+    if (this.pendingTasks === null) {
+      return;
+    }
+
+    clearTimeout(this.saveTimeoutId);
+    this.persistence.save(this.pendingTasks);
+    this.pendingTasks = null;
   }
 
   add(input: CreateTaskInput): Task {
