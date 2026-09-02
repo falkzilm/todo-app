@@ -362,6 +362,14 @@ describe('TaskStoreService', () => {
 
       expect(store.todayTasks()).toEqual([task]);
     });
+
+    it('excludes completed tasks even if their due date is today', () => {
+      const today = todayAsCalendarDate();
+      const task = store.add({ title: 'Erledigt', dueDate: today });
+      store.toggleCompleted(task.id);
+
+      expect(store.todayTasks()).toEqual([]);
+    });
   });
 
   describe('overdueTasks', () => {
@@ -383,6 +391,43 @@ describe('TaskStoreService', () => {
       store.add({ title: 'Ohne Datum' });
 
       expect(store.overdueTasks()).toEqual([]);
+    });
+
+    it('sorts by due date ascending, oldest (most overdue) first', () => {
+      const recent = store.add({ title: 'Kürzlich fällig', dueDate: '2026-01-05' });
+      const oldest = store.add({ title: 'Am längsten überfällig', dueDate: '2020-01-01' });
+      const middle = store.add({ title: 'Mittel überfällig', dueDate: '2023-06-15' });
+
+      expect(store.overdueTasks()).toEqual([oldest, middle, recent]);
+    });
+  });
+
+  describe('midnight rollover', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('moves a task from todayTasks to overdueTasks once local midnight passes', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-09-02T23:59:00'));
+
+      const rolloverStorage = createMockStorage();
+      rolloverStorage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [{ provide: STORAGE, useValue: rolloverStorage }],
+      });
+      const rolloverStore = TestBed.inject(TaskStoreService);
+      const task = rolloverStore.add({ title: 'Aufgabe', dueDate: '2026-09-02' });
+
+      expect(rolloverStore.todayTasks()).toEqual([task]);
+      expect(rolloverStore.overdueTasks()).toEqual([]);
+
+      vi.setSystemTime(new Date('2026-09-03T00:01:00'));
+      vi.advanceTimersByTime(2 * 60 * 1000);
+
+      expect(rolloverStore.todayTasks()).toEqual([]);
+      expect(rolloverStore.overdueTasks()).toEqual([task]);
     });
   });
 

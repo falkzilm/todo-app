@@ -158,7 +158,10 @@ describe('TasksPageComponent', () => {
       fixture.detectChanges();
       expect(fixture.nativeElement.querySelector('.undo-notice')).not.toBeNull();
 
-      vi.runAllTimers();
+      // Advance by exactly the undo duration rather than vi.runAllTimers(): the task
+      // store also schedules a self-rescheduling midnight rollover timer, which would
+      // make runAllTimers() loop "forever" (it keeps requeuing a new 24h timer).
+      vi.advanceTimersByTime(6000);
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('.undo-notice')).toBeNull();

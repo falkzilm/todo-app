@@ -1,11 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
+import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.component';
 
 @Component({
   selector: 'app-heute-page',
   standalone: true,
-  imports: [PageHeaderComponent],
+  imports: [PageHeaderComponent, TaskItemComponent],
   templateUrl: './heute-page.component.html',
   styleUrl: './heute-page.component.scss',
 })
@@ -24,4 +25,33 @@ export class HeutePageComponent {
   );
 
   protected readonly todayTasks = this.taskStore.todayTasks;
+  protected readonly overdueTasks = this.taskStore.overdueTasks;
+
+  protected readonly hasNoOpenTasks = computed(
+    () => this.todayTasks().length === 0 && this.overdueTasks().length === 0,
+  );
+
+  protected readonly summaryText = computed(() => {
+    const todayCount = this.todayTasks().length;
+    const overdueCount = this.overdueTasks().length;
+    return overdueCount === 0
+      ? `${todayCount} Aufgabe(n) für heute.`
+      : `${todayCount} Aufgabe(n) für heute, ${overdueCount} überfällig.`;
+  });
+
+  protected toggleTask(id: string): void {
+    this.taskStore.toggleCompleted(id);
+  }
+
+  protected removeTask(id: string): void {
+    this.taskStore.remove(id);
+  }
+
+  protected saveTitle(id: string, title: string): void {
+    this.taskStore.update(id, { title });
+  }
+
+  protected saveNotes(id: string, notes: string | null): void {
+    this.taskStore.update(id, { notes });
+  }
 }

@@ -1,9 +1,47 @@
 <app-page-header title="Heute" [subtitle]="todayLabel()" />
 
 <section class="heute-page__summary" aria-label="Zusammenfassung">
-  <p>{{ todayTasks().length }} Aufgabe(n) für heute.</p>
+  <p>{{ summaryText() }}</p>
 </section>
 
 <section class="heute-page__quick-add" aria-label="Schnellerfassung"></section>
 
-<section class="heute-page__list" aria-label="Aufgabenliste"></section>
+<section class="heute-page__list" aria-label="Aufgabenliste">
+  @if (hasNoOpenTasks()) {
+    <p class="heute-page__empty-state">Heute steht nichts an.</p>
+  } @else {
+    <section class="heute-page__group" aria-label="Heute fällige Aufgaben">
+      <h3 class="heute-page__group-title">Heute</h3>
+      <ul class="task-list">
+        @for (task of todayTasks(); track task.id) {
+          <app-task-item
+            [task]="task"
+            (toggleCompleted)="toggleTask(task.id)"
+            (remove)="removeTask(task.id)"
+            (titleSave)="saveTitle(task.id, $event)"
+            (notesSave)="saveNotes(task.id, $event)"
+          />
+        } @empty {
+          <li class="heute-page__group-empty">Keine Aufgaben für heute fällig.</li>
+        }
+      </ul>
+    </section>
+
+    <section class="heute-page__group" aria-label="Überfällige Aufgaben">
+      <h3 class="heute-page__group-title">Überfällig</h3>
+      <ul class="task-list">
+        @for (task of overdueTasks(); track task.id) {
+          <app-task-item
+            [task]="task"
+            (toggleCompleted)="toggleTask(task.id)"
+            (remove)="removeTask(task.id)"
+            (titleSave)="saveTitle(task.id, $event)"
+            (notesSave)="saveNotes(task.id, $event)"
+          />
+        } @empty {
+          <li class="heute-page__group-empty">Keine überfälligen Aufgaben.</li>
+        }
+      </ul>
+    </section>
+  }
+</section>
