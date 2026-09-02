@@ -1,0 +1,9 @@
+<button
+  class="app-icon-button"
+  type="button"
+  [attr.aria-label]="ariaLabel()"
+  [disabled]="disabled()"
+  (click)="onClick()"
+>
+  <ng-content />
+</button>
