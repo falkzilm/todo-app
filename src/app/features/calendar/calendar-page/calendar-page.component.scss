@@ -1,11 +1,14 @@
 .calendar-nav {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: var(--space-4);
 
   &__label {
     font-weight: var(--font-weight-semibold);
     min-width: 10rem;
+    max-width: 100%;
     text-align: center;
   }
 }
