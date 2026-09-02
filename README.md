@@ -9,8 +9,8 @@ Der Code unter `src/app` ist nach Feature-Slices organisiert:
 
 - `core/` – anwendungsweite Services (z. B. `AppTitleService`)
 - `shared/` – wiederverwendbare, feature-übergreifende UI-Bausteine (z. B. `PageHeaderComponent`)
-- `features/tasks/` – Aufgabenverwaltung (Startseite unter `/tasks`)
-- `features/calendar/` – Kalenderansicht unter `/calendar`
+- `features/tasks/` – Aufgabenverwaltung (Startseite unter `/heute`)
+- `features/calendar/` – Kalenderansicht unter `/kalender`
 
 Es gibt kein Backend und keine Proxy-Konfiguration; alle Daten liegen aktuell nur im
 Client-State (Signals).
@@ -101,7 +101,7 @@ angegebenen Unterpfad.
 
 Da die App ausschließlich clientseitiges Routing nutzt (`provideRouter`
 ohne `withHashLocation`), führt der direkte Aufruf einer Deep-Link-Route
-wie `/calendar` auf einem naiv konfigurierten Static-Host zu einem echten
+wie `/kalender` auf einem naiv konfigurierten Static-Host zu einem echten
 404, weil unter diesem Pfad keine Datei existiert. Der Host muss deshalb so
 konfiguriert sein, dass unbekannte Pfade auf `index.html` zurückfallen
 ("SPA-Fallback"), damit der Angular-Router die Route anschließend

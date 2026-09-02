@@ -1,14 +1,19 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'tasks' },
+  { path: '', pathMatch: 'full', redirectTo: 'heute' },
   {
-    path: 'tasks',
+    path: 'heute',
     loadChildren: () => import('./features/tasks/tasks.routes').then((m) => m.TASKS_ROUTES),
   },
   {
-    path: 'calendar',
+    path: 'kalender',
     loadChildren: () =>
       import('./features/calendar/calendar.routes').then((m) => m.CALENDAR_ROUTES),
+  },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./shared/ui/not-found/not-found.component').then((m) => m.NotFoundComponent),
   },
 ];
