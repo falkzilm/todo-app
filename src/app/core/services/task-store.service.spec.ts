@@ -247,6 +247,92 @@ describe('TaskStoreService', () => {
 
       expect(store.tasks()).toEqual([second]);
     });
+
+    it('returns the removed task', () => {
+      const task = store.add({ title: 'Aufgabe' });
+
+      expect(store.remove(task.id)).toEqual(task);
+    });
+
+    it('returns undefined when no task matches the id', () => {
+      expect(store.remove('unbekannte-id')).toBeUndefined();
+    });
+
+    it('persists the removal synchronously, without waiting for the save debounce', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const task = store.add({ title: 'Aufgabe' });
+      vi.runAllTimers();
+
+      store.remove(task.id);
+
+      const persisted = JSON.parse(storage.getItem('todo-app.tasks')!) as { tasks: Task[] };
+      expect(persisted.tasks).toEqual([]);
+
+      vi.useRealTimers();
+    });
+
+    it('discards a pending debounced write from before the removal', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const task = store.add({ title: 'Aufgabe' });
+      const setItemSpy = vi.spyOn(storage, 'setItem');
+
+      store.remove(task.id);
+      setItemSpy.mockClear();
+      vi.runAllTimers();
+
+      expect(setItemSpy).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('restore', () => {
+    it('re-inserts a removed task at the given index', () => {
+      const first = store.add({ title: 'Aufgabe 1' });
+      const second = store.add({ title: 'Aufgabe 2' });
+      const third = store.add({ title: 'Aufgabe 3' });
+      store.remove(second.id);
+
+      store.restore(second, 1);
+
+      expect(store.tasks()).toEqual([first, second, third]);
+    });
+
+    it('restores the task with all its original fields', () => {
+      const task = store.add({ title: 'Aufgabe', notes: 'Details', dueDate: '2026-09-05' });
+      store.remove(task.id);
+
+      store.restore(task, 0);
+
+      expect(store.tasks()).toEqual([task]);
+    });
+
+    it('clamps an out-of-range index to the end of the list', () => {
+      const first = store.add({ title: 'Aufgabe 1' });
+      const second = store.add({ title: 'Aufgabe 2' });
+      store.remove(second.id);
+
+      store.restore(second, 99);
+
+      expect(store.tasks()).toEqual([first, second]);
+    });
+
+    it('persists the restore synchronously, without waiting for the save debounce', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const task = store.add({ title: 'Aufgabe' });
+      vi.runAllTimers();
+      store.remove(task.id);
+
+      store.restore(task, 0);
+
+      const persisted = JSON.parse(storage.getItem('todo-app.tasks')!) as { tasks: Task[] };
+      expect(persisted.tasks).toEqual([task]);
+
+      vi.useRealTimers();
+    });
   });
 
   describe('tasksForDate', () => {

@@ -15,6 +15,13 @@
   <p class="task-form__hint" role="status">Bitte einen Titel eingeben.</p>
 }
 
+@if (pendingUndo(); as pending) {
+  <p class="undo-notice" role="status">
+    <span>„{{ pending.task.title }}“ gelöscht.</span>
+    <button type="button" class="undo-notice__button" (click)="undoRemove()">Rückgängig</button>
+  </p>
+}
+
 <button type="button" class="reset-button" (click)="resetToDemoData()">
   Auf Demo-Daten zurücksetzen
 </button>

@@ -1,9 +1,25 @@
-import { Component, ElementRef, computed, inject, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { todayAsCalendarDate } from '../../../core/models/task.model';
+import { Task, todayAsCalendarDate } from '../../../core/models/task.model';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.component';
+
+/** How long the undo notice stays visible before a delete becomes final. */
+const UNDO_DURATION_MS = 6000;
+
+interface PendingUndo {
+  task: Task;
+  index: number;
+}
 
 @Component({
   selector: 'app-tasks-page',
@@ -24,6 +40,14 @@ export class TasksPageComponent {
   protected newTaskTitle = '';
   protected showEmptyTitleHint = false;
 
+  /** The most recently deleted task, while its undo notice is still shown. */
+  protected readonly pendingUndo = signal<PendingUndo | null>(null);
+  private undoTimeoutId?: ReturnType<typeof setTimeout>;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.undoTimeoutId));
+  }
+
   protected addTask(): void {
     const title = this.newTaskTitle.trim();
     if (!title) {
@@ -43,7 +67,26 @@ export class TasksPageComponent {
   }
 
   protected removeTask(id: string): void {
-    this.taskStore.remove(id);
+    const index = this.taskStore.tasks().findIndex((task) => task.id === id);
+    const removedTask = this.taskStore.remove(id);
+    if (!removedTask) {
+      return;
+    }
+
+    clearTimeout(this.undoTimeoutId);
+    this.pendingUndo.set({ task: removedTask, index });
+    this.undoTimeoutId = setTimeout(() => this.pendingUndo.set(null), UNDO_DURATION_MS);
+  }
+
+  protected undoRemove(): void {
+    const pending = this.pendingUndo();
+    if (!pending) {
+      return;
+    }
+
+    clearTimeout(this.undoTimeoutId);
+    this.pendingUndo.set(null);
+    this.taskStore.restore(pending.task, pending.index);
   }
 
   protected saveTitle(id: string, title: string): void {

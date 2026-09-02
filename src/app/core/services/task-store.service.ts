@@ -93,6 +93,16 @@ export class TaskStoreService {
     this.pendingTasks = null;
   }
 
+  /** Applies and persists a new task list synchronously, discarding any pending debounced write. */
+  private setTasksImmediately(tasks: Task[]): void {
+    clearTimeout(this.saveTimeoutId);
+    this.pendingTasks = null;
+
+    this.persistence.save(tasks);
+    this.loadedTasks = tasks;
+    this.tasksSignal.set(tasks);
+  }
+
   add(input: CreateTaskInput): Task {
     const task = createTask(input);
     this.tasksSignal.update((tasks) => [...tasks, task]);
@@ -122,19 +132,33 @@ export class TaskStoreService {
     );
   }
 
-  remove(id: string): void {
-    this.tasksSignal.update((tasks) => tasks.filter((task) => task.id !== id));
+  /**
+   * Removes the task and persists synchronously (no debounce), so the
+   * deletion survives an immediate reload even before an undo grace period
+   * (handled by the caller) elapses. Returns the removed task, or
+   * `undefined` if no task with that id exists.
+   */
+  remove(id: string): Task | undefined {
+    const tasks = this.tasksSignal();
+    const removedTask = tasks.find((task) => task.id === id);
+    if (!removedTask) {
+      return undefined;
+    }
+
+    this.setTasksImmediately(tasks.filter((task) => task.id !== id));
+    return removedTask;
+  }
+
+  /** Re-inserts a previously removed task at the given index (clamped to the current length), used to undo a delete. */
+  restore(task: Task, index: number): void {
+    const tasks = this.tasksSignal();
+    const insertAt = Math.min(Math.max(index, 0), tasks.length);
+    this.setTasksImmediately([...tasks.slice(0, insertAt), task, ...tasks.slice(insertAt)]);
   }
 
   /** Discards all tasks and restores the original demo task set. */
   reset(): void {
-    clearTimeout(this.saveTimeoutId);
-    this.pendingTasks = null;
-
-    const demoTasks = createDemoTasks();
-    this.persistence.save(demoTasks);
-    this.loadedTasks = demoTasks;
-    this.tasksSignal.set(demoTasks);
+    this.setTasksImmediately(createDemoTasks());
   }
 
   tasksForDate(date: CalendarDate): Signal<Task[]> {
