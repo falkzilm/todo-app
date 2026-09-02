@@ -1,3 +1,5 @@
+@use 'styles/tokens';
+
 * {
   box-sizing: border-box;
 }
@@ -9,11 +11,9 @@ body {
 }
 
 body {
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
-  color: #1a1a1a;
-  background: #fafafa;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+  background: var(--color-bg);
 }
