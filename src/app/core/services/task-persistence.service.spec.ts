@@ -1,0 +1,111 @@
+import { TestBed } from '@angular/core/testing';
+import { Task } from '../models/task.model';
+import { STORAGE } from './storage.token';
+import { TaskPersistenceService, migrateToCurrentSchema } from './task-persistence.service';
+
+function createMockStorage(): Storage {
+  const store = new Map<string, string>();
+
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => store.clear(),
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+}
+
+const exampleTask: Task = {
+  id: 'task-1',
+  title: 'Milch kaufen',
+  notes: null,
+  dueDate: null,
+  completed: false,
+  completedAt: null,
+  createdAt: '2026-09-01',
+  updatedAt: '2026-09-01',
+};
+
+describe('TaskPersistenceService', () => {
+  let storage: Storage;
+  let service: TaskPersistenceService;
+
+  beforeEach(() => {
+    storage = createMockStorage();
+    TestBed.configureTestingModule({
+      providers: [{ provide: STORAGE, useValue: storage }],
+    });
+    service = TestBed.inject(TaskPersistenceService);
+  });
+
+  describe('load', () => {
+    it('returns an empty list when nothing has been persisted yet', () => {
+      expect(service.load()).toEqual([]);
+    });
+
+    it('returns the persisted tasks for the current schema version', () => {
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [exampleTask] }));
+
+      expect(service.load()).toEqual([exampleTask]);
+    });
+
+    it('returns an empty list when the persisted value is not valid JSON', () => {
+      storage.setItem('todo-app.tasks', '{not-json');
+
+      expect(service.load()).toEqual([]);
+    });
+  });
+
+  describe('save', () => {
+    it('writes the tasks together with the current schema version', () => {
+      service.save([exampleTask]);
+
+      const raw = storage.getItem('todo-app.tasks');
+      expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [exampleTask] });
+    });
+
+    it('round-trips tasks written by save through load', () => {
+      service.save([exampleTask]);
+
+      expect(service.load()).toEqual([exampleTask]);
+    });
+  });
+});
+
+describe('migrateToCurrentSchema', () => {
+  it('passes data that already matches the current version through unchanged', () => {
+    const state = { version: 1, tasks: [exampleTask] };
+
+    expect(migrateToCurrentSchema(state)).toEqual(state);
+  });
+
+  it('migrates unversioned (legacy) data by treating it as version 0', () => {
+    const legacy = { tasks: [exampleTask] };
+
+    expect(migrateToCurrentSchema(legacy)).toEqual({ version: 1, tasks: [exampleTask] });
+  });
+
+  it('falls back to an empty task list for an unknown older schema version', () => {
+    const unknown = { version: -1, tasks: [exampleTask] };
+
+    expect(migrateToCurrentSchema(unknown)).toEqual({ version: 1, tasks: [] });
+  });
+
+  it('falls back to an empty task list for an unsupported future schema version', () => {
+    const future = { version: 99, tasks: [exampleTask] };
+
+    expect(migrateToCurrentSchema(future)).toEqual({ version: 1, tasks: [] });
+  });
+
+  it('falls back to an empty task list for non-object input', () => {
+    expect(migrateToCurrentSchema('not an object')).toEqual({ version: 1, tasks: [] });
+    expect(migrateToCurrentSchema(null)).toEqual({ version: 1, tasks: [] });
+  });
+});

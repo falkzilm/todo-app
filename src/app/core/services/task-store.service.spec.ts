@@ -1,12 +1,34 @@
 import { TestBed } from '@angular/core/testing';
-import { todayAsCalendarDate } from '../models/task.model';
+import { Task, todayAsCalendarDate } from '../models/task.model';
+import { STORAGE } from './storage.token';
 import { TaskStoreService } from './task-store.service';
+
+function createMockStorage(): Storage {
+  const store = new Map<string, string>();
+
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => store.clear(),
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+}
 
 describe('TaskStoreService', () => {
   let store: TaskStoreService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [{ provide: STORAGE, useValue: createMockStorage() }],
+    });
     store = TestBed.inject(TaskStoreService);
   });
 
@@ -213,6 +235,79 @@ describe('TaskStoreService', () => {
 
       expect(store.openTasks()).toEqual([open]);
       expect(store.completedTasks()[0].id).toBe(done.id);
+    });
+  });
+
+  describe('persistence', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('loads previously persisted tasks on startup', () => {
+      const storage = createMockStorage();
+      const persisted: Task[] = [
+        {
+          id: 'task-1',
+          title: 'Bereits gespeichert',
+          notes: null,
+          dueDate: null,
+          completed: false,
+          completedAt: null,
+          createdAt: '2026-09-01',
+          updatedAt: '2026-09-01',
+        },
+      ];
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: persisted }));
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [{ provide: STORAGE, useValue: storage }] });
+      const restoredStore = TestBed.inject(TaskStoreService);
+
+      expect(restoredStore.tasks()).toEqual(persisted);
+    });
+
+    it('bundles several rapid changes into a single debounced write', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const setItemSpy = vi.spyOn(storage, 'setItem');
+
+      store.add({ title: 'Aufgabe 1' });
+      TestBed.tick();
+      store.add({ title: 'Aufgabe 2' });
+      TestBed.tick();
+      store.add({ title: 'Aufgabe 3' });
+      TestBed.tick();
+
+      expect(setItemSpy).not.toHaveBeenCalled();
+
+      vi.runAllTimers();
+
+      expect(setItemSpy).toHaveBeenCalledTimes(1);
+      const [, value] = setItemSpy.mock.calls[0];
+      expect(JSON.parse(value).tasks).toHaveLength(3);
+    });
+
+    it('does not persist on startup before any change is made', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const setItemSpy = vi.spyOn(storage, 'setItem');
+
+      vi.runAllTimers();
+
+      expect(setItemSpy).not.toHaveBeenCalled();
+    });
+
+    it('persists the tasks resulting from a change after the debounce window', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+
+      const task = store.add({ title: 'Aufgabe' });
+      TestBed.tick();
+
+      vi.runAllTimers();
+
+      const raw = storage.getItem('todo-app.tasks');
+      expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [task] });
     });
   });
 });

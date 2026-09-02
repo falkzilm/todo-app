@@ -1,4 +1,4 @@
-import { Injectable, Signal, computed, signal } from '@angular/core';
+import { Injectable, Signal, computed, effect, inject, signal } from '@angular/core';
 import {
   CalendarDate,
   CreateTaskInput,
@@ -7,6 +7,7 @@ import {
   isCalendarDate,
   todayAsCalendarDate,
 } from '../models/task.model';
+import { TaskPersistenceService } from './task-persistence.service';
 
 export interface UpdateTaskInput {
   title?: string;
@@ -14,9 +15,14 @@ export interface UpdateTaskInput {
   dueDate?: CalendarDate | null;
 }
 
+/** Time to wait after the last change before persisting, so bursts of edits result in one write. */
+const SAVE_DEBOUNCE_MS = 300;
+
 @Injectable({ providedIn: 'root' })
 export class TaskStoreService {
-  private readonly tasksSignal = signal<Task[]>([]);
+  private readonly persistence = inject(TaskPersistenceService);
+  private readonly loadedTasks = this.persistence.load();
+  private readonly tasksSignal = signal<Task[]>(this.loadedTasks);
 
   readonly tasks = this.tasksSignal.asReadonly();
 
@@ -35,6 +41,23 @@ export class TaskStoreService {
       (task) => !task.completed && task.dueDate !== null && task.dueDate < today,
     );
   });
+
+  constructor() {
+    effect((onCleanup) => {
+      const tasks = this.tasks();
+
+      if (tasks === this.loadedTasks) {
+        // Nothing has changed since the initial load; avoid a redundant write.
+        return;
+      }
+
+      const timeoutId = setTimeout(() => {
+        this.persistence.save(tasks);
+      }, SAVE_DEBOUNCE_MS);
+
+      onCleanup(() => clearTimeout(timeoutId));
+    });
+  }
 
   add(input: CreateTaskInput): Task {
     const task = createTask(input);
