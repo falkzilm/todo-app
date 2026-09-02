@@ -1,4 +1,13 @@
-import { DestroyRef, Injectable, Signal, computed, effect, inject, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Injectable,
+  NgZone,
+  Signal,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { createDemoTasks } from '../models/demo-tasks';
 import {
   CalendarDate,
@@ -22,6 +31,7 @@ const SAVE_DEBOUNCE_MS = 300;
 @Injectable({ providedIn: 'root' })
 export class TaskStoreService {
   private readonly persistence = inject(TaskPersistenceService);
+  private readonly zone = inject(NgZone);
   private loadedTasks = this.persistence.load();
   private readonly tasksSignal = signal<Task[]>(this.loadedTasks);
 
@@ -31,16 +41,23 @@ export class TaskStoreService {
 
   readonly completedTasks = computed(() => this.tasks().filter((task) => task.completed));
 
+  /**
+   * Today's calendar date, refreshed at local midnight so `todayTasks`/`overdueTasks`
+   * roll over correctly even if the app is left open across a day change.
+   */
+  private readonly currentDate = signal(todayAsCalendarDate());
+  private midnightTimeoutId?: ReturnType<typeof setTimeout>;
+
   readonly todayTasks = computed(() => {
-    const today = todayAsCalendarDate();
-    return this.tasks().filter((task) => task.dueDate === today);
+    const today = this.currentDate();
+    return this.tasks().filter((task) => !task.completed && task.dueDate === today);
   });
 
   readonly overdueTasks = computed(() => {
-    const today = todayAsCalendarDate();
-    return this.tasks().filter(
-      (task) => !task.completed && task.dueDate !== null && task.dueDate < today,
-    );
+    const today = this.currentDate();
+    return this.tasks()
+      .filter((task) => !task.completed && task.dueDate !== null && task.dueDate < today)
+      .sort((a, b) => (a.dueDate as string).localeCompare(b.dueDate as string));
   });
 
   /** Latest tasks not yet written to storage; cleared once a write completes. */
@@ -48,6 +65,8 @@ export class TaskStoreService {
   private saveTimeoutId?: ReturnType<typeof setTimeout>;
 
   constructor() {
+    this.scheduleMidnightRollover();
+
     effect((onCleanup) => {
       const tasks = this.tasks();
 
@@ -70,6 +89,26 @@ export class TaskStoreService {
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('pagehide', this.handlePageHide);
       document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      clearTimeout(this.midnightTimeoutId);
+    });
+  }
+
+  /**
+   * Schedules a refresh of `currentDate` for the next local midnight, then reschedules itself.
+   * Runs outside the Angular zone since the delay can be up to 24h; otherwise this pending
+   * timer would keep zone stability (and anything awaiting it, e.g. `whenStable()` in tests)
+   * from ever settling.
+   */
+  private scheduleMidnightRollover(): void {
+    const now = new Date();
+    const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+    const msUntilMidnight = nextMidnight.getTime() - now.getTime();
+
+    this.zone.runOutsideAngular(() => {
+      this.midnightTimeoutId = setTimeout(() => {
+        this.zone.run(() => this.currentDate.set(todayAsCalendarDate()));
+        this.scheduleMidnightRollover();
+      }, msUntilMidnight);
     });
   }
 
