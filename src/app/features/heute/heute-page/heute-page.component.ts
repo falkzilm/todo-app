@@ -1,7 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.component';
+
+/** Persists whether the "done today" section is expanded, so it survives a reload. */
+const COMPLETED_EXPANDED_STORAGE_KEY = 'todo-app.heute.completedExpanded';
 
 @Component({
   selector: 'app-heute-page',
@@ -12,6 +16,7 @@ import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.compon
 })
 export class HeutePageComponent {
   private readonly taskStore = inject(TaskStoreService);
+  private readonly storage = inject(STORAGE);
 
   private readonly today = signal(new Date());
 
@@ -52,6 +57,18 @@ export class HeutePageComponent {
     const total = this.todayTotalCount();
     return total === 0 ? 0 : Math.round((this.todayCompletedCount() / total) * 100);
   });
+
+  protected readonly completedTasks = this.taskStore.todayCompletedTasks;
+
+  protected readonly completedExpanded = signal(
+    this.storage.getItem(COMPLETED_EXPANDED_STORAGE_KEY) === 'true',
+  );
+
+  protected toggleCompletedExpanded(): void {
+    const expanded = !this.completedExpanded();
+    this.completedExpanded.set(expanded);
+    this.storage.setItem(COMPLETED_EXPANDED_STORAGE_KEY, String(expanded));
+  }
 
   protected toggleTask(id: string): void {
     this.taskStore.toggleCompleted(id);

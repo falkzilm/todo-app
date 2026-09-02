@@ -60,4 +60,46 @@
       </ul>
     </section>
   }
+
+  @if (completedTasks().length > 0) {
+    <section class="heute-page__group heute-page__completed">
+      <h3 class="heute-page__group-title">
+        <button
+          type="button"
+          class="heute-page__completed-toggle"
+          [attr.aria-expanded]="completedExpanded()"
+          [attr.aria-controls]="completedExpanded() ? 'heute-completed-list' : null"
+          (click)="toggleCompletedExpanded()"
+        >
+          <svg
+            class="heute-page__completed-chevron"
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Erledigt ({{ completedTasks().length }})</span>
+        </button>
+      </h3>
+
+      @if (completedExpanded()) {
+        <ul id="heute-completed-list" class="task-list">
+          @for (task of completedTasks(); track task.id) {
+            <app-task-item
+              [task]="task"
+              (toggleCompleted)="toggleTask(task.id)"
+              (remove)="removeTask(task.id)"
+              (titleSave)="saveTitle(task.id, $event)"
+              (notesSave)="saveNotes(task.id, $event)"
+            />
+          }
+        </ul>
+      }
+    </section>
+  }
 </section>
