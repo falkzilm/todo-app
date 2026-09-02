@@ -60,6 +60,18 @@ export class TaskStoreService {
       .sort((a, b) => (a.dueDate as string).localeCompare(b.dueDate as string));
   });
 
+  /** All tasks due today, regardless of completion state; used for the day's progress summary. */
+  private readonly allTodayTasks = computed(() => {
+    const today = this.currentDate();
+    return this.tasks().filter((task) => task.dueDate === today);
+  });
+
+  readonly todayTotalCount = computed(() => this.allTodayTasks().length);
+
+  readonly todayCompletedCount = computed(
+    () => this.allTodayTasks().filter((task) => task.completed).length,
+  );
+
   /** Latest tasks not yet written to storage; cleared once a write completes. */
   private pendingTasks: Task[] | null = null;
   private saveTimeoutId?: ReturnType<typeof setTimeout>;

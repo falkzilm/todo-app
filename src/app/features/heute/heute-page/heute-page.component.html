@@ -2,6 +2,22 @@
 
 <section class="heute-page__summary" aria-label="Zusammenfassung">
   <p>{{ summaryText() }}</p>
+
+  @if (todayProgressText(); as progressText) {
+    <div class="heute-page__progress">
+      <p class="heute-page__progress-text">{{ progressText }}</p>
+      <div
+        class="heute-page__progress-track"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="todayProgressPercent()"
+        [attr.aria-valuetext]="progressText"
+      >
+        <div class="heute-page__progress-fill" [style.width.%]="todayProgressPercent()"></div>
+      </div>
+    </div>
+  }
 </section>
 
 <section class="heute-page__quick-add" aria-label="Schnellerfassung"></section>

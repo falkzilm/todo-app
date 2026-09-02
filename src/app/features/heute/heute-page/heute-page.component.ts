@@ -39,6 +39,20 @@ export class HeutePageComponent {
       : `${todayCount} Aufgabe(n) für heute, ${overdueCount} überfällig.`;
   });
 
+  private readonly todayTotalCount = this.taskStore.todayTotalCount;
+  private readonly todayCompletedCount = this.taskStore.todayCompletedCount;
+
+  /** `null` when there are no tasks due today, so the template can hide the indicator instead of showing a misleading "0 von 0". */
+  protected readonly todayProgressText = computed(() => {
+    const total = this.todayTotalCount();
+    return total === 0 ? null : `${this.todayCompletedCount()} von ${total} erledigt`;
+  });
+
+  protected readonly todayProgressPercent = computed(() => {
+    const total = this.todayTotalCount();
+    return total === 0 ? 0 : Math.round((this.todayCompletedCount() / total) * 100);
+  });
+
   protected toggleTask(id: string): void {
     this.taskStore.toggleCompleted(id);
   }
