@@ -5,6 +5,9 @@
 // Dokumentation (Spacing-Skala, Kontrastwerte): src/styles/tokens.md
 
 :root {
+  // Native Formularelemente/Scrollbars an das aktive Farbschema anpassen.
+  color-scheme: light dark;
+
   // --- Farbe: neutrale Graustufen -------------------------------------
   --color-gray-50: #fafafa;
   --color-gray-100: #f4f4f5;
@@ -89,4 +92,44 @@
   // --- Layout ----------------------------------------------------------
   // Maximalbreite der zentrierten Inhaltsspalte (Header- und Hauptbereich).
   --layout-content-max-width: 48rem; // 768px
+}
+
+// --- Dunkles Farbschema -------------------------------------------------
+// Ausschließlich Farb-Tokens werden umgeschaltet (Systemeinstellung via
+// prefers-color-scheme). Spacing, Typografie, Radien etc. bleiben
+// unverändert, damit kein Layout-Sprung entsteht. Kontrastwerte:
+// src/styles/tokens.md.
+@media (prefers-color-scheme: dark) {
+  :root {
+    // --- Farbe: neutrale Graustufen (Skala invertiert) -----------------
+    --color-gray-50: #18181b;
+    --color-gray-100: #27272a;
+    --color-gray-200: #3f3f46;
+    --color-gray-300: #52525b;
+    --color-gray-400: #71717a;
+    --color-gray-500: #a1a1aa;
+    --color-gray-600: #d4d4d8;
+    --color-gray-700: #e4e4e7;
+    --color-gray-800: #f4f4f5;
+    --color-gray-900: #fafafa;
+
+    // --- Farbe: eine Akzentfarbe -----------------------------------------
+    --color-accent: #6a91e8;
+    --color-accent-contrast: var(--color-gray-50);
+
+    // --- Farbe: Zustandsfarben (Erfolg, Warnung, Fehler) -----------------
+    --color-success: #4ade80;
+    --color-success-surface: #10281a;
+    --color-warning: #fbbf24;
+    --color-warning-surface: #2a2107;
+    --color-error: #f87171;
+    --color-error-surface: #2e1414;
+
+    // --- Farbe: semantische Aliase ---------------------------------------
+    --color-bg: var(--color-gray-50);
+    --color-surface: var(--color-gray-100);
+    --color-text: var(--color-gray-900);
+    --color-text-muted: var(--color-gray-600);
+    --color-border: var(--color-gray-300);
+  }
 }
