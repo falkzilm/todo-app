@@ -20,6 +20,8 @@
       [task]="task"
       (toggleCompleted)="toggleTask(task.id)"
       (remove)="removeTask(task.id)"
+      (titleSave)="saveTitle(task.id, $event)"
+      (notesSave)="saveNotes(task.id, $event)"
     />
   } @empty {
     <li>Keine Aufgaben vorhanden.</li>
