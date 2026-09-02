@@ -53,4 +53,71 @@ Die App ist danach unter `http://localhost:4200` erreichbar.
 npm run build
 ```
 
-Das Bundle wird nach `dist/todo-app` erzeugt.
+Das Bundle wird nach `dist/todo-app` erzeugt; die statisch ausliefer­baren
+Dateien (inkl. `index.html`) liegen dabei unter `dist/todo-app/browser`. Es
+handelt sich um ein reines Static-Asset-Bundle (HTML/JS/CSS) ohne
+Serverlogik – jeder Static-File-Host (Nginx, Netlify, GitHub Pages, S3, ...)
+kann den Ordner unverändert ausliefern.
+
+### base-href für Unterpfade
+
+Die App ist standardmäßig für die Auslieferung am Domain-Root gebaut
+(`<base href="/">` in `src/index.html`). Soll die App stattdessen unter
+einem Unterpfad laufen (z. B. `https://beispiel.de/todo-app/` oder
+GitHub Pages unter `https://<user>.github.io/<repo>/`), lässt sich der
+`base-href` über den Standard-Build-Parameter der Angular-CLI setzen:
+
+```bash
+npm run build -- --base-href=/todo-app/
+```
+
+Alle generierten Assets und der Router referenzieren dann konsequent den
+angegebenen Unterpfad.
+
+## Deployment (statisches Hosting)
+
+Da die App ausschließlich clientseitiges Routing nutzt (`provideRouter`
+ohne `withHashLocation`), führt der direkte Aufruf einer Deep-Link-Route
+wie `/calendar` auf einem naiv konfigurierten Static-Host zu einem echten
+404, weil unter diesem Pfad keine Datei existiert. Der Host muss deshalb so
+konfiguriert sein, dass unbekannte Pfade auf `index.html` zurückfallen
+("SPA-Fallback"), damit der Angular-Router die Route anschließend
+clientseitig auflöst:
+
+- **Nginx:** `try_files $uri $uri/ /index.html;`
+- **Netlify:** `_redirects`-Datei mit `/* /index.html 200`
+- **GitHub Pages:** kennt kein serverseitiges Rewriting; stattdessen wird
+  `index.html` zusätzlich als `404.html` abgelegt – GitHub Pages liefert
+  diese Datei bei jedem unbekannten Pfad aus, wodurch die Angular-App
+  geladen wird und die Route clientseitig übernimmt.
+
+Das Skript `scripts/deploy-static.sh` kapselt Build und SPA-Fallback in
+einem Schritt:
+
+```bash
+npm run deploy:static -- /todo-app/
+# oder direkt:
+scripts/deploy-static.sh /todo-app/
+```
+
+Es baut die App mit dem übergebenen `base-href` (Default `/`) und legt in
+`dist/todo-app/browser` zusätzlich eine `404.html` (Kopie von `index.html`)
+ab. Der Ordner `dist/todo-app/browser` kann danach unverändert auf den
+Ziel-Host hochgeladen werden.
+
+### Beispiel: GitHub Pages
+
+```bash
+npm run deploy:static -- /todo-app/
+npx gh-pages -d dist/todo-app/browser
+```
+
+`gh-pages` veröffentlicht den Ordnerinhalt (inkl. `404.html`) auf dem
+`gh-pages`-Branch des Repositories. Der `base-href` muss dabei zum
+Repository-Namen passen, unter dem GitHub Pages die Seite ausliefert
+(`https://<user>.github.io/<repo>/`). Andere Hosting-Ziele (internes Nginx,
+Netlify, S3 + CDN, ...) funktionieren analog: `base-href` passend zum
+Ziel-Unterpfad setzen und den Inhalt von `dist/todo-app/browser` inkl.
+SPA-Fallback-Konfiguration des jeweiligen Hosts ausliefern. Das konkrete
+Hosting-Ziel ist für dieses Projekt noch offen – siehe Ticket-Beschreibung;
+das Deployment-Skript ist bewusst hosting-neutral gehalten.

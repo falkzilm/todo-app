@@ -10,7 +10,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "deploy:static": "bash scripts/deploy-static.sh"
   },
   "dependencies": {
     "@angular/common": "^21.2.22",
