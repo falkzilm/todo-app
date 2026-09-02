@@ -1,4 +1,5 @@
 import { DestroyRef, Injectable, Signal, computed, effect, inject, signal } from '@angular/core';
+import { createDemoTasks } from '../models/demo-tasks';
 import {
   CalendarDate,
   CreateTaskInput,
@@ -123,6 +124,11 @@ export class TaskStoreService {
 
   remove(id: string): void {
     this.tasksSignal.update((tasks) => tasks.filter((task) => task.id !== id));
+  }
+
+  /** Discards all tasks and restores the original demo task set. */
+  reset(): void {
+    this.tasksSignal.set(createDemoTasks());
   }
 
   tasksForDate(date: CalendarDate): Signal<Task[]> {

@@ -29,12 +29,15 @@ export function isCalendarDate(value: string): value is CalendarDate {
   return CALENDAR_DATE_PATTERN.test(value);
 }
 
-export function todayAsCalendarDate(): CalendarDate {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+export function toCalendarDate(date: Date): CalendarDate {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function todayAsCalendarDate(): CalendarDate {
+  return toCalendarDate(new Date());
 }
 
 export function createTask(input: CreateTaskInput): Task {

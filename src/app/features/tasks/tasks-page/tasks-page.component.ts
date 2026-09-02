@@ -36,4 +36,13 @@ export class TasksPageComponent {
   protected removeTask(id: string): void {
     this.taskStore.remove(id);
   }
+
+  protected resetToDemoData(): void {
+    const confirmed = window.confirm('Alle Aufgaben löschen und auf die Demo-Daten zurücksetzen?');
+    if (!confirmed) {
+      return;
+    }
+
+    this.taskStore.reset();
+  }
 }

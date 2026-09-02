@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Task } from '../models/task.model';
+import { todayAsCalendarDate, Task } from '../models/task.model';
 import { STORAGE } from './storage.token';
 import { TaskPersistenceService, migrateToCurrentSchema } from './task-persistence.service';
 
@@ -46,7 +46,29 @@ describe('TaskPersistenceService', () => {
   });
 
   describe('load', () => {
-    it('returns an empty list when nothing has been persisted yet', () => {
+    it('seeds and returns demo tasks covering today, overdue and upcoming when nothing has been persisted yet', () => {
+      const tasks = service.load();
+
+      expect(tasks.length).toBeGreaterThan(0);
+      expect(tasks.some((task) => task.dueDate === todayAsCalendarDate())).toBe(true);
+      expect(
+        tasks.some((task) => task.dueDate !== null && task.dueDate < todayAsCalendarDate()),
+      ).toBe(true);
+      expect(
+        tasks.some((task) => task.dueDate !== null && task.dueDate > todayAsCalendarDate()),
+      ).toBe(true);
+    });
+
+    it('persists the seeded demo tasks so a subsequent load does not reseed', () => {
+      const first = service.load();
+      const second = service.load();
+
+      expect(second).toEqual(first);
+    });
+
+    it('does not insert demo tasks when the user has already saved data, even an empty list', () => {
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+
       expect(service.load()).toEqual([]);
     });
 
