@@ -107,4 +107,62 @@ describe('TasksPageComponent', () => {
 
     expect(fixture.nativeElement.querySelector('.task-form__hint')).toBeNull();
   });
+
+  describe('delete with undo', () => {
+    it('removes the task from the view immediately and shows an undo notice', async () => {
+      const fixture = await createStableFixture();
+      enterTitle(fixture, 'Zu löschen');
+      await submit(fixture);
+      const component = fixture.componentInstance;
+      const taskId = component['tasks']()[0].id;
+
+      component['removeTask'](taskId);
+      fixture.detectChanges();
+
+      expect(component['tasks']()).toHaveLength(0);
+      const notice = fixture.nativeElement.querySelector('.undo-notice');
+      expect(notice).not.toBeNull();
+      expect(notice?.getAttribute('role')).toBe('status');
+      expect(notice?.textContent).toContain('Zu löschen');
+    });
+
+    it('restores the task with all its fields when "Rückgängig" is activated', async () => {
+      const fixture = await createStableFixture();
+      enterTitle(fixture, 'Zu löschen');
+      await submit(fixture);
+      const component = fixture.componentInstance;
+      const original = component['tasks']()[0];
+
+      component['removeTask'](original.id);
+      fixture.detectChanges();
+
+      const undoButton = fixture.nativeElement.querySelector(
+        '.undo-notice__button',
+      ) as HTMLButtonElement;
+      undoButton.click();
+      fixture.detectChanges();
+
+      expect(component['tasks']()).toEqual([original]);
+      expect(fixture.nativeElement.querySelector('.undo-notice')).toBeNull();
+    });
+
+    it('hides the undo notice once the undo period elapses', async () => {
+      vi.useFakeTimers();
+      const fixture = await createStableFixture();
+      enterTitle(fixture, 'Zu löschen');
+      await submit(fixture);
+      const component = fixture.componentInstance;
+      const taskId = component['tasks']()[0].id;
+
+      component['removeTask'](taskId);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.undo-notice')).not.toBeNull();
+
+      vi.runAllTimers();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.undo-notice')).toBeNull();
+      vi.useRealTimers();
+    });
+  });
 });
