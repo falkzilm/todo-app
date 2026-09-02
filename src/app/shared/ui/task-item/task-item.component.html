@@ -1,0 +1,34 @@
+<li class="app-task-item" [class.app-task-item--completed]="task().completed">
+  <app-checkbox
+    class="app-task-item__checkbox"
+    [ngModel]="task().completed"
+    [ariaLabel]="task().title"
+    (ngModelChange)="onToggle()"
+  />
+
+  <div class="app-task-item__content">
+    <span class="app-task-item__title">{{ task().title }}</span>
+    @if (task().dueDate) {
+      <span class="app-task-item__due-date">{{ task().dueDate | date: 'dd.MM.yyyy' }}</span>
+    }
+  </div>
+
+  <div class="app-task-item__actions">
+    <app-icon-button ariaLabel="Aufgabe löschen" (pressed)="onRemove()">
+      <svg
+        viewBox="0 0 24 24"
+        width="16"
+        height="16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          d="M4 6h16M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </app-icon-button>
+  </div>
+</li>

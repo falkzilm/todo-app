@@ -5,6 +5,7 @@
     [id]="id"
     [checked]="checked"
     [disabled]="disabled"
+    [attr.aria-label]="ariaLabel()"
     (change)="onInputChange($event)"
     (blur)="onBlur()"
   />

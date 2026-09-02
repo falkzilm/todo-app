@@ -18,6 +18,7 @@ let nextId = 0;
 })
 export class CheckboxComponent implements ControlValueAccessor {
   readonly label = input<string>();
+  readonly ariaLabel = input<string>();
   protected readonly id = `app-checkbox-${nextId++}`;
 
   protected checked = false;
