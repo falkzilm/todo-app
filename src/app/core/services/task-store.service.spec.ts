@@ -26,15 +26,88 @@ describe('TaskStoreService', () => {
   let store: TaskStoreService;
 
   beforeEach(() => {
+    // Pre-seed storage with an (empty) saved list so tests below start from
+    // a blank slate instead of the demo tasks that a truly empty storage
+    // would be seeded with. Demo seeding itself is covered separately below.
+    const storage = createMockStorage();
+    storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+
     TestBed.configureTestingModule({
-      providers: [{ provide: STORAGE, useValue: createMockStorage() }],
+      providers: [{ provide: STORAGE, useValue: storage }],
     });
     store = TestBed.inject(TaskStoreService);
   });
 
-  it('should be created with an empty task list', () => {
+  it('should be created with an empty task list when the user has no saved tasks', () => {
     expect(store).toBeTruthy();
     expect(store.tasks()).toEqual([]);
+  });
+
+  describe('demo data seeding', () => {
+    it('seeds demo tasks covering today, overdue and upcoming when storage is completely empty', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [{ provide: STORAGE, useValue: createMockStorage() }],
+      });
+      const freshStore = TestBed.inject(TaskStoreService);
+
+      const tasks = freshStore.tasks();
+      const today = todayAsCalendarDate();
+      expect(tasks.length).toBeGreaterThan(0);
+      expect(tasks.some((task) => task.dueDate === today)).toBe(true);
+      expect(tasks.some((task) => task.dueDate !== null && task.dueDate < today)).toBe(true);
+      expect(tasks.some((task) => task.dueDate !== null && task.dueDate > today)).toBe(true);
+    });
+
+    it('does not seed demo tasks when the user already has saved data', () => {
+      expect(store.tasks()).toEqual([]);
+    });
+  });
+
+  describe('reset', () => {
+    it('replaces all tasks with a fresh demo task set', () => {
+      store.add({ title: 'Eigene Aufgabe' });
+
+      store.reset();
+
+      const today = todayAsCalendarDate();
+      const tasks = store.tasks();
+      expect(tasks.length).toBeGreaterThan(0);
+      expect(tasks.some((task) => task.title === 'Eigene Aufgabe')).toBe(false);
+      expect(tasks.some((task) => task.dueDate === today)).toBe(true);
+      expect(tasks.some((task) => task.dueDate !== null && task.dueDate < today)).toBe(true);
+      expect(tasks.some((task) => task.dueDate !== null && task.dueDate > today)).toBe(true);
+    });
+
+    it('persists the demo task set synchronously, without waiting for the save debounce', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+
+      store.add({ title: 'Eigene Aufgabe' });
+      store.reset();
+
+      const persisted = JSON.parse(storage.getItem('todo-app.tasks')!) as { tasks: Task[] };
+      expect(persisted.tasks.some((task) => task.title === 'Eigene Aufgabe')).toBe(false);
+      expect(persisted.tasks).toEqual(store.tasks());
+
+      vi.useRealTimers();
+    });
+
+    it('discards a pending debounced write from before the reset', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const setItemSpy = vi.spyOn(storage, 'setItem');
+
+      store.add({ title: 'Eigene Aufgabe' });
+      store.reset();
+      setItemSpy.mockClear();
+
+      vi.runAllTimers();
+
+      expect(setItemSpy).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
   });
 
   describe('add', () => {

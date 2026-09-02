@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { createDemoTasks } from '../models/demo-tasks';
 import { Task } from '../models/task.model';
 import { STORAGE } from './storage.token';
 
@@ -64,8 +65,12 @@ export class TaskPersistenceService {
 
   load(): Task[] {
     const raw = this.storage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
+    if (raw === null) {
+      // Nothing has ever been saved: seed and persist a demo task set so a
+      // first-time user sees example data instead of an empty app.
+      const demoTasks = createDemoTasks();
+      this.save(demoTasks);
+      return demoTasks;
     }
 
     try {

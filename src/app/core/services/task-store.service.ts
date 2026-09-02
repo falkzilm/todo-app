@@ -1,4 +1,5 @@
 import { DestroyRef, Injectable, Signal, computed, effect, inject, signal } from '@angular/core';
+import { createDemoTasks } from '../models/demo-tasks';
 import {
   CalendarDate,
   CreateTaskInput,
@@ -21,7 +22,7 @@ const SAVE_DEBOUNCE_MS = 300;
 @Injectable({ providedIn: 'root' })
 export class TaskStoreService {
   private readonly persistence = inject(TaskPersistenceService);
-  private readonly loadedTasks = this.persistence.load();
+  private loadedTasks = this.persistence.load();
   private readonly tasksSignal = signal<Task[]>(this.loadedTasks);
 
   readonly tasks = this.tasksSignal.asReadonly();
@@ -123,6 +124,17 @@ export class TaskStoreService {
 
   remove(id: string): void {
     this.tasksSignal.update((tasks) => tasks.filter((task) => task.id !== id));
+  }
+
+  /** Discards all tasks and restores the original demo task set. */
+  reset(): void {
+    clearTimeout(this.saveTimeoutId);
+    this.pendingTasks = null;
+
+    const demoTasks = createDemoTasks();
+    this.persistence.save(demoTasks);
+    this.loadedTasks = demoTasks;
+    this.tasksSignal.set(demoTasks);
   }
 
   tasksForDate(date: CalendarDate): Signal<Task[]> {
