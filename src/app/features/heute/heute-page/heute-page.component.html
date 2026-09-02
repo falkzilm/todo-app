@@ -1,0 +1,9 @@
+<app-page-header title="Heute" [subtitle]="todayLabel()" />
+
+<section class="heute-page__summary" aria-label="Zusammenfassung">
+  <p>{{ todayTasks().length }} Aufgabe(n) für heute.</p>
+</section>
+
+<section class="heute-page__quick-add" aria-label="Schnellerfassung"></section>
+
+<section class="heute-page__list" aria-label="Aufgabenliste"></section>
