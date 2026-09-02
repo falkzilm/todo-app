@@ -2,13 +2,18 @@
 
 <form class="task-form" (ngSubmit)="addTask()">
   <input
+    #titleInput
     type="text"
     name="newTask"
     placeholder="Neue Aufgabe hinzufügen"
     [(ngModel)]="newTaskTitle"
+    (input)="showEmptyTitleHint = false"
   />
   <button type="submit">Hinzufügen</button>
 </form>
+@if (showEmptyTitleHint) {
+  <p class="task-form__hint" role="status">Bitte einen Titel eingeben.</p>
+}
 
 <button type="button" class="reset-button" (click)="resetToDemoData()">
   Auf Demo-Daten zurücksetzen
