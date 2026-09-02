@@ -72,6 +72,11 @@ export class TaskStoreService {
     () => this.allTodayTasks().filter((task) => task.completed).length,
   );
 
+  /** Tasks due today that have already been completed, for the collapsible "done" section. */
+  readonly todayCompletedTasks = computed(() =>
+    this.allTodayTasks().filter((task) => task.completed),
+  );
+
   /** Latest tasks not yet written to storage; cleared once a write completes. */
   private pendingTasks: Task[] | null = null;
   private saveTimeoutId?: ReturnType<typeof setTimeout>;

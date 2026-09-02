@@ -393,6 +393,26 @@ describe('TaskStoreService', () => {
     });
   });
 
+  describe('todayCompletedTasks', () => {
+    it('returns only completed tasks due today', () => {
+      const today = todayAsCalendarDate();
+      const open = store.add({ title: 'Offen', dueDate: today });
+      const done = store.add({ title: 'Erledigt', dueDate: today });
+      store.toggleCompleted(done.id);
+      store.add({ title: 'Anderer Tag, erledigt', dueDate: '2099-01-01' });
+
+      expect(store.todayCompletedTasks().map((task) => task.id)).toEqual([done.id]);
+      expect(open).toBeTruthy();
+    });
+
+    it('is empty when nothing due today has been completed', () => {
+      const today = todayAsCalendarDate();
+      store.add({ title: 'Offen', dueDate: today });
+
+      expect(store.todayCompletedTasks()).toEqual([]);
+    });
+  });
+
   describe('overdueTasks', () => {
     it('returns open tasks with a due date in the past', () => {
       const overdue = store.add({ title: 'Überfällig', dueDate: '2020-01-01' });
