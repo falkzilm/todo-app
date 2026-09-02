@@ -22,7 +22,7 @@ const SAVE_DEBOUNCE_MS = 300;
 @Injectable({ providedIn: 'root' })
 export class TaskStoreService {
   private readonly persistence = inject(TaskPersistenceService);
-  private readonly loadedTasks = this.persistence.load();
+  private loadedTasks = this.persistence.load();
   private readonly tasksSignal = signal<Task[]>(this.loadedTasks);
 
   readonly tasks = this.tasksSignal.asReadonly();
@@ -128,7 +128,13 @@ export class TaskStoreService {
 
   /** Discards all tasks and restores the original demo task set. */
   reset(): void {
-    this.tasksSignal.set(createDemoTasks());
+    clearTimeout(this.saveTimeoutId);
+    this.pendingTasks = null;
+
+    const demoTasks = createDemoTasks();
+    this.persistence.save(demoTasks);
+    this.loadedTasks = demoTasks;
+    this.tasksSignal.set(demoTasks);
   }
 
   tasksForDate(date: CalendarDate): Signal<Task[]> {

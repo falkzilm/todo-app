@@ -78,6 +78,36 @@ describe('TaskStoreService', () => {
       expect(tasks.some((task) => task.dueDate !== null && task.dueDate < today)).toBe(true);
       expect(tasks.some((task) => task.dueDate !== null && task.dueDate > today)).toBe(true);
     });
+
+    it('persists the demo task set synchronously, without waiting for the save debounce', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+
+      store.add({ title: 'Eigene Aufgabe' });
+      store.reset();
+
+      const persisted = JSON.parse(storage.getItem('todo-app.tasks')!) as { tasks: Task[] };
+      expect(persisted.tasks.some((task) => task.title === 'Eigene Aufgabe')).toBe(false);
+      expect(persisted.tasks).toEqual(store.tasks());
+
+      vi.useRealTimers();
+    });
+
+    it('discards a pending debounced write from before the reset', () => {
+      vi.useFakeTimers();
+      const storage = TestBed.inject(STORAGE);
+      const setItemSpy = vi.spyOn(storage, 'setItem');
+
+      store.add({ title: 'Eigene Aufgabe' });
+      store.reset();
+      setItemSpy.mockClear();
+
+      vi.runAllTimers();
+
+      expect(setItemSpy).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
   });
 
   describe('add', () => {
