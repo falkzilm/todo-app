@@ -47,6 +47,29 @@ Die App ist danach unter `http://localhost:4200` erreichbar.
 > Die Abhängigkeiten sind mit `npm install` gegen die npm-Registry aufgelöst;
 > `package-lock.json` ist entsprechend committet.
 
+## Tests
+
+```bash
+npm test -- --watch=false
+```
+
+Der Test-Runner ist Vitest, angebunden über den offiziellen Angular-Builder
+`@angular/build:unit-test` (`architect.test` in `angular.json`, Konfiguration
+in `vitest-base.config.ts`). Vitest führt die Tests standardmäßig in einer
+Node.js-Umgebung mit `jsdom` aus – es wird kein echter Browser gestartet,
+der Lauf ist damit von Haus aus headless und CI-tauglich, ganz ohne
+zusätzliche Browser-/Headless-Flags.
+
+Coverage ist über `coverage: true` im `test`-Target in `angular.json` fest
+aktiviert; jeder Testlauf erzeugt einen HTML- und Text-Report unter
+`coverage/todo-app` (Ordner `/coverage` ist in `.gitignore` und wird nicht
+versioniert).
+
+Beispieltests als Vorlage für neue Komponenten/Services:
+
+- Komponente: `src/app/shared/ui/page-header/page-header.component.spec.ts`
+- Service: `src/app/core/services/app-title.service.spec.ts`
+
 ## Produktions-Build
 
 ```bash

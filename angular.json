@@ -70,6 +70,13 @@
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n"
         },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "runnerConfig": "vitest-base.config.ts",
+            "coverage": true
+          }
+        },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
