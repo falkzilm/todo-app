@@ -1,11 +1,11 @@
 .task-form {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
 
   input {
     flex: 1;
-    padding: 0.4rem 0.6rem;
+    padding: var(--space-2) var(--space-3);
   }
 }
 
@@ -15,19 +15,19 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
 
   &__item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
 
     &--done label {
       text-decoration: line-through;
-      color: #888;
+      color: var(--color-text-muted);
     }
   }
 }
