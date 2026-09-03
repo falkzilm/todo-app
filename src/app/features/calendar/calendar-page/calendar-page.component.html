@@ -39,7 +39,7 @@
     @if (selectedDayTasks().length === 0) {
       <p class="calendar-page__empty-state">Keine Aufgaben für diesen Tag.</p>
     } @else {
-      <ul class="task-list">
+      <ul class="task-list" role="list" [attr.aria-label]="'Aufgaben für ' + selectedDateLabel()">
         @for (task of selectedDayTasks(); track task.id) {
           <app-task-item
             [task]="task"

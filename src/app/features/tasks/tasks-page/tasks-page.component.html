@@ -26,7 +26,7 @@
   Auf Demo-Daten zurücksetzen
 </button>
 
-<ul class="task-list">
+<ul class="task-list" role="list" aria-label="Aufgabenliste">
   @for (task of tasks(); track task.id) {
     <app-task-item
       [task]="task"

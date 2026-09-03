@@ -3,6 +3,7 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router } from '@angular/router';
 import { AppComponent } from './app.component';
 import { routes } from './app.routes';
+import { AnnouncerService } from './core/services/announcer.service';
 import { StorageStatusService } from './core/services/storage-status.service';
 
 describe('AppComponent', () => {
@@ -81,5 +82,24 @@ describe('AppComponent', () => {
     expect(skipLink).not.toBeNull();
     expect(skipLink.getAttribute('href')).toBe('#main-content');
     expect(main.id).toBe('main-content');
+  });
+
+  it('renders an always-present live region that announces messages from the AnnouncerService', () => {
+    vi.useFakeTimers();
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const liveRegion = fixture.nativeElement.querySelector('[role="status"]') as HTMLElement;
+    expect(liveRegion).not.toBeNull();
+    expect(liveRegion.getAttribute('aria-live')).toBe('polite');
+    expect(liveRegion.textContent?.trim()).toBe('');
+
+    TestBed.inject(AnnouncerService).announce('„Milch kaufen“ hinzugefügt.');
+    vi.runAllTimers();
+    fixture.detectChanges();
+
+    expect(liveRegion.textContent?.trim()).toBe('„Milch kaufen“ hinzugefügt.');
+
+    vi.useRealTimers();
   });
 });
