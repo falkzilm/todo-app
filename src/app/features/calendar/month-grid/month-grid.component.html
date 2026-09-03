@@ -21,7 +21,19 @@
           [attr.aria-current]="isToday(day) ? 'date' : null"
           (keydown)="onKeydown($event, day)"
         >
-          {{ day.dayOfMonth }}
+          <span class="month-grid__day-number">{{ day.dayOfMonth }}</span>
+          @if (taskSummaryFor(day); as summary) {
+            @if (summary.openCount > 0) {
+              <span class="month-grid__indicator month-grid__indicator--open" aria-hidden="true">{{
+                summary.openCount
+              }}</span>
+            } @else if (summary.allCompleted) {
+              <span
+                class="month-grid__indicator month-grid__indicator--done"
+                aria-hidden="true"
+              ></span>
+            }
+          }
         </div>
       }
     </div>
