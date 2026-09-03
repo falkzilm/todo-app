@@ -1,8 +1,31 @@
 import { TestBed } from '@angular/core/testing';
 import { getMonthGrid } from '../../../core/date/date-utils';
-import { CalendarDate } from '../../../core/models/task.model';
+import { CalendarDate, TASK_DRAG_DATA_FORMAT } from '../../../core/models/task.model';
 import { DayTaskSummary } from '../../../core/services/task-store.service';
 import { MonthGridComponent } from './month-grid.component';
+
+/**
+ * jsdom does not implement `DataTransfer`, so drag events in tests carry a
+ * minimal stand-in exposing just the members the component reads/writes.
+ */
+function createDataTransfer(data: Record<string, string> = {}): DataTransfer {
+  const store = new Map(Object.entries(data));
+  return {
+    setData: (format: string, value: string) => store.set(format, value),
+    getData: (format: string) => store.get(format) ?? '',
+    get types() {
+      return Array.from(store.keys());
+    },
+    dropEffect: 'none',
+    effectAllowed: 'uninitialized',
+  } as unknown as DataTransfer;
+}
+
+function dragEvent(type: string, dataTransfer: DataTransfer): Event {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.defineProperty(event, 'dataTransfer', { value: dataTransfer });
+  return event;
+}
 
 describe('MonthGridComponent', () => {
   function setUp(
@@ -259,6 +282,81 @@ describe('MonthGridComponent', () => {
       const cell = cellFor(fixture, referenceDate, '2026-09-05');
 
       expect(cell.querySelector('.month-grid__indicator')).toBeNull();
+    });
+  });
+
+  describe('Umplanen per Drag & Drop', () => {
+    const referenceDate = new Date(2026, 8, 1);
+
+    it('highlights a cell while a task is dragged over it', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      const dataTransfer = createDataTransfer({ [TASK_DRAG_DATA_FORMAT]: 'task-1' });
+
+      const event = dragEvent('dragover', dataTransfer);
+      const preventDefault = vi.spyOn(event, 'preventDefault');
+      cell.dispatchEvent(event);
+      fixture.detectChanges();
+
+      expect(preventDefault).toHaveBeenCalled();
+      expect(cell.classList.contains('month-grid__day--drag-over')).toBe(true);
+    });
+
+    it('ignores a drag that does not carry a task id', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      const dataTransfer = createDataTransfer({ 'text/plain': 'irrelevant' });
+
+      const event = dragEvent('dragover', dataTransfer);
+      const preventDefault = vi.spyOn(event, 'preventDefault');
+      cell.dispatchEvent(event);
+      fixture.detectChanges();
+
+      expect(preventDefault).not.toHaveBeenCalled();
+      expect(cell.classList.contains('month-grid__day--drag-over')).toBe(false);
+    });
+
+    it('removes the highlight once the drag leaves the cell', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      const dataTransfer = createDataTransfer({ [TASK_DRAG_DATA_FORMAT]: 'task-1' });
+
+      cell.dispatchEvent(dragEvent('dragover', dataTransfer));
+      fixture.detectChanges();
+      expect(cell.classList.contains('month-grid__day--drag-over')).toBe(true);
+
+      cell.dispatchEvent(dragEvent('dragleave', dataTransfer));
+      fixture.detectChanges();
+      expect(cell.classList.contains('month-grid__day--drag-over')).toBe(false);
+    });
+
+    it('emits taskDrop with the dragged task id and the target date, and clears the highlight', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      const dataTransfer = createDataTransfer({ [TASK_DRAG_DATA_FORMAT]: 'task-1' });
+      const emitted: { taskId: string; date: CalendarDate }[] = [];
+      fixture.componentInstance.taskDrop.subscribe((value) => emitted.push(value));
+
+      cell.dispatchEvent(dragEvent('dragover', dataTransfer));
+      fixture.detectChanges();
+      cell.dispatchEvent(dragEvent('drop', dataTransfer));
+      fixture.detectChanges();
+
+      expect(emitted).toEqual([{ taskId: 'task-1', date: '2026-09-05' }]);
+      expect(cell.classList.contains('month-grid__day--drag-over')).toBe(false);
+    });
+
+    it('does not emit taskDrop when the dropped data has no task id', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      const dataTransfer = createDataTransfer();
+      const emitted: { taskId: string; date: CalendarDate }[] = [];
+      fixture.componentInstance.taskDrop.subscribe((value) => emitted.push(value));
+
+      cell.dispatchEvent(dragEvent('drop', dataTransfer));
+      fixture.detectChanges();
+
+      expect(emitted).toEqual([]);
     });
   });
 });

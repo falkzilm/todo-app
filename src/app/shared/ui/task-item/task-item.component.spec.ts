@@ -1,7 +1,12 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { getMonthGrid } from '../../../core/date/date-utils';
-import { CalendarDate, Task, createTask } from '../../../core/models/task.model';
+import {
+  CalendarDate,
+  TASK_DRAG_DATA_FORMAT,
+  Task,
+  createTask,
+} from '../../../core/models/task.model';
 import { TaskItemComponent } from './task-item.component';
 
 function buildTask(overrides: Partial<Task> = {}): Task {
@@ -159,6 +164,28 @@ describe('TaskItemComponent', () => {
     checkbox.click();
 
     expect(fixture.componentInstance.toggleCount).toBe(1);
+  });
+
+  describe('Umplanen per Drag & Drop', () => {
+    it('is draggable and puts its task id on the drag data', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const item = fixture.nativeElement.querySelector('.app-task-item') as HTMLElement;
+      expect(item.getAttribute('draggable')).toBe('true');
+
+      const store = new Map<string, string>();
+      const dataTransfer = {
+        setData: (format: string, value: string) => store.set(format, value),
+        getData: (format: string) => store.get(format) ?? '',
+      } as unknown as DataTransfer;
+      const event = new Event('dragstart', { bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'dataTransfer', { value: dataTransfer });
+
+      item.dispatchEvent(event);
+
+      expect(dataTransfer.getData(TASK_DRAG_DATA_FORMAT)).toBe(fixture.componentInstance.task.id);
+    });
   });
 
   describe('title editing', () => {

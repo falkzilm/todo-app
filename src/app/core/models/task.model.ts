@@ -5,6 +5,14 @@
  */
 export type CalendarDate = string;
 
+/**
+ * `DataTransfer` type used to identify a task drag (e.g. dragging a task from
+ * the day list onto a calendar day cell to reschedule it). A dedicated type
+ * (rather than plain "text/plain") lets drop targets tell a task drag apart
+ * from unrelated native drags, e.g. text selection.
+ */
+export const TASK_DRAG_DATA_FORMAT = 'application/x-fleetview-task-id';
+
 export interface Task {
   readonly id: string;
   readonly title: string;

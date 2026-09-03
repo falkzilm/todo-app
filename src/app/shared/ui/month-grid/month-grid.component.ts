@@ -9,7 +9,11 @@ import {
   viewChildren,
 } from '@angular/core';
 import { MonthGridDay } from '../../../core/date/date-utils';
-import { CalendarDate, todayAsCalendarDate } from '../../../core/models/task.model';
+import {
+  CalendarDate,
+  TASK_DRAG_DATA_FORMAT,
+  todayAsCalendarDate,
+} from '../../../core/models/task.model';
 import { DayTaskSummary } from '../../../core/services/task-store.service';
 
 const DAYS_PER_WEEK = 7;
@@ -59,6 +63,9 @@ export class MonthGridComponent {
 
   readonly daySelect = output<CalendarDate>();
 
+  /** Emitted when a task dragged from a day list is dropped on a day cell (DEMOPROJEK-45). */
+  readonly taskDrop = output<{ taskId: string; date: CalendarDate }>();
+
   protected readonly weekdays = WEEKDAYS;
 
   protected readonly weeks = computed(() => {
@@ -71,6 +78,8 @@ export class MonthGridComponent {
   });
 
   private readonly focusedDate = signal<CalendarDate | null>(null);
+
+  private readonly dragOverDate = signal<CalendarDate | null>(null);
 
   private readonly cellElements = viewChildren<ElementRef<HTMLElement>>('cell');
 
@@ -99,6 +108,36 @@ export class MonthGridComponent {
 
   protected isSelected(day: MonthGridDay): boolean {
     return day.date === this.selected();
+  }
+
+  protected isDragOver(day: MonthGridDay): boolean {
+    return day.date === this.dragOverDate();
+  }
+
+  /** Only highlights and accepts the drop for an actual task drag, so dropping unrelated content (e.g. dragged text) outside a valid target changes nothing. */
+  protected onDragOver(event: DragEvent, day: MonthGridDay): void {
+    if (!event.dataTransfer?.types.includes(TASK_DRAG_DATA_FORMAT)) {
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    this.dragOverDate.set(day.date);
+  }
+
+  protected onDragLeave(day: MonthGridDay): void {
+    if (this.dragOverDate() === day.date) {
+      this.dragOverDate.set(null);
+    }
+  }
+
+  protected onDrop(event: DragEvent, day: MonthGridDay): void {
+    const taskId = event.dataTransfer?.getData(TASK_DRAG_DATA_FORMAT);
+    this.dragOverDate.set(null);
+    if (!taskId) {
+      return;
+    }
+    event.preventDefault();
+    this.taskDrop.emit({ taskId, date: day.date });
   }
 
   protected dayAriaLabel(day: MonthGridDay): string {

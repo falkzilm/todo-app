@@ -16,6 +16,7 @@
           [class.month-grid__day--muted]="!day.inCurrentMonth"
           [class.month-grid__day--today]="isToday(day)"
           [class.month-grid__day--selected]="isSelected(day)"
+          [class.month-grid__day--drag-over]="isDragOver(day)"
           role="gridcell"
           [tabindex]="isFocusable(day) ? 0 : -1"
           [attr.aria-label]="dayAriaLabel(day)"
@@ -23,6 +24,9 @@
           [attr.aria-selected]="isSelected(day) ? 'true' : null"
           (click)="onClick(day)"
           (keydown)="onKeydown($event, day)"
+          (dragover)="onDragOver($event, day)"
+          (dragleave)="onDragLeave(day)"
+          (drop)="onDrop($event, day)"
         >
           <span class="month-grid__day-number">{{ day.dayOfMonth }}</span>
           @if (taskSummaryFor(day); as summary) {
