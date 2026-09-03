@@ -124,10 +124,17 @@ export class MonthGridComponent {
     this.dragOverDate.set(day.date);
   }
 
-  protected onDragLeave(day: MonthGridDay): void {
-    if (this.dragOverDate() === day.date) {
-      this.dragOverDate.set(null);
+  /** Ignores dragleave fired when the pointer moves onto a child element (day number, indicator) of the same cell, so the highlight only clears once the pointer truly leaves the cell. */
+  protected onDragLeave(event: DragEvent, day: MonthGridDay): void {
+    if (this.dragOverDate() !== day.date) {
+      return;
     }
+    const relatedTarget = event.relatedTarget as Node | null;
+    const currentTarget = event.currentTarget as HTMLElement | null;
+    if (relatedTarget && currentTarget?.contains(relatedTarget)) {
+      return;
+    }
+    this.dragOverDate.set(null);
   }
 
   protected onDrop(event: DragEvent, day: MonthGridDay): void {

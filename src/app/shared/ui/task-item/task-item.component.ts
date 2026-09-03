@@ -1,6 +1,7 @@
 import { Component, ElementRef, effect, input, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { QuickDueDateToken, resolveQuickDueDate } from '../../../core/date/date-utils';
+import { isTouchDevice } from '../../../core/device/pointer';
 import { CalendarDate, TASK_DRAG_DATA_FORMAT, Task } from '../../../core/models/task.model';
 import { CheckboxComponent } from '../checkbox/checkbox.component';
 import { DatePickerComponent } from '../date-picker/date-picker.component';
@@ -29,6 +30,9 @@ export class TaskItemComponent {
   protected readonly editingNotes = signal(false);
   protected titleDraft = '';
   protected notesDraft = '';
+
+  /** Drag & drop rescheduling (DEMOPROJEK-45) is disabled on touch devices so it never interferes with scrolling. */
+  protected readonly dragEnabled = !isTouchDevice();
 
   constructor() {
     effect(() => {
@@ -78,12 +82,6 @@ export class TaskItemComponent {
     this.dueDateSave.emit(date);
   }
 
-  /**
-   * Drag & drop rescheduling (DEMOPROJEK-45): only fires from mouse-driven
-   * HTML5 drag interactions, never from touch, so touch scrolling is
-   * unaffected without any extra handling. The keyboard-based alternatives
-   * (date picker, quick actions) remain the only way to reschedule on touch.
-   */
   protected onDragStart(event: DragEvent): void {
     event.dataTransfer?.setData(TASK_DRAG_DATA_FORMAT, this.task().id);
     if (event.dataTransfer) {

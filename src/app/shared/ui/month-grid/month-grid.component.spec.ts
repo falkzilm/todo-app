@@ -21,9 +21,10 @@ function createDataTransfer(data: Record<string, string> = {}): DataTransfer {
   } as unknown as DataTransfer;
 }
 
-function dragEvent(type: string, dataTransfer: DataTransfer): Event {
+function dragEvent(type: string, dataTransfer: DataTransfer, relatedTarget: EventTarget | null = null): Event {
   const event = new Event(type, { bubbles: true, cancelable: true });
   Object.defineProperty(event, 'dataTransfer', { value: dataTransfer });
+  Object.defineProperty(event, 'relatedTarget', { value: relatedTarget });
   return event;
 }
 
@@ -325,9 +326,24 @@ describe('MonthGridComponent', () => {
       fixture.detectChanges();
       expect(cell.classList.contains('month-grid__day--drag-over')).toBe(true);
 
-      cell.dispatchEvent(dragEvent('dragleave', dataTransfer));
+      cell.dispatchEvent(dragEvent('dragleave', dataTransfer, document.body));
       fixture.detectChanges();
       expect(cell.classList.contains('month-grid__day--drag-over')).toBe(false);
+    });
+
+    it('keeps the highlight when the drag briefly leaves onto a child element of the same cell', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      const dataTransfer = createDataTransfer({ [TASK_DRAG_DATA_FORMAT]: 'task-1' });
+      const dayNumber = cell.querySelector('.month-grid__day-number') as HTMLElement;
+
+      cell.dispatchEvent(dragEvent('dragover', dataTransfer));
+      fixture.detectChanges();
+      expect(cell.classList.contains('month-grid__day--drag-over')).toBe(true);
+
+      cell.dispatchEvent(dragEvent('dragleave', dataTransfer, dayNumber));
+      fixture.detectChanges();
+      expect(cell.classList.contains('month-grid__day--drag-over')).toBe(true);
     });
 
     it('emits taskDrop with the dragged task id and the target date, and clears the highlight', () => {

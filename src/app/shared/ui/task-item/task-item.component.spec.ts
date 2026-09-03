@@ -186,6 +186,24 @@ describe('TaskItemComponent', () => {
 
       expect(dataTransfer.getData(TASK_DRAG_DATA_FORMAT)).toBe(fixture.componentInstance.task.id);
     });
+
+    it('is not draggable on a touch-capable device, so scrolling is never intercepted', () => {
+      const originalMaxTouchPoints = navigator.maxTouchPoints;
+      Object.defineProperty(navigator, 'maxTouchPoints', { value: 5, configurable: true });
+
+      try {
+        const fixture = TestBed.createComponent(HostComponent);
+        fixture.detectChanges();
+
+        const item = fixture.nativeElement.querySelector('.app-task-item') as HTMLElement;
+        expect(item.getAttribute('draggable')).toBeNull();
+      } finally {
+        Object.defineProperty(navigator, 'maxTouchPoints', {
+          value: originalMaxTouchPoints,
+          configurable: true,
+        });
+      }
+    });
   });
 
   describe('title editing', () => {

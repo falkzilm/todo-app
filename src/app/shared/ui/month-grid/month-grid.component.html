@@ -25,7 +25,7 @@
           (click)="onClick(day)"
           (keydown)="onKeydown($event, day)"
           (dragover)="onDragOver($event, day)"
-          (dragleave)="onDragLeave(day)"
+          (dragleave)="onDragLeave($event, day)"
           (drop)="onDrop($event, day)"
         >
           <span class="month-grid__day-number">{{ day.dayOfMonth }}</span>

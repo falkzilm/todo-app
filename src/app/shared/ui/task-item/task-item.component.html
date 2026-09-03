@@ -3,7 +3,7 @@
 <li
   class="app-task-item"
   [class.app-task-item--completed]="task().completed"
-  draggable="true"
+  [attr.draggable]="dragEnabled ? 'true' : null"
   (click)="onRowClick($event)"
   (dragstart)="onDragStart($event)"
 >
