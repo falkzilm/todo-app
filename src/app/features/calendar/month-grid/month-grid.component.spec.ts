@@ -1,0 +1,134 @@
+import { TestBed } from '@angular/core/testing';
+import { getMonthGrid } from '../../../core/date/date-utils';
+import { MonthGridComponent } from './month-grid.component';
+
+describe('MonthGridComponent', () => {
+  function setUp(referenceDate: Date, today = '2026-09-02') {
+    TestBed.configureTestingModule({
+      imports: [MonthGridComponent],
+    });
+
+    const fixture = TestBed.createComponent(MonthGridComponent);
+    fixture.componentRef.setInput('days', getMonthGrid(referenceDate));
+    fixture.componentRef.setInput('label', 'Kalender September 2026');
+    fixture.componentRef.setInput('today', today);
+    fixture.detectChanges();
+
+    return fixture;
+  }
+
+  it('renders 42 day cells, labeled as a grid for screen readers', () => {
+    const fixture = setUp(new Date(2026, 8, 1));
+
+    const grid = fixture.nativeElement.querySelector('[role="grid"]');
+    expect(grid.getAttribute('aria-label')).toBe('Kalender September 2026');
+    expect(fixture.nativeElement.querySelectorAll('[role="gridcell"]')).toHaveLength(42);
+    expect(fixture.nativeElement.querySelectorAll('[role="columnheader"]')).toHaveLength(7);
+  });
+
+  it('renders weekday headers starting on Monday', () => {
+    const fixture = setUp(new Date(2026, 8, 1));
+
+    const headers = Array.from(
+      fixture.nativeElement.querySelectorAll('[role="columnheader"]'),
+    ) as HTMLElement[];
+    expect(headers.map((header) => header.textContent?.trim())).toEqual([
+      'Mo',
+      'Di',
+      'Mi',
+      'Do',
+      'Fr',
+      'Sa',
+      'So',
+    ]);
+  });
+
+  it('marks days outside the current month as muted', () => {
+    const fixture = setUp(new Date(2026, 8, 1));
+
+    // September 2026 starts on a Tuesday, so the first cell is 31 August.
+    const cells = fixture.nativeElement.querySelectorAll('[role="gridcell"]');
+    expect(cells[0].textContent?.trim()).toBe('31');
+    expect(cells[0].classList.contains('month-grid__day--muted')).toBe(true);
+    expect(cells[1].textContent?.trim()).toBe('1');
+    expect(cells[1].classList.contains('month-grid__day--muted')).toBe(false);
+  });
+
+  it('highlights today with aria-current and a dedicated class', () => {
+    const fixture = setUp(new Date(2026, 8, 1), '2026-09-02');
+
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('[role="gridcell"]'),
+    ) as HTMLElement[];
+    const todayCell = cells.find((cell) => cell.getAttribute('aria-label')?.includes('heute'));
+
+    expect(todayCell?.textContent?.trim()).toBe('2');
+    expect(todayCell?.classList.contains('month-grid__day--today')).toBe(true);
+    expect(todayCell?.getAttribute('aria-current')).toBe('date');
+  });
+
+  it('gives exactly one cell a tabindex of 0, defaulting to today', () => {
+    const fixture = setUp(new Date(2026, 8, 1), '2026-09-02');
+
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('[role="gridcell"]'),
+    ) as HTMLElement[];
+    const tabbable = cells.filter((cell) => cell.getAttribute('tabindex') === '0');
+
+    expect(tabbable).toHaveLength(1);
+    expect(tabbable[0].textContent?.trim()).toBe('2');
+    expect(
+      cells.every(
+        (cell) => cell.getAttribute('tabindex') === '0' || cell.getAttribute('tabindex') === '-1',
+      ),
+    ).toBe(true);
+  });
+
+  it('defaults the roving tabindex to the first day of the month when today is outside the grid', () => {
+    const fixture = setUp(new Date(2026, 8, 1), '2099-01-01');
+
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('[role="gridcell"]'),
+    ) as HTMLElement[];
+    const tabbable = cells.find((cell) => cell.getAttribute('tabindex') === '0');
+
+    expect(tabbable?.textContent?.trim()).toBe('1');
+  });
+
+  it('moves the roving tabindex and DOM focus with the arrow keys', () => {
+    const fixture = setUp(new Date(2026, 8, 1), '2026-09-02');
+
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('[role="gridcell"]'),
+    ) as HTMLElement[];
+    const startCell = cells.find((cell) => cell.getAttribute('tabindex') === '0')!;
+    expect(startCell.textContent?.trim()).toBe('2');
+
+    startCell.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(startCell.getAttribute('tabindex')).toBe('-1');
+    const nextCell = cells[cells.indexOf(startCell) + 1];
+    expect(nextCell.getAttribute('tabindex')).toBe('0');
+    expect(fixture.nativeElement.ownerDocument.activeElement).toBe(nextCell);
+  });
+
+  it('does not move past the start of the grid', () => {
+    const fixture = setUp(new Date(2026, 8, 1), '2026-09-02');
+    const document = fixture.nativeElement.ownerDocument as Document;
+
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('[role="gridcell"]'),
+    ) as HTMLElement[];
+    let active = cells.find((cell) => cell.getAttribute('tabindex') === '0')!;
+
+    for (let i = 0; i < 10; i++) {
+      active.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      fixture.detectChanges();
+      active = document.activeElement as HTMLElement;
+    }
+
+    expect(cells[0].getAttribute('tabindex')).toBe('0');
+    expect(active).toBe(cells[0]);
+  });
+});

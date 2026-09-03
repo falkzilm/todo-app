@@ -1,0 +1,29 @@
+<div class="month-grid" role="grid" [attr.aria-label]="label()">
+  <div class="month-grid__row month-grid__row--header" role="row">
+    @for (weekday of weekdays; track weekday.short) {
+      <div class="month-grid__weekday" role="columnheader" [attr.aria-label]="weekday.full">
+        {{ weekday.short }}
+      </div>
+    }
+  </div>
+
+  @for (week of weeks(); track $index) {
+    <div class="month-grid__row" role="row">
+      @for (day of week; track day.date) {
+        <div
+          #cell
+          class="month-grid__day"
+          [class.month-grid__day--muted]="!day.inCurrentMonth"
+          [class.month-grid__day--today]="isToday(day)"
+          role="gridcell"
+          [tabindex]="isFocusable(day) ? 0 : -1"
+          [attr.aria-label]="dayAriaLabel(day)"
+          [attr.aria-current]="isToday(day) ? 'date' : null"
+          (keydown)="onKeydown($event, day)"
+        >
+          {{ day.dayOfMonth }}
+        </div>
+      }
+    </div>
+  }
+</div>
