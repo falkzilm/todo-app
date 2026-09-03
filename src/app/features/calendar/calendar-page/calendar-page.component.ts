@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { getMonthGrid } from '../../../core/date/date-utils';
 import { CalendarDate, todayAsCalendarDate } from '../../../core/models/task.model';
 import { TaskStoreService } from '../../../core/services/task-store.service';
@@ -9,12 +10,15 @@ import { MonthGridComponent } from '../month-grid/month-grid.component';
 @Component({
   selector: 'app-calendar-page',
   standalone: true,
-  imports: [PageHeaderComponent, MonthGridComponent, TaskItemComponent],
+  imports: [FormsModule, PageHeaderComponent, MonthGridComponent, TaskItemComponent],
   templateUrl: './calendar-page.component.html',
   styleUrl: './calendar-page.component.scss',
 })
 export class CalendarPageComponent {
   private readonly taskStore = inject(TaskStoreService);
+
+  private readonly quickAddInput =
+    viewChild.required<ElementRef<HTMLInputElement>>('quickAddInput');
 
   protected readonly taskSummaries = this.taskStore.taskSummaryByDate;
 
@@ -43,6 +47,33 @@ export class CalendarPageComponent {
   protected readonly selectedDayTasks = computed(() =>
     this.taskStore.tasksForDate(this.selectedDate())(),
   );
+
+  protected newTaskTitle = '';
+  protected showEmptyTitleHint = false;
+
+  constructor() {
+    // Resets the quick-add field whenever the selected day changes, so a
+    // half-typed title never ends up attached to a different day.
+    effect(() => {
+      this.selectedDate();
+      this.newTaskTitle = '';
+      this.showEmptyTitleHint = false;
+    });
+  }
+
+  protected addTaskForSelectedDay(): void {
+    const title = this.newTaskTitle.trim();
+    if (!title) {
+      this.showEmptyTitleHint = true;
+      this.quickAddInput().nativeElement.focus();
+      return;
+    }
+
+    this.showEmptyTitleHint = false;
+    this.taskStore.add({ title, dueDate: this.selectedDate() });
+    this.newTaskTitle = '';
+    this.quickAddInput().nativeElement.focus();
+  }
 
   protected previousMonth(): void {
     this.shiftMonth(-1);

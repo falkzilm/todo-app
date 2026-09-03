@@ -20,11 +20,23 @@
   <section class="calendar-page__day" [attr.aria-label]="'Aufgaben für ' + selectedDateLabel()">
     <h3 class="calendar-page__day-title">{{ selectedDateLabel() }}</h3>
 
+    <form class="task-form" (ngSubmit)="addTaskForSelectedDay()">
+      <input
+        #quickAddInput
+        type="text"
+        name="newDayTask"
+        placeholder="Aufgabe für diesen Tag hinzufügen"
+        [(ngModel)]="newTaskTitle"
+        (input)="showEmptyTitleHint = false"
+      />
+      <button type="submit">Hinzufügen</button>
+    </form>
+    @if (showEmptyTitleHint) {
+      <p class="task-form__hint" role="status">Bitte einen Titel eingeben.</p>
+    }
+
     @if (selectedDayTasks().length === 0) {
-      <p class="calendar-page__empty-state">
-        Keine Aufgaben für diesen Tag. Lege in der Aufgabenübersicht eine neue Aufgabe mit diesem
-        Datum an.
-      </p>
+      <p class="calendar-page__empty-state">Keine Aufgaben für diesen Tag.</p>
     } @else {
       <ul class="task-list">
         @for (task of selectedDayTasks(); track task.id) {
