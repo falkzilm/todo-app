@@ -97,6 +97,67 @@ npm run build -- --base-href=/todo-app/
 Alle generierten Assets und der Router referenzieren dann konsequent den
 angegebenen Unterpfad.
 
+## Sicherheit
+
+### Aufgabentexte (Titel, Notizen) werden nie als HTML interpretiert
+
+Titel und Notizen sind frei eingebbarer, nutzergesteuerter Text. Sie werden im
+gesamten Quellcode ausschließlich per Angular-Interpolation (`{{ ... }}`)
+gerendert, niemals über `innerHTML` oder `DomSanitizer.bypassSecurityTrust*`.
+Angular escaped interpolierte Werte automatisch, wodurch z. B. ein Titel wie
+`<img src=x onerror=alert(1)>` als sichtbarer Text dargestellt wird und kein
+Skript ausführt (siehe Test in
+`src/app/shared/ui/task-item/task-item.component.spec.ts`).
+
+Dies ist zusätzlich per Lint-Regel abgesichert (`eslint.config.js`):
+
+- `no-unsafe-html/no-inner-html-assignment` verbietet `.innerHTML`-Zuweisungen
+  in TypeScript-Code.
+- `no-unsafe-html/no-bypass-security-trust` verbietet den Import von
+  `DomSanitizer` sowie Aufrufe von `bypassSecurityTrust*`.
+- `no-restricted-syntax` verbietet `[innerHTML]`-Bindings in Templates
+  (`**/*.html`).
+
+`npm run lint` schlägt fehl, sobald eine dieser APIs verwendet wird.
+
+### Content-Security-Policy
+
+Da die App als reines Static-Asset-Bundle ohne eigenen Server ausgeliefert
+wird (siehe unten), kann sie keine HTTP-Response-Header setzen. Die CSP ist
+deshalb als `<meta http-equiv="Content-Security-Policy">`-Tag in
+`src/index.html` hinterlegt und landet damit unverändert in jedem
+Produktions-Build:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;
+font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self';
+object-src 'none'
+```
+
+- Kein `unsafe-inline`/`unsafe-eval` in `script-src` – es werden ausschließlich
+  die vom Build erzeugten, gehashten `<script>`-Dateien vom eigenen Origin
+  geladen.
+- Auch `style-src` kommt ohne `unsafe-inline` aus: Der Produktions-Build
+  inlined standardmäßig kritisches CSS (samt eines `onload`-Inline-Handlers)
+  in `index.html`; dieses "Critical CSS Inlining" ist in `angular.json` über
+  `optimization.styles.inlineCritical: false` deaktiviert, damit ausschließlich
+  die externe, eigene Stylesheet-Datei geladen wird.
+- `object-src 'none'` unterbindet Plugins (Flash u. ä.).
+- `img-src` erlaubt zusätzlich `data:`, da das Favicon als Data-URI eingebunden
+  ist.
+
+Einschränkung von `<meta>`-basierten CSPs: Direktiven wie `frame-ancestors`,
+`report-uri`/`report-to` und `sandbox` werden von Browsern in einem
+`<meta>`-Tag ignoriert und wirken nur über einen echten HTTP-Header. Hosts,
+die eigene Response-Header setzen können (Nginx, Netlify, CDN, ...), sollten
+daher zusätzlich `Content-Security-Policy: frame-ancestors 'none'` bzw.
+`X-Frame-Options: DENY` als Header konfigurieren, um Clickjacking zu
+verhindern; das Deployment-Skript selbst bleibt hosting-neutral (siehe unten).
+
+Die App wurde nach Aktivierung der CSP gegen `npm run build` verifiziert
+(Produktions-Build lädt ausschließlich Same-Origin-Skripte/-Stylesheets ohne
+Inline-Code, siehe `npm test` und `npm run lint`).
+
 ## Deployment (statisches Hosting)
 
 Da die App ausschließlich clientseitiges Routing nutzt (`provideRouter`

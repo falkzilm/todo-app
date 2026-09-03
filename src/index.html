@@ -6,6 +6,19 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="data:," />
+    <!--
+      Restriktive Content-Security-Policy fuer das statische Hosting (siehe README.md,
+      Abschnitt "Content-Security-Policy"). Als <meta>-Tag, da die App ohne eigenen
+      Server ausgeliefert wird und damit keine HTTP-Response-Header setzen kann.
+      Kein "unsafe-inline"/"unsafe-eval" fuer Skripte: Aufgabentexte (Titel, Notizen)
+      werden ausschliesslich per Angular-Interpolation gerendert, nie ueber innerHTML
+      oder DomSanitizer.bypassSecurityTrust*, wodurch Skript-Injektion ueber
+      Aufgabentexte von vornherein ausgeschlossen ist.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+    />
   </head>
   <body>
     <app-root></app-root>

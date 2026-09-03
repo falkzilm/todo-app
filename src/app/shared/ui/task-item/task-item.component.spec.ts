@@ -68,6 +68,18 @@ describe('TaskItemComponent', () => {
     expect(checkbox.checked).toBe(false);
   });
 
+  it('renders a title containing markup as plain text instead of interpreting it as HTML', () => {
+    const maliciousTitle = '<img src=x onerror=alert(1)>';
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.task = buildTask({ title: maliciousTitle });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const titleButton = compiled.querySelector('.app-task-item__title');
+    expect(titleButton?.textContent?.trim()).toBe(maliciousTitle);
+    expect(compiled.querySelector('img')).toBeNull();
+  });
+
   it('visually marks a completed task as done', async () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.task = buildTask({ completed: true });
