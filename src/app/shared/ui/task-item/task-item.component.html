@@ -1,116 +1,94 @@
-<!-- The checkbox inside is the focusable, keyboard-operable control; the row click is a mouse-only convenience that mirrors it. -->
-<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-<li
-  class="app-task-item"
-  [class.app-task-item--completed]="task().completed"
-  [attr.draggable]="dragEnabled ? 'true' : null"
-  (click)="onRowClick($event)"
-  (dragstart)="onDragStart($event)"
->
-  <app-checkbox
-    class="app-task-item__checkbox"
-    [ngModel]="task().completed"
-    [ariaLabel]="task().title"
-    (ngModelChange)="onToggle()"
-  />
+<!-- The checkbox inside is the focusable, keyboard-operable control; the row click (registered on the host `li`) is a mouse-only convenience that mirrors it. -->
+<app-checkbox
+  class="app-task-item__checkbox"
+  [ngModel]="task().completed"
+  [ariaLabel]="task().title"
+  (ngModelChange)="onToggle()"
+/>
 
-  <div class="app-task-item__content">
-    <div class="app-task-item__title-field">
-      @if (editingTitle()) {
-        <input
-          #titleInput
-          class="app-task-item__title-input"
-          type="text"
-          [(ngModel)]="titleDraft"
-          (blur)="commitTitle()"
-          (keydown)="onTitleKeydown($event)"
-        />
-      } @else {
-        <button
-          #titleButton
-          type="button"
-          class="app-task-item__title"
-          (click)="startEditingTitle()"
-        >
-          {{ task().title }}
-        </button>
-      }
-    </div>
-
-    <div class="app-task-item__due-row">
-      <app-date-picker
-        class="app-task-item__due-date"
-        label="Fälligkeitsdatum ändern"
-        [value]="task().dueDate"
-        (dateSelect)="onDueDateSelect($event)"
+<div class="app-task-item__content">
+  <div class="app-task-item__title-field">
+    @if (editingTitle()) {
+      <input
+        #titleInput
+        class="app-task-item__title-input"
+        type="text"
+        [(ngModel)]="titleDraft"
+        (blur)="commitTitle()"
+        (keydown)="onTitleKeydown($event)"
       />
+    } @else {
+      <button #titleButton type="button" class="app-task-item__title" (click)="startEditingTitle()">
+        {{ task().title }}
+      </button>
+    }
+  </div>
 
-      <div
-        class="app-task-item__quick-dates"
-        role="group"
-        aria-label="Fälligkeitsdatum per Schnellaktion setzen"
-      >
-        <button type="button" class="app-task-item__quick-date" (click)="setQuickDueDate('today')">
-          Heute
-        </button>
-        <button
-          type="button"
-          class="app-task-item__quick-date"
-          (click)="setQuickDueDate('tomorrow')"
-        >
-          Morgen
-        </button>
-        <button
-          type="button"
-          class="app-task-item__quick-date"
-          (click)="setQuickDueDate('nextWeek')"
-        >
-          Nächste Woche
-        </button>
-      </div>
-    </div>
+  <div class="app-task-item__due-row">
+    <app-date-picker
+      class="app-task-item__due-date"
+      label="Fälligkeitsdatum ändern"
+      [value]="task().dueDate"
+      (dateSelect)="onDueDateSelect($event)"
+    />
 
-    <div class="app-task-item__notes-field">
-      @if (editingNotes()) {
-        <input
-          #notesInput
-          class="app-task-item__notes-input"
-          type="text"
-          placeholder="Notiz hinzufügen"
-          [(ngModel)]="notesDraft"
-          (blur)="commitNotes()"
-          (keydown)="onNotesKeydown($event)"
-        />
-      } @else {
-        <button
-          #notesButton
-          type="button"
-          class="app-task-item__notes"
-          [class.app-task-item__notes--empty]="!task().notes"
-          (click)="startEditingNotes()"
-        >
-          {{ task().notes || 'Notiz hinzufügen' }}
-        </button>
-      }
+    <div
+      class="app-task-item__quick-dates"
+      role="group"
+      aria-label="Fälligkeitsdatum per Schnellaktion setzen"
+    >
+      <button type="button" class="app-task-item__quick-date" (click)="setQuickDueDate('today')">
+        Heute
+      </button>
+      <button type="button" class="app-task-item__quick-date" (click)="setQuickDueDate('tomorrow')">
+        Morgen
+      </button>
+      <button type="button" class="app-task-item__quick-date" (click)="setQuickDueDate('nextWeek')">
+        Nächste Woche
+      </button>
     </div>
   </div>
 
-  <div class="app-task-item__actions">
-    <app-icon-button ariaLabel="Aufgabe löschen" (pressed)="onRemove()">
-      <svg
-        viewBox="0 0 24 24"
-        width="16"
-        height="16"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
+  <div class="app-task-item__notes-field">
+    @if (editingNotes()) {
+      <input
+        #notesInput
+        class="app-task-item__notes-input"
+        type="text"
+        placeholder="Notiz hinzufügen"
+        [(ngModel)]="notesDraft"
+        (blur)="commitNotes()"
+        (keydown)="onNotesKeydown($event)"
+      />
+    } @else {
+      <button
+        #notesButton
+        type="button"
+        class="app-task-item__notes"
+        [class.app-task-item__notes--empty]="!task().notes"
+        (click)="startEditingNotes()"
       >
-        <path
-          d="M4 6h16M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </app-icon-button>
+        {{ task().notes || 'Notiz hinzufügen' }}
+      </button>
+    }
   </div>
-</li>
+</div>
+
+<div class="app-task-item__actions">
+  <app-icon-button ariaLabel="Aufgabe löschen" (pressed)="onRemove()">
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path
+        d="M4 6h16M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </app-icon-button>
+</div>

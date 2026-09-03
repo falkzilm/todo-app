@@ -1,4 +1,8 @@
-.app-task-item {
+// The host `<li>` (not a template element) carries the `.app-task-item` class,
+// so under Angular's emulated view encapsulation only `:host`-based selectors
+// reach it — a plain `.app-task-item { ... }` compiles to a `[_ngcontent-*]`
+// selector that never matches the host's `[_nghost-*]` attribute.
+:host.app-task-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -6,7 +10,9 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
 
+.app-task-item {
   &__content {
     display: flex;
     flex-direction: column;
@@ -131,9 +137,9 @@
   &__actions {
     flex-shrink: 0;
   }
+}
 
-  &--completed &__title {
-    color: var(--color-text-muted);
-    text-decoration: line-through;
-  }
+:host.app-task-item--completed .app-task-item__title {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
 }

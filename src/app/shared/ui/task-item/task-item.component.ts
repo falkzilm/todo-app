@@ -19,11 +19,22 @@ import { DatePickerComponent } from '../date-picker/date-picker.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 
 @Component({
-  selector: 'app-task-item',
+  // Als Attribut-Selektor auf `li` statt als eigenes Element: die Aufgabe wird
+  // stets innerhalb einer `<ul>`/`<ol>` gerendert, und ein zwischengeschobenes
+  // `<app-task-item>`-Element würde dort die Listensemantik brechen (WCAG 1.3.1
+  // "list"/"listitem" – <li> muss direktes Kind von <ul>/<ol> sein).
+  selector: 'li[app-task-item]',
   standalone: true,
   imports: [FormsModule, CheckboxComponent, DatePickerComponent, IconButtonComponent],
   templateUrl: './task-item.component.html',
   styleUrl: './task-item.component.scss',
+  host: {
+    class: 'app-task-item',
+    '[class.app-task-item--completed]': 'task().completed',
+    '[attr.draggable]': "dragEnabled ? 'true' : null",
+    '(click)': 'onRowClick($event)',
+    '(dragstart)': 'onDragStart($event)',
+  },
 })
 export class TaskItemComponent {
   readonly task = input.required<Task>();

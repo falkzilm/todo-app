@@ -17,3 +17,18 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
 }
+
+// Nutzer:innen mit Systemeinstellung "Bewegung reduzieren" respektieren:
+// Übergänge und Animationen global deaktivieren statt komponentenweise
+// einzeln zu deaktivieren, damit auch künftig neue Komponenten automatisch
+// erfasst sind.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
