@@ -135,6 +135,13 @@ describe('isValidPersistedTask', () => {
   it('rejects a task with a malformed date', () => {
     expect(isValidPersistedTask({ ...validTask, createdAt: '01.09.2026' })).toBe(false);
   });
+
+  it('rejects a task with an impossible calendar date', () => {
+    expect(isValidPersistedTask({ ...validTask, dueDate: '2026-02-30' })).toBe(false);
+    expect(isValidPersistedTask({ ...validTask, completedAt: '2026-99-99' })).toBe(false);
+    expect(isValidPersistedTask({ ...validTask, createdAt: '2026-02-30' })).toBe(false);
+    expect(isValidPersistedTask({ ...validTask, updatedAt: '2026-02-30' })).toBe(false);
+  });
 });
 
 describe('isCalendarDate', () => {
@@ -148,5 +155,21 @@ describe('isCalendarDate', () => {
 
   it('rejects non-date strings', () => {
     expect(isCalendarDate('not-a-date')).toBe(false);
+  });
+
+  it('rejects an out-of-range month', () => {
+    expect(isCalendarDate('2026-99-99')).toBe(false);
+    expect(isCalendarDate('2026-13-01')).toBe(false);
+    expect(isCalendarDate('2026-00-01')).toBe(false);
+  });
+
+  it('rejects a day that does not exist in the given month', () => {
+    expect(isCalendarDate('2026-02-30')).toBe(false);
+    expect(isCalendarDate('2026-04-31')).toBe(false);
+    expect(isCalendarDate('2026-02-29')).toBe(false);
+  });
+
+  it('accepts February 29th on a leap year', () => {
+    expect(isCalendarDate('2024-02-29')).toBe(true);
   });
 });

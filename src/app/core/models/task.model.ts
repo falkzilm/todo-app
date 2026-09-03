@@ -23,10 +23,29 @@ export interface CreateTaskInput {
   createdAt?: CalendarDate;
 }
 
-const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+/**
+ * Matches the `YYYY-MM-DD` format and also rejects values that are
+ * structurally well-formed but not real calendar dates (e.g. "2026-02-30" or
+ * "2026-99-99"), including correct leap-year handling for February.
+ */
 export function isCalendarDate(value: string): value is CalendarDate {
-  return CALENDAR_DATE_PATTERN.test(value);
+  const match = CALENDAR_DATE_PATTERN.exec(value);
+  if (!match) {
+    return false;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  if (month < 1 || month > 12) {
+    return false;
+  }
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day >= 1 && day <= daysInMonth;
 }
 
 /** Upper bounds for user-entered text, enforced both when creating/updating and when loading persisted tasks. */

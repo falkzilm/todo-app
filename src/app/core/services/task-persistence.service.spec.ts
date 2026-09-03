@@ -115,6 +115,22 @@ describe('TaskPersistenceService', () => {
       expect(service.load()).toEqual([exampleTask]);
     });
 
+    it('discards persisted tasks with an impossible calendar date', () => {
+      const badDueDate = { ...exampleTask, id: 'bad-due-date', dueDate: '2026-02-30' };
+      const badCompletedAt = { ...exampleTask, id: 'bad-completed-at', completedAt: '2026-99-99' };
+      const badCreatedAt = { ...exampleTask, id: 'bad-created-at', createdAt: '2026-02-30' };
+      const badUpdatedAt = { ...exampleTask, id: 'bad-updated-at', updatedAt: '2026-04-31' };
+      storage.setItem(
+        'todo-app.tasks',
+        JSON.stringify({
+          version: 1,
+          tasks: [badDueDate, badCompletedAt, badCreatedAt, badUpdatedAt, exampleTask],
+        }),
+      );
+
+      expect(service.load()).toEqual([exampleTask]);
+    });
+
     it('clamps overly long titles and notes to the defined maximum', () => {
       const longTask = {
         ...exampleTask,
