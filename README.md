@@ -70,6 +70,36 @@ Beispieltests als Vorlage für neue Komponenten/Services:
 - Komponente: `src/app/shared/ui/page-header/page-header.component.spec.ts`
 - Service: `src/app/core/services/app-title.service.spec.ts`
 
+## Barrierefreiheit (A11y)
+
+```bash
+npm run a11y
+```
+
+Prüft die Hauptansichten (`/heute`, `/kalender`) automatisiert gegen die
+WCAG-2-A/AA-Erfolgskriterien: `*.a11y.spec.ts`-Dateien rendern die jeweilige
+Seiten-Komponente per Angular TestBed (inkl. repräsentativer Beispieldaten)
+und lassen [axe-core](https://github.com/dequelabs/axe-core) gegen das
+Ergebnis laufen (`src/testing/axe.ts`). Der Lauf schlägt fehl, sobald axe-core
+einen Verstoß meldet. Die Farbkontrast-Regel (`color-contrast`) ist dabei
+deaktiviert, da jsdom kein echtes Layout/Rendering durchführt und daher keine
+verlässlichen Kontrastwerte liefert – Kontrast wird stattdessen separat über
+die Design-Tokens sichergestellt (siehe `src/styles/tokens.md`, alle
+Text-/Hintergrund-Kombinationen sind dort mit ihrem Kontrastverhältnis
+dokumentiert und erfüllen WCAG AA).
+
+Die A11y-Spezifikationen laufen als Teilmenge auch über `npm test` mit;
+`npm run a11y` filtert per `--include` gezielt nur auf sie, für einen
+schnellen, eigenständigen A11y-Gate-Check.
+
+### `prefers-reduced-motion`
+
+Nutzer:innen mit aktivierter Systemeinstellung "Bewegung reduzieren" bekommen
+keine Übergänge/Animationen: `src/styles.scss` deaktiviert global (für alle
+aktuellen und künftigen Komponenten) `transition`/`animation` per
+`@media (prefers-reduced-motion: reduce)`, statt dies einzeln pro Komponente
+nachzuziehen.
+
 ## Produktions-Build
 
 ```bash

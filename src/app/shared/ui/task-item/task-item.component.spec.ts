@@ -18,14 +18,17 @@ function buildTask(overrides: Partial<Task> = {}): Task {
   standalone: true,
   imports: [TaskItemComponent],
   template: `
-    <app-task-item
-      [task]="task"
-      (toggleCompleted)="onToggleCompleted()"
-      (remove)="onRemove()"
-      (titleSave)="onTitleSave($event)"
-      (notesSave)="onNotesSave($event)"
-      (dueDateSave)="onDueDateSave($event)"
-    />
+    <ul>
+      <li
+        app-task-item
+        [task]="task"
+        (toggleCompleted)="onToggleCompleted()"
+        (remove)="onRemove()"
+        (titleSave)="onTitleSave($event)"
+        (notesSave)="onNotesSave($event)"
+        (dueDateSave)="onDueDateSave($event)"
+      ></li>
+    </ul>
   `,
 })
 class HostComponent {

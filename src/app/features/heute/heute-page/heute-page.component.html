@@ -5,10 +5,11 @@
 
   @if (todayProgressText(); as progressText) {
     <div class="heute-page__progress">
-      <p class="heute-page__progress-text">{{ progressText }}</p>
+      <p class="heute-page__progress-text" id="heute-progress-label">{{ progressText }}</p>
       <div
         class="heute-page__progress-track"
         role="progressbar"
+        aria-labelledby="heute-progress-label"
         aria-valuemin="0"
         aria-valuemax="100"
         [attr.aria-valuenow]="todayProgressPercent()"
@@ -30,14 +31,15 @@
       <h3 class="heute-page__group-title">Heute</h3>
       <ul class="task-list">
         @for (task of todayTasks(); track task.id) {
-          <app-task-item
+          <li
+            app-task-item
             [task]="task"
             (toggleCompleted)="toggleTask(task.id)"
             (remove)="removeTask(task.id)"
             (titleSave)="saveTitle(task.id, $event)"
             (notesSave)="saveNotes(task.id, $event)"
             (dueDateSave)="saveDueDate(task.id, $event)"
-          />
+          ></li>
         } @empty {
           <li class="heute-page__group-empty">Keine Aufgaben für heute fällig.</li>
         }
@@ -48,14 +50,15 @@
       <h3 class="heute-page__group-title">Überfällig</h3>
       <ul class="task-list">
         @for (task of overdueTasks(); track task.id) {
-          <app-task-item
+          <li
+            app-task-item
             [task]="task"
             (toggleCompleted)="toggleTask(task.id)"
             (remove)="removeTask(task.id)"
             (titleSave)="saveTitle(task.id, $event)"
             (notesSave)="saveNotes(task.id, $event)"
             (dueDateSave)="saveDueDate(task.id, $event)"
-          />
+          ></li>
         } @empty {
           <li class="heute-page__group-empty">Keine überfälligen Aufgaben.</li>
         }
@@ -92,14 +95,15 @@
       @if (completedExpanded()) {
         <ul id="heute-completed-list" class="task-list">
           @for (task of completedTasks(); track task.id) {
-            <app-task-item
+            <li
+              app-task-item
               [task]="task"
               (toggleCompleted)="toggleTask(task.id)"
               (remove)="removeTask(task.id)"
               (titleSave)="saveTitle(task.id, $event)"
               (notesSave)="saveNotes(task.id, $event)"
               (dueDateSave)="saveDueDate(task.id, $event)"
-            />
+            ></li>
           }
         </ul>
       }
