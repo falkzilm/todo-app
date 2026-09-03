@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { todayAsCalendarDate } from '../../../core/models/task.model';
+import { AnnouncerService } from '../../../core/services/announcer.service';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TasksPageComponent } from './tasks-page.component';
 
@@ -64,6 +65,14 @@ async function submit(fixture: {
 }
 
 describe('TasksPageComponent', () => {
+  it('exposes the task list with an explicit list role and a descriptive label', async () => {
+    const fixture = await createStableFixture();
+
+    const list = fixture.nativeElement.querySelector('.task-list') as HTMLElement;
+    expect(list.getAttribute('role')).toBe('list');
+    expect(list.getAttribute('aria-label')).toBe('Aufgabenliste');
+  });
+
   it('adds a task with the current day as due date when a title is entered and submitted', async () => {
     const fixture = await createStableFixture();
     enterTitle(fixture, 'Neue Aufgabe');
@@ -96,6 +105,31 @@ describe('TasksPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.task-form__hint')?.textContent).toContain(
       'Bitte einen Titel eingeben.',
     );
+  });
+
+  it('announces a created task via the live region', async () => {
+    const fixture = await createStableFixture();
+    const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
+
+    enterTitle(fixture, 'Neue Aufgabe');
+    await submit(fixture);
+
+    expect(announceSpy).toHaveBeenCalledWith('„Neue Aufgabe“ hinzugefügt.');
+  });
+
+  it('announces toggling a task as completed and back to open via the live region', async () => {
+    const fixture = await createStableFixture();
+    enterTitle(fixture, 'Abzuhaken');
+    await submit(fixture);
+    const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
+    const component = fixture.componentInstance;
+    const taskId = component['tasks']()[0].id;
+
+    component['toggleTask'](taskId);
+    expect(announceSpy).toHaveBeenCalledWith('„Abzuhaken“ als erledigt markiert.');
+
+    component['toggleTask'](taskId);
+    expect(announceSpy).toHaveBeenCalledWith('„Abzuhaken“ als offen markiert.');
   });
 
   it('hides the hint again once the user starts typing a new title', async () => {

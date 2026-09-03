@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CalendarDate } from '../../../core/models/task.model';
+import { CalendarDate, Task } from '../../../core/models/task.model';
+import { AnnouncerService } from '../../../core/services/announcer.service';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
@@ -18,6 +19,7 @@ const COMPLETED_EXPANDED_STORAGE_KEY = 'todo-app.heute.completedExpanded';
 export class HeutePageComponent {
   private readonly taskStore = inject(TaskStoreService);
   private readonly storage = inject(STORAGE);
+  private readonly announcer = inject(AnnouncerService);
 
   private readonly today = signal(new Date());
 
@@ -72,11 +74,26 @@ export class HeutePageComponent {
   }
 
   protected toggleTask(id: string): void {
+    const task = this.findTaskById(id);
     this.taskStore.toggleCompleted(id);
+    if (task) {
+      const completed = !task.completed;
+      this.announcer.announce(`„${task.title}“ als ${completed ? 'erledigt' : 'offen'} markiert.`);
+    }
   }
 
   protected removeTask(id: string): void {
+    const task = this.findTaskById(id);
     this.taskStore.remove(id);
+    if (task) {
+      this.announcer.announce(`„${task.title}“ gelöscht.`);
+    }
+  }
+
+  private findTaskById(id: string): Task | undefined {
+    return [...this.todayTasks(), ...this.overdueTasks(), ...this.completedTasks()].find(
+      (task) => task.id === id,
+    );
   }
 
   protected saveTitle(id: string, title: string): void {

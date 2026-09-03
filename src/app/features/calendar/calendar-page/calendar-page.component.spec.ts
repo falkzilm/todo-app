@@ -9,6 +9,7 @@ import {
   toCalendarDate,
   todayAsCalendarDate,
 } from '../../../core/models/task.model';
+import { AnnouncerService } from '../../../core/services/announcer.service';
 import { DayTaskSummary, TaskStoreService } from '../../../core/services/task-store.service';
 import { CalendarPageComponent } from './calendar-page.component';
 
@@ -237,6 +238,17 @@ describe('CalendarPageComponent', () => {
       });
     });
 
+    it('announces a created task via the live region', async () => {
+      const fixture = await setUpStable();
+      const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
+
+      await enterQuickAddTitle(fixture, 'Neue Aufgabe für den Tag');
+      quickAddForm(fixture).dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      expect(announceSpy).toHaveBeenCalledWith('„Neue Aufgabe für den Tag“ hinzugefügt.');
+    });
+
     it('shows a hint instead of adding a task when the title is empty', async () => {
       const fixture = await setUpStable();
       const addSpy = vi.spyOn(TestBed.inject(TaskStoreService), 'add');
@@ -283,6 +295,19 @@ describe('CalendarPageComponent', () => {
       checkbox.click();
 
       expect(toggleSpy).toHaveBeenCalledWith(task.id);
+    });
+
+    it('announces toggling and removing a task via the live region', () => {
+      const today = todayAsCalendarDate();
+      const task = createTask({ title: 'Abhaken', dueDate: today });
+      const fixture = setUp(undefined, [task]);
+      const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
+
+      fixture.componentInstance['toggleTask'](task.id);
+      expect(announceSpy).toHaveBeenCalledWith('„Abhaken“ als erledigt markiert.');
+
+      fixture.componentInstance['removeTask'](task.id);
+      expect(announceSpy).toHaveBeenCalledWith('„Abhaken“ gelöscht.');
     });
 
     it('rescheduling a task in the day list is backed by the shared task store', () => {

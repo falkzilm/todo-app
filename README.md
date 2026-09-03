@@ -178,6 +178,89 @@ blockiert, wodurch die App ungestylt bliebe. Mit `inlineCritical: false`
 wird das Stylesheet stattdessen als gewöhnlicher `<link rel="stylesheet">`
 ohne Inline-Handler eingebunden.
 
+## Barrierefreiheit
+
+### ARIA-Rollen, -Beschriftungen und Live-Region (DEMOPROJEK-49)
+
+- **Aufgabenlisten**: Alle `<ul class="task-list">` (Aufgaben-, Heute- und
+  Kalender-Tagesansicht) tragen zusätzlich zum semantischen `<ul>` ein
+  explizites `role="list"` sowie ein beschriftendes `aria-label`. Grund: Die
+  Listen sind aus Layoutgründen mit `list-style: none` gestylt, wodurch
+  WebKit/VoiceOver (Safari) der `<ul>` ihre implizite `list`-Rolle entzieht
+  ("list-style: none removes list semantics"-Verhalten) – `role="list"`
+  stellt sie explizit wieder her, unabhängig vom CSS.
+- **Kalenderraster** (`app-month-grid`): nutzt bereits `role="grid"` /
+  `role="row"` / `role="columnheader"` / `role="gridcell"` mit
+  `aria-label` je Zelle (Datum, "heute", Aufgabenanzahl) sowie
+  `aria-selected`/`aria-current` und Roving-Tabindex mit Pfeiltasten-
+  Navigation (aus DEMOPROJEK-48). Für diesen Task nur verifiziert, keine
+  Änderung nötig.
+- **Icon-only-Bedienelemente**: `app-icon-button` (Löschen, Monatsnavigation
+  im Datepicker) und `app-checkbox` (Erledigt-Status) erzwingen `ariaLabel`
+  als Pflicht-Input; alle Verwendungsstellen im Code liefern bereits einen
+  sprechenden Text (z. B. "Aufgabe löschen", "Vorheriger Monat"). Ebenfalls
+  nur verifiziert, keine Änderung nötig.
+- **Live-Region für Anlegen/Abhaken/Löschen**: Neuer `AnnouncerService`
+  (`core/services/announcer.service.ts`) hält eine `message`-Signal; die
+  aktuelle Nachricht wird in `AppComponent` in einer global vorhandenen,
+  visuell versteckten (`.visually-hidden`) Region mit `role="status"
+  aria-live="polite"` gerendert. `TasksPageComponent`, `HeutePageComponent`
+  und `CalendarPageComponent` rufen `announce(...)` beim Anlegen, Abhaken/
+  Wieder-Öffnen und Löschen einer Aufgabe auf (z. B. „Milch kaufen“
+  hinzugefügt./als erledigt markiert./gelöscht.). In der Aufgaben-Ansicht
+  übernimmt für das Löschen weiterhin die bestehende Undo-Meldung
+  (`role="status"`) die Ankündigung, um keine doppelte Sprachausgabe für
+  dieselbe Aktion zu erzeugen.
+
+### Dokumentierter Screenreader-Durchgang
+
+In dieser (headless) Ausführungsumgebung steht kein echter Screenreader zur
+Verfügung (kein NVDA/VoiceOver/Orca installierbar). Der Durchgang wurde
+deshalb anhand des tatsächlich gerenderten DOM/Accessibility-Baums
+durchgeführt: Für jede interaktive Komponente wurde Rolle, berechneter
+Accessible Name und Status anhand der ARIA-Spezifikation nachvollzogen (so,
+wie NVDA/VoiceOver sie vorlesen würden), ergänzt um die Tastatur-Interaktion
+aus DEMOPROJEK-48. Geprüft wurden:
+
+1. Skip-Link → Hauptinhalt, Navigation mit `aria-current="page"`.
+2. Aufgabenliste (`/aufgaben`): Formular mit Label-losem, aber per
+   `placeholder` **und** sichtbarem "Hinzufügen"-Button beschriftetem Feld;
+   Liste als `list` mit 1..n `listitem`s; Checkbox mit Titel als Name;
+   Inline-Edit-Buttons für Titel/Notiz mit sichtbarem Text als Name;
+   Schnelldatum-Gruppe mit `role="group"` + `aria-label`; Löschen-Button mit
+   `aria-label="Aufgabe löschen"`.
+3. Heute-Ansicht: Fortschrittsanzeige als `role="progressbar"` mit
+   `aria-valuenow`/`aria-valuetext`; Gruppen ("Heute", "Überfällig",
+   "Erledigt (n)") mit Überschrift vor der jeweiligen Liste; Erledigt-
+   Bereich als `aria-expanded`-Button mit `aria-controls` auf die Liste.
+4. Kalender: Monatsraster als `grid` mit Pfeiltasten-Navigation und
+   sprechenden Zellenbeschriftungen ("Dienstag, 3. September 2026, heute, 2
+   offene Aufgaben"); Tagesliste rechts mit kontextgebendem
+   `aria-label="Aufgaben für …"` auf der Sektion.
+5. Anlegen/Abhaken/Löschen auf allen drei Seiten: Live-Region
+   (`role="status" aria-live="polite"`) enthält nach der Aktion den
+   erwarteten Ankündigungstext (siehe oben).
+
+**Gefundene Mängel, die in diesem Änderungssatz behoben wurden:**
+
+- Aufgabenlisten hatten keine explizite `list`-Rolle (Safari/VoiceOver-Bug
+  durch `list-style: none`) und die Aufgabenliste unter `/aufgaben` keine
+  eigene Beschriftung → `role="list"` + `aria-label` ergänzt (siehe oben).
+- Abhaken (Checkbox-Toggle) und Anlegen einer Aufgabe wurden bisher gar
+  nicht angekündigt, Löschen nur auf der Aufgaben-Seite (über die
+  Undo-Meldung) → einheitlich über `AnnouncerService` auf allen drei Seiten
+  ergänzt.
+
+**Als Folge-Item notiert (nicht in diesem Change behoben):**
+
+- Das Datumsauswahl-Popover (`app-date-picker`, `role="dialog"
+  aria-modal="false"`) fängt den Tab-Fokus nicht ein: Per Tab kann der
+  Fokus aus dem geöffneten Popover heraus in den dahinterliegenden Inhalt
+  wandern, während das Popover optisch noch offen ist. Ein echter
+  Fokus-Trap (oder `aria-modal="true"` mit entsprechendem Trap) ist ein
+  separates, größeres Stück Arbeit und war nicht Teil dieses ARIA-/
+  Live-Region-Tickets – als Folge-Ticket vorzumerken.
+
 ## Deployment (statisches Hosting)
 
 Da die App ausschließlich clientseitiges Routing nutzt (`provideRouter`
