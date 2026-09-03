@@ -38,3 +38,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Local scratch files
+check-touch.mjs

@@ -3,7 +3,9 @@
 <li
   class="app-task-item"
   [class.app-task-item--completed]="task().completed"
+  [attr.draggable]="dragEnabled ? 'true' : null"
   (click)="onRowClick($event)"
+  (dragstart)="onDragStart($event)"
 >
   <app-checkbox
     class="app-task-item__checkbox"

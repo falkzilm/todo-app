@@ -111,6 +111,11 @@ export class CalendarPageComponent {
     this.taskStore.update(id, { dueDate });
   }
 
+  /** Drag & drop rescheduling (DEMOPROJEK-45): dropping a task from the day list onto a grid cell. */
+  protected onTaskDrop(event: { taskId: string; date: CalendarDate }): void {
+    this.taskStore.update(event.taskId, { dueDate: event.date });
+  }
+
   private shiftMonth(delta: number): void {
     this.referenceDate.update((date) => new Date(date.getFullYear(), date.getMonth() + delta, 1));
   }

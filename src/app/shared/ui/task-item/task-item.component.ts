@@ -1,7 +1,8 @@
 import { Component, ElementRef, effect, input, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { QuickDueDateToken, resolveQuickDueDate } from '../../../core/date/date-utils';
-import { CalendarDate, Task } from '../../../core/models/task.model';
+import { isTouchDevice } from '../../../core/device/pointer';
+import { CalendarDate, TASK_DRAG_DATA_FORMAT, Task } from '../../../core/models/task.model';
 import { CheckboxComponent } from '../checkbox/checkbox.component';
 import { DatePickerComponent } from '../date-picker/date-picker.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
@@ -29,6 +30,9 @@ export class TaskItemComponent {
   protected readonly editingNotes = signal(false);
   protected titleDraft = '';
   protected notesDraft = '';
+
+  /** Drag & drop rescheduling (DEMOPROJEK-45) is disabled on touch devices so it never interferes with scrolling. */
+  protected readonly dragEnabled = !isTouchDevice();
 
   constructor() {
     effect(() => {
@@ -76,6 +80,13 @@ export class TaskItemComponent {
 
   protected onDueDateSelect(date: CalendarDate): void {
     this.dueDateSave.emit(date);
+  }
+
+  protected onDragStart(event: DragEvent): void {
+    event.dataTransfer?.setData(TASK_DRAG_DATA_FORMAT, this.task().id);
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
   }
 
   /** Quick-action shortcut (DEMOPROJEK-44): sets the due date without opening the calendar popover. */

@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { getMonthGrid } from '../../../core/date/date-utils';
 import {
   CalendarDate,
+  TASK_DRAG_DATA_FORMAT,
   Task,
   createTask,
   toCalendarDate,
@@ -312,6 +313,41 @@ describe('CalendarPageComponent', () => {
       ) as HTMLElement[];
       const index = getMonthGrid(new Date()).findIndex((day) => day.date === otherDate);
       popoverCells[index].click();
+      fixture.detectChanges();
+
+      expect(updateSpy).toHaveBeenCalledWith(task.id, { dueDate: otherDate });
+    });
+
+    it('rescheduling a task by dropping it on a grid cell is backed by the shared task store', () => {
+      const today = todayAsCalendarDate();
+      const task = createTask({ title: 'Per Drag & Drop umplanen', dueDate: today });
+      const store = createMockStore(undefined, [task]);
+      const updateSpy = vi.fn();
+      store.update = updateSpy;
+
+      TestBed.configureTestingModule({
+        imports: [CalendarPageComponent],
+        providers: [{ provide: TaskStoreService, useValue: store }],
+      });
+      const fixture = TestBed.createComponent(CalendarPageComponent);
+      fixture.detectChanges();
+
+      const otherDate = anotherDayThisMonth();
+      const targetCell = cellForDate(fixture, otherDate);
+
+      const dragData = new Map<string, string>([[TASK_DRAG_DATA_FORMAT, task.id]]);
+      const dataTransfer = {
+        setData: (format: string, value: string) => dragData.set(format, value),
+        getData: (format: string) => dragData.get(format) ?? '',
+        get types() {
+          return Array.from(dragData.keys());
+        },
+        dropEffect: 'none',
+      } as unknown as DataTransfer;
+      const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
+      Object.defineProperty(dropEvent, 'dataTransfer', { value: dataTransfer });
+
+      targetCell.dispatchEvent(dropEvent);
       fixture.detectChanges();
 
       expect(updateSpy).toHaveBeenCalledWith(task.id, { dueDate: otherDate });

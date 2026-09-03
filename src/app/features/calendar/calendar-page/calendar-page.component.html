@@ -15,6 +15,7 @@
     [taskSummaries]="taskSummaries()"
     [selected]="selectedDate()"
     (daySelect)="selectDay($event)"
+    (taskDrop)="onTaskDrop($event)"
   />
 
   <section class="calendar-page__day" [attr.aria-label]="'Aufgaben für ' + selectedDateLabel()">
