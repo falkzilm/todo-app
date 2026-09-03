@@ -5,6 +5,55 @@ const tseslint = require("typescript-eslint");
 const angular = require("angular-eslint");
 const eslintConfigPrettier = require("eslint-config-prettier");
 
+// Aufgabentexte (Titel, Notizen) duerfen nie als HTML interpretiert werden, siehe
+// DEMOPROJEK-20: innerHTML-Zuweisungen sowie DomSanitizer/bypassSecurityTrust* umgehen
+// Angulars eingebautes XSS-Escaping und sind daher projektweit verboten - Rendering
+// erfolgt ausschliesslich per Interpolation ({{ ... }}).
+const noUnsafeHtmlPlugin = {
+  rules: {
+    "no-inner-html-assignment": {
+      meta: {
+        type: "problem",
+        schema: [],
+        messages: {
+          forbidden:
+            "innerHTML darf nicht verwendet werden, da Aufgabentexte dadurch als HTML statt als Text interpretiert werden koennten. Rendering ausschliesslich per Interpolation.",
+        },
+      },
+      create(context) {
+        return {
+          "MemberExpression[property.name='innerHTML']"(node) {
+            context.report({ node, messageId: "forbidden" });
+          },
+        };
+      },
+    },
+    "no-bypass-security-trust": {
+      meta: {
+        type: "problem",
+        schema: [],
+        messages: {
+          forbidden:
+            "DomSanitizer/bypassSecurityTrust* darf fuer Aufgabentexte nicht verwendet werden, da damit Angulars XSS-Schutz umgangen wird.",
+        },
+      },
+      create(context) {
+        return {
+          "ImportSpecifier[imported.name='DomSanitizer']"(node) {
+            context.report({ node, messageId: "forbidden" });
+          },
+          "MemberExpression[property.name=/^bypassSecurityTrust/]"(node) {
+            context.report({ node, messageId: "forbidden" });
+          },
+          "Identifier[name=/^bypassSecurityTrust/]"(node) {
+            context.report({ node, messageId: "forbidden" });
+          },
+        };
+      },
+    },
+  },
+};
+
 module.exports = defineConfig([
   {
     files: ["**/*.ts"],
@@ -16,6 +65,9 @@ module.exports = defineConfig([
       eslintConfigPrettier,
     ],
     processor: angular.processInlineTemplates,
+    plugins: {
+      "no-unsafe-html": noUnsafeHtmlPlugin,
+    },
     rules: {
       "@angular-eslint/directive-selector": [
         "error",
@@ -33,6 +85,8 @@ module.exports = defineConfig([
           style: "kebab-case",
         },
       ],
+      "no-unsafe-html/no-inner-html-assignment": "error",
+      "no-unsafe-html/no-bypass-security-trust": "error",
     },
   },
   {
@@ -41,6 +95,18 @@ module.exports = defineConfig([
       angular.configs.templateRecommended,
       angular.configs.templateAccessibility,
     ],
-    rules: {},
+    plugins: {
+      "no-unsafe-html": noUnsafeHtmlPlugin,
+    },
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: ":matches(BoundAttribute, TextAttribute)[name='innerHTML']",
+          message:
+            "[innerHTML] darf in Templates nicht gebunden werden, da Aufgabentexte dadurch als HTML statt als Text interpretiert werden koennten. Rendering ausschliesslich per Interpolation ({{ ... }}).",
+        },
+      ],
+    },
   }
 ]);
