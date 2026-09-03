@@ -48,8 +48,6 @@ export class TaskItemComponent {
   protected readonly dragEnabled = !isTouchDevice();
 
   private readonly injector = inject(Injector);
-  private wasEditingTitle = false;
-  private wasEditingNotes = false;
 
   constructor() {
     effect(() => {
@@ -58,13 +56,7 @@ export class TaskItemComponent {
         const element = this.titleInput()?.nativeElement;
         element?.focus();
         element?.select();
-      } else if (this.wasEditingTitle) {
-        /** Returns focus to the button that opened the inline editor, so Escape/Enter never drop the keyboard focus into the page body. */
-        afterNextRender(() => this.titleButton()?.nativeElement.focus(), {
-          injector: this.injector,
-        });
       }
-      this.wasEditingTitle = editing;
     });
 
     effect(() => {
@@ -73,12 +65,7 @@ export class TaskItemComponent {
         const element = this.notesInput()?.nativeElement;
         element?.focus();
         element?.select();
-      } else if (this.wasEditingNotes) {
-        afterNextRender(() => this.notesButton()?.nativeElement.focus(), {
-          injector: this.injector,
-        });
       }
-      this.wasEditingNotes = editing;
     });
   }
 
@@ -140,8 +127,12 @@ export class TaskItemComponent {
     this.titleSave.emit(title);
   }
 
+  /** Escape returns focus to the button that opened the editor; commit (blur/Enter) leaves the browser's normal focus progression alone. */
   protected cancelTitleEdit(): void {
     this.editingTitle.set(false);
+    afterNextRender(() => this.titleButton()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   protected onTitleKeydown(event: KeyboardEvent): void {
@@ -172,8 +163,12 @@ export class TaskItemComponent {
     this.notesSave.emit(notes);
   }
 
+  /** Escape returns focus to the button that opened the editor; commit (blur/Enter) leaves the browser's normal focus progression alone. */
   protected cancelNotesEdit(): void {
     this.editingNotes.set(false);
+    afterNextRender(() => this.notesButton()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   protected onNotesKeydown(event: KeyboardEvent): void {
