@@ -4,4 +4,7 @@
   <button type="button" (click)="previousMonth()">« Vorheriger Monat</button>
   <span class="calendar-nav__label">{{ monthLabel() }}</span>
   <button type="button" (click)="nextMonth()">Nächster Monat »</button>
+  <button type="button" class="calendar-nav__today" (click)="goToToday()">Heute</button>
 </div>
+
+<app-month-grid [days]="days()" [label]="gridLabel()" />
