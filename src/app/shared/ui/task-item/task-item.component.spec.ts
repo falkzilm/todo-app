@@ -333,7 +333,7 @@ describe('TaskItemComponent', () => {
       expect(document.activeElement).not.toBe(reshownTitleButton);
     });
 
-    it('does not steal focus back to the title button when Enter commits the change', async () => {
+    it('moves focus to the title button when Enter commits the change, instead of losing it', async () => {
       const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
 
@@ -354,7 +354,7 @@ describe('TaskItemComponent', () => {
       const reshownTitleButton = fixture.nativeElement.querySelector(
         '.app-task-item__title',
       ) as HTMLButtonElement;
-      expect(document.activeElement).not.toBe(reshownTitleButton);
+      expect(document.activeElement).toBe(reshownTitleButton);
     });
 
     it('does not save an empty title and keeps the previous one', () => {
@@ -493,6 +493,30 @@ describe('TaskItemComponent', () => {
         '.app-task-item__notes',
       ) as HTMLButtonElement;
       expect(document.activeElement).not.toBe(reshownNotesButton);
+    });
+
+    it('moves focus to the notes button when Enter commits the change, instead of losing it', async () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const notesButton = fixture.nativeElement.querySelector(
+        '.app-task-item__notes',
+      ) as HTMLButtonElement;
+      notesButton.click();
+      fixture.detectChanges();
+
+      const input = fixture.nativeElement.querySelector(
+        '.app-task-item__notes-input',
+      ) as HTMLInputElement;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const reshownNotesButton = fixture.nativeElement.querySelector(
+        '.app-task-item__notes',
+      ) as HTMLButtonElement;
+      expect(document.activeElement).toBe(reshownNotesButton);
     });
   });
 
