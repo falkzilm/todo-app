@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { todayAsCalendarDate, Task } from '../models/task.model';
+import { StorageStatusService } from './storage-status.service';
 import { STORAGE } from './storage.token';
 import { TaskPersistenceService, migrateToCurrentSchema } from './task-persistence.service';
 
@@ -171,6 +172,49 @@ describe('TaskPersistenceService', () => {
       const { tasks } = JSON.parse(raw as string) as { tasks: Task[] };
       expect(tasks[0].title.length).toBeLessThanOrEqual(200);
       expect(tasks[0].notes?.length).toBeLessThanOrEqual(2000);
+    });
+  });
+
+  describe('with a storage that rejects writes (e.g. quota exceeded)', () => {
+    beforeEach(() => {
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+      vi.spyOn(storage, 'setItem').mockImplementation(() => {
+        throw new DOMException('quota exceeded', 'QuotaExceededError');
+      });
+    });
+
+    it('does not throw and marks the save as failed', () => {
+      const storageStatus = TestBed.inject(StorageStatusService);
+
+      expect(() => service.save([exampleTask])).not.toThrow();
+
+      expect(storageStatus.saveFailed()).toBe(true);
+      expect(storageStatus.unavailable()).toBe(true);
+    });
+
+    it('clears the failed state again once a later write succeeds', () => {
+      const storageStatus = TestBed.inject(StorageStatusService);
+      service.save([exampleTask]);
+      expect(storageStatus.saveFailed()).toBe(true);
+
+      vi.mocked(storage.setItem).mockRestore();
+      service.save([exampleTask]);
+
+      expect(storageStatus.saveFailed()).toBe(false);
+      expect(storageStatus.unavailable()).toBe(false);
+    });
+  });
+
+  describe('with a storage that rejects reads (e.g. blocked storage)', () => {
+    it('does not throw and returns an empty list instead of crashing', () => {
+      vi.spyOn(storage, 'getItem').mockImplementation(() => {
+        throw new DOMException('storage disabled', 'SecurityError');
+      });
+      const storageStatus = TestBed.inject(StorageStatusService);
+
+      expect(() => service.load()).not.toThrow();
+      expect(service.load()).toEqual([]);
+      expect(storageStatus.unavailable()).toBe(true);
     });
   });
 });

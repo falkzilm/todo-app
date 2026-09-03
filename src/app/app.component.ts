@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppTitleService } from './core/services/app-title.service';
+import { StorageStatusService } from './core/services/storage-status.service';
 
 @Component({
   selector: 'app-root',
@@ -11,4 +12,5 @@ import { AppTitleService } from './core/services/app-title.service';
 })
 export class AppComponent {
   protected readonly title = inject(AppTitleService).title;
+  protected readonly storageUnavailable = inject(StorageStatusService).unavailable;
 }

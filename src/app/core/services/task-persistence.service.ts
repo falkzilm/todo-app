@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { createDemoTasks } from '../models/demo-tasks';
 import { Task, clampTaskTextLengths, isValidPersistedTask } from '../models/task.model';
+import { StorageStatusService } from './storage-status.service';
 import { STORAGE } from './storage.token';
 
 const STORAGE_KEY = 'todo-app.tasks';
@@ -81,9 +82,18 @@ function sanitizeTasks(rawTasks: unknown[]): Task[] {
 @Injectable({ providedIn: 'root' })
 export class TaskPersistenceService {
   private readonly storage = inject(STORAGE);
+  private readonly storageStatus = inject(StorageStatusService);
 
   load(): Task[] {
-    const raw = this.storage.getItem(STORAGE_KEY);
+    let raw: string | null;
+    try {
+      raw = this.storage.getItem(STORAGE_KEY);
+    } catch (error) {
+      console.warn('Failed to read persisted tasks; starting with an empty list.', error);
+      this.storageStatus.markSaveFailed();
+      return [];
+    }
+
     if (raw === null) {
       // Nothing has ever been saved: seed and persist a demo task set so a
       // first-time user sees example data instead of an empty app.
@@ -100,11 +110,24 @@ export class TaskPersistenceService {
     }
   }
 
+  /**
+   * Persists the given tasks. Storage errors (e.g. a `QuotaExceededError`
+   * when full, or a blocked/disabled storage rejecting writes) are caught
+   * so a failed save never crashes the app; `StorageStatusService` tracks
+   * the failure so the UI can show a non-blocking hint instead.
+   */
   save(tasks: Task[]): void {
     const state: PersistedStateV1 = {
       version: CURRENT_SCHEMA_VERSION,
       tasks: tasks.map(clampTaskTextLengths),
     };
-    this.storage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+    try {
+      this.storage.setItem(STORAGE_KEY, JSON.stringify(state));
+      this.storageStatus.markSaveSucceeded();
+    } catch (error) {
+      console.warn('Failed to persist tasks; changes will not be saved.', error);
+      this.storageStatus.markSaveFailed();
+    }
   }
 }

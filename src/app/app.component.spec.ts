@@ -3,6 +3,7 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router } from '@angular/router';
 import { AppComponent } from './app.component';
 import { routes } from './app.routes';
+import { StorageStatusService } from './core/services/storage-status.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -50,5 +51,23 @@ describe('AppComponent', () => {
     expect(fixture.nativeElement.querySelector('h2')?.textContent).toContain(
       'Seite nicht gefunden',
     );
+  });
+
+  it('shows no storage hint while storage is available', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.storage-notice')).toBeNull();
+  });
+
+  it('shows a non-blocking hint when storage is unavailable', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    TestBed.inject(StorageStatusService).markInMemoryMode();
+    fixture.detectChanges();
+
+    const notice = fixture.nativeElement.querySelector('.storage-notice');
+    expect(notice).not.toBeNull();
+    expect(notice.getAttribute('role')).toBe('status');
+    expect(notice.textContent).toContain('werden');
   });
 });
