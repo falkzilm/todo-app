@@ -107,6 +107,10 @@ export class CalendarPageComponent {
     this.taskStore.update(id, { notes });
   }
 
+  protected saveDueDate(id: string, dueDate: CalendarDate): void {
+    this.taskStore.update(id, { dueDate });
+  }
+
   private shiftMonth(delta: number): void {
     this.referenceDate.update((date) => new Date(date.getFullYear(), date.getMonth() + delta, 1));
   }

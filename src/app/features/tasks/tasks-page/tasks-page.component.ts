@@ -8,7 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Task, todayAsCalendarDate } from '../../../core/models/task.model';
+import { CalendarDate, Task, todayAsCalendarDate } from '../../../core/models/task.model';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.component';
@@ -95,6 +95,10 @@ export class TasksPageComponent {
 
   protected saveNotes(id: string, notes: string | null): void {
     this.taskStore.update(id, { notes });
+  }
+
+  protected saveDueDate(id: string, dueDate: CalendarDate): void {
+    this.taskStore.update(id, { dueDate });
   }
 
   protected resetToDemoData(): void {

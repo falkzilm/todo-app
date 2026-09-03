@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Task, createTask } from '../../../core/models/task.model';
+import { getMonthGrid } from '../../../core/date/date-utils';
+import { CalendarDate, Task, createTask } from '../../../core/models/task.model';
 import { TaskItemComponent } from './task-item.component';
 
 function buildTask(overrides: Partial<Task> = {}): Task {
@@ -18,6 +19,7 @@ function buildTask(overrides: Partial<Task> = {}): Task {
       (remove)="onRemove()"
       (titleSave)="onTitleSave($event)"
       (notesSave)="onNotesSave($event)"
+      (dueDateSave)="onDueDateSave($event)"
     />
   `,
 })
@@ -27,6 +29,7 @@ class HostComponent {
   removeCount = 0;
   savedTitles: string[] = [];
   savedNotes: (string | null)[] = [];
+  savedDueDates: CalendarDate[] = [];
 
   onToggleCompleted(): void {
     this.toggleCount++;
@@ -42,6 +45,10 @@ class HostComponent {
 
   onNotesSave(notes: string | null): void {
     this.savedNotes.push(notes);
+  }
+
+  onDueDateSave(dueDate: CalendarDate): void {
+    this.savedDueDates.push(dueDate);
   }
 }
 
@@ -321,6 +328,73 @@ describe('TaskItemComponent', () => {
       expect(
         fixture.nativeElement.querySelector('.app-task-item__notes')?.textContent?.trim(),
       ).toBe('Ursprüngliche Notiz');
+    });
+  });
+
+  describe('Fälligkeitsdatum ändern', () => {
+    function dueDateTrigger(fixture: ReturnType<typeof TestBed.createComponent<HostComponent>>) {
+      return fixture.nativeElement.querySelector(
+        '.app-task-item__due-date .date-picker__trigger',
+      ) as HTMLButtonElement;
+    }
+
+    function cellFor(
+      fixture: ReturnType<typeof TestBed.createComponent<HostComponent>>,
+      referenceDate: Date,
+      date: CalendarDate,
+    ): HTMLElement {
+      const cells = Array.from(
+        fixture.nativeElement.querySelectorAll('[role="gridcell"]'),
+      ) as HTMLElement[];
+      const index = getMonthGrid(referenceDate).findIndex((day) => day.date === date);
+      return cells[index];
+    }
+
+    it('opens a date picker prefilled with the task due date', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      expect(dueDateTrigger(fixture).textContent?.trim()).toBe('5. September 2026');
+    });
+
+    it('emits dueDateSave with the newly picked date, without touching any store', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      dueDateTrigger(fixture).click();
+      fixture.detectChanges();
+
+      const cell = cellFor(fixture, new Date(2026, 8, 5), '2026-09-12');
+      cell.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.savedDueDates).toEqual(['2026-09-12']);
+      expect(fixture.componentInstance.toggleCount).toBe(0);
+    });
+
+    it('does not emit dueDateSave when the picker is cancelled via Escape', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      dueDateTrigger(fixture).click();
+      fixture.detectChanges();
+
+      const cell = cellFor(fixture, new Date(2026, 8, 5), '2026-09-05');
+      cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.savedDueDates).toEqual([]);
+      expect(dueDateTrigger(fixture).textContent?.trim()).toBe('5. September 2026');
+    });
+
+    it('does not emit toggleCompleted when opening the date picker', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      dueDateTrigger(fixture).click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.toggleCount).toBe(0);
     });
   });
 });

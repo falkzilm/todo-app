@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { getMonthGrid } from '../../../core/date/date-utils';
 import { createTask } from '../../../core/models/task.model';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
@@ -19,6 +20,7 @@ function createMockStore(
     todayCompletedCount: signal(todayCompletedCount),
     todayCompletedTasks: signal(todayCompletedTasks),
     remove: () => undefined,
+    update: () => undefined,
   };
 }
 
@@ -166,6 +168,43 @@ describe('HeutePageComponent', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.textContent).toContain('1 von 2 erledigt');
+    });
+  });
+
+  describe('Fälligkeitsdatum ändern', () => {
+    it('reschedules a task via its date picker through the shared task store', () => {
+      const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
+      const store = createMockStore([todayTask], []);
+      const updateSpy = vi.fn();
+      store.update = updateSpy;
+
+      TestBed.configureTestingModule({
+        imports: [HeutePageComponent],
+        providers: [
+          { provide: TaskStoreService, useValue: store },
+          { provide: STORAGE, useValue: createMockStorage() },
+        ],
+      });
+
+      const fixture = TestBed.createComponent(HeutePageComponent);
+      fixture.detectChanges();
+
+      const trigger = fixture.nativeElement.querySelector(
+        '.app-task-item__due-date .date-picker__trigger',
+      ) as HTMLButtonElement;
+      trigger.click();
+      fixture.detectChanges();
+
+      const cells = Array.from(
+        fixture.nativeElement.querySelectorAll('[role="gridcell"]'),
+      ) as HTMLElement[];
+      const index = getMonthGrid(new Date(2026, 8, 2)).findIndex(
+        (day) => day.date === '2026-09-12',
+      );
+      cells[index].click();
+      fixture.detectChanges();
+
+      expect(updateSpy).toHaveBeenCalledWith(todayTask.id, { dueDate: '2026-09-12' });
     });
   });
 
