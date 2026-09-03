@@ -1,5 +1,6 @@
 import { Component, ElementRef, effect, input, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { QuickDueDateToken, resolveQuickDueDate } from '../../../core/date/date-utils';
 import { CalendarDate, Task } from '../../../core/models/task.model';
 import { CheckboxComponent } from '../checkbox/checkbox.component';
 import { DatePickerComponent } from '../date-picker/date-picker.component';
@@ -61,7 +62,8 @@ export class TaskItemComponent {
       target.closest('.app-task-item__actions') ||
       target.closest('.app-task-item__title-field') ||
       target.closest('.app-task-item__notes-field') ||
-      target.closest('.app-task-item__due-date')
+      target.closest('.app-task-item__due-date') ||
+      target.closest('.app-task-item__quick-dates')
     ) {
       return;
     }
@@ -74,6 +76,11 @@ export class TaskItemComponent {
 
   protected onDueDateSelect(date: CalendarDate): void {
     this.dueDateSave.emit(date);
+  }
+
+  /** Quick-action shortcut (DEMOPROJEK-44): sets the due date without opening the calendar popover. */
+  protected setQuickDueDate(token: QuickDueDateToken): void {
+    this.dueDateSave.emit(resolveQuickDueDate(token, new Date()));
   }
 
   protected startEditingTitle(): void {

@@ -1,4 +1,9 @@
-import { getMonthGrid, groupByCalendarDate, isSameCalendarDay } from './date-utils';
+import {
+  getMonthGrid,
+  groupByCalendarDate,
+  isSameCalendarDay,
+  resolveQuickDueDate,
+} from './date-utils';
 
 describe('getMonthGrid', () => {
   it('returns a full 6x7 grid of 42 days', () => {
@@ -140,6 +145,40 @@ describe('isSameCalendarDay', () => {
     const afterChangeover = new Date(2026, 9, 25, 23, 0, 0);
 
     expect(isSameCalendarDay(beforeChangeover, afterChangeover)).toBe(true);
+  });
+});
+
+describe('resolveQuickDueDate', () => {
+  it('resolves "today" to the reference date itself', () => {
+    expect(resolveQuickDueDate('today', new Date(2026, 8, 2))).toBe('2026-09-02');
+  });
+
+  it('resolves "tomorrow" to the next day', () => {
+    expect(resolveQuickDueDate('tomorrow', new Date(2026, 8, 2))).toBe('2026-09-03');
+  });
+
+  it('resolves "nextWeek" to seven days later', () => {
+    expect(resolveQuickDueDate('nextWeek', new Date(2026, 8, 2))).toBe('2026-09-09');
+  });
+
+  it('rolls "tomorrow" over a month boundary', () => {
+    expect(resolveQuickDueDate('tomorrow', new Date(2026, 8, 30))).toBe('2026-10-01');
+  });
+
+  it('rolls "nextWeek" over a month boundary', () => {
+    expect(resolveQuickDueDate('nextWeek', new Date(2026, 8, 26))).toBe('2026-10-03');
+  });
+
+  it('rolls "tomorrow" over a year boundary', () => {
+    expect(resolveQuickDueDate('tomorrow', new Date(2026, 11, 31))).toBe('2027-01-01');
+  });
+
+  it('rolls "nextWeek" over a year boundary', () => {
+    expect(resolveQuickDueDate('nextWeek', new Date(2026, 11, 28))).toBe('2027-01-04');
+  });
+
+  it('rolls "nextWeek" from the last day of a leap-year February', () => {
+    expect(resolveQuickDueDate('nextWeek', new Date(2028, 1, 29))).toBe('2028-03-07');
   });
 });
 

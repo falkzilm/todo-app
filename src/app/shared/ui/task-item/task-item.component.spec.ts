@@ -397,4 +397,84 @@ describe('TaskItemComponent', () => {
       expect(fixture.componentInstance.toggleCount).toBe(0);
     });
   });
+
+  describe('Schnellaktionen für das Fälligkeitsdatum', () => {
+    function quickDateButton(
+      fixture: ReturnType<typeof TestBed.createComponent<HostComponent>>,
+      label: string,
+    ): HTMLButtonElement {
+      const buttons = Array.from(
+        fixture.nativeElement.querySelectorAll('.app-task-item__quick-date'),
+      ) as HTMLButtonElement[];
+      const button = buttons.find((candidate) => candidate.textContent?.trim() === label);
+      if (!button) {
+        throw new Error(`No quick date button found for label "${label}"`);
+      }
+      return button;
+    }
+
+    it('are labelled real buttons, reachable without opening the calendar', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      for (const label of ['Heute', 'Morgen', 'Nächste Woche']) {
+        const button = quickDateButton(fixture, label);
+        expect(button.tagName).toBe('BUTTON');
+        expect(button.type).toBe('button');
+      }
+      expect(fixture.nativeElement.querySelector('.date-picker__popover')).toBeNull();
+    });
+
+    it("emits dueDateSave with today's date, without touching any store", () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 8, 2));
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      quickDateButton(fixture, 'Heute').click();
+
+      expect(fixture.componentInstance.savedDueDates).toEqual(['2026-09-02']);
+      expect(fixture.componentInstance.toggleCount).toBe(0);
+
+      vi.useRealTimers();
+    });
+
+    it("emits dueDateSave with tomorrow's date", () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 8, 2));
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      quickDateButton(fixture, 'Morgen').click();
+
+      expect(fixture.componentInstance.savedDueDates).toEqual(['2026-09-03']);
+
+      vi.useRealTimers();
+    });
+
+    it('emits dueDateSave with a date seven days out, rolling correctly over a month boundary', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 8, 26));
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      quickDateButton(fixture, 'Nächste Woche').click();
+
+      expect(fixture.componentInstance.savedDueDates).toEqual(['2026-10-03']);
+
+      vi.useRealTimers();
+    });
+
+    it('does not emit toggleCompleted when a quick date action is pressed', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      quickDateButton(fixture, 'Heute').click();
+
+      expect(fixture.componentInstance.toggleCount).toBe(0);
+    });
+  });
 });

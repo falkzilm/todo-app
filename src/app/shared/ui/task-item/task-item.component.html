@@ -30,12 +30,38 @@
       }
     </div>
 
-    <app-date-picker
-      class="app-task-item__due-date"
-      label="Fälligkeitsdatum ändern"
-      [value]="task().dueDate"
-      (dateSelect)="onDueDateSelect($event)"
-    />
+    <div class="app-task-item__due-row">
+      <app-date-picker
+        class="app-task-item__due-date"
+        label="Fälligkeitsdatum ändern"
+        [value]="task().dueDate"
+        (dateSelect)="onDueDateSelect($event)"
+      />
+
+      <div
+        class="app-task-item__quick-dates"
+        role="group"
+        aria-label="Fälligkeitsdatum per Schnellaktion setzen"
+      >
+        <button type="button" class="app-task-item__quick-date" (click)="setQuickDueDate('today')">
+          Heute
+        </button>
+        <button
+          type="button"
+          class="app-task-item__quick-date"
+          (click)="setQuickDueDate('tomorrow')"
+        >
+          Morgen
+        </button>
+        <button
+          type="button"
+          class="app-task-item__quick-date"
+          (click)="setQuickDueDate('nextWeek')"
+        >
+          Nächste Woche
+        </button>
+      </div>
+    </div>
 
     <div class="app-task-item__notes-field">
       @if (editingNotes()) {
