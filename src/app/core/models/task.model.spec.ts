@@ -1,4 +1,10 @@
-import { createTask, isCalendarDate } from './task.model';
+import {
+  MAX_NOTES_LENGTH,
+  MAX_TITLE_LENGTH,
+  createTask,
+  isCalendarDate,
+  isValidPersistedTask,
+} from './task.model';
 
 describe('createTask', () => {
   it('creates a task with the given title', () => {
@@ -80,6 +86,62 @@ describe('createTask', () => {
   it('throws for a title consisting only of whitespace', () => {
     expect(() => createTask({ title: '   ' })).toThrow();
   });
+
+  it('clamps a title longer than the defined maximum', () => {
+    const task = createTask({ title: 'a'.repeat(MAX_TITLE_LENGTH + 50) });
+
+    expect(task.title.length).toBe(MAX_TITLE_LENGTH);
+  });
+
+  it('clamps notes longer than the defined maximum', () => {
+    const task = createTask({ title: 'Aufgabe', notes: 'b'.repeat(MAX_NOTES_LENGTH + 50) });
+
+    expect(task.notes?.length).toBe(MAX_NOTES_LENGTH);
+  });
+});
+
+describe('isValidPersistedTask', () => {
+  const validTask = {
+    id: 'task-1',
+    title: 'Milch kaufen',
+    notes: null,
+    dueDate: null,
+    completed: false,
+    completedAt: null,
+    createdAt: '2026-09-01',
+    updatedAt: '2026-09-01',
+  };
+
+  it('accepts a well-formed task', () => {
+    expect(isValidPersistedTask(validTask)).toBe(true);
+  });
+
+  it('rejects non-object values', () => {
+    expect(isValidPersistedTask(null)).toBe(false);
+    expect(isValidPersistedTask('not-a-task')).toBe(false);
+    expect(isValidPersistedTask(undefined)).toBe(false);
+  });
+
+  it('rejects a task missing a required field', () => {
+    const withoutTitle: Record<string, unknown> = { ...validTask };
+    delete withoutTitle['title'];
+    expect(isValidPersistedTask(withoutTitle)).toBe(false);
+  });
+
+  it('rejects a task with a field of the wrong type', () => {
+    expect(isValidPersistedTask({ ...validTask, completed: 'yes' })).toBe(false);
+  });
+
+  it('rejects a task with a malformed date', () => {
+    expect(isValidPersistedTask({ ...validTask, createdAt: '01.09.2026' })).toBe(false);
+  });
+
+  it('rejects a task with an impossible calendar date', () => {
+    expect(isValidPersistedTask({ ...validTask, dueDate: '2026-02-30' })).toBe(false);
+    expect(isValidPersistedTask({ ...validTask, completedAt: '2026-99-99' })).toBe(false);
+    expect(isValidPersistedTask({ ...validTask, createdAt: '2026-02-30' })).toBe(false);
+    expect(isValidPersistedTask({ ...validTask, updatedAt: '2026-02-30' })).toBe(false);
+  });
 });
 
 describe('isCalendarDate', () => {
@@ -93,5 +155,21 @@ describe('isCalendarDate', () => {
 
   it('rejects non-date strings', () => {
     expect(isCalendarDate('not-a-date')).toBe(false);
+  });
+
+  it('rejects an out-of-range month', () => {
+    expect(isCalendarDate('2026-99-99')).toBe(false);
+    expect(isCalendarDate('2026-13-01')).toBe(false);
+    expect(isCalendarDate('2026-00-01')).toBe(false);
+  });
+
+  it('rejects a day that does not exist in the given month', () => {
+    expect(isCalendarDate('2026-02-30')).toBe(false);
+    expect(isCalendarDate('2026-04-31')).toBe(false);
+    expect(isCalendarDate('2026-02-29')).toBe(false);
+  });
+
+  it('accepts February 29th on a leap year', () => {
+    expect(isCalendarDate('2024-02-29')).toBe(true);
   });
 });

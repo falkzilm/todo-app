@@ -23,10 +23,74 @@ export interface CreateTaskInput {
   createdAt?: CalendarDate;
 }
 
-const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+/**
+ * Matches the `YYYY-MM-DD` format and also rejects values that are
+ * structurally well-formed but not real calendar dates (e.g. "2026-02-30" or
+ * "2026-99-99"), including correct leap-year handling for February.
+ */
 export function isCalendarDate(value: string): value is CalendarDate {
-  return CALENDAR_DATE_PATTERN.test(value);
+  const match = CALENDAR_DATE_PATTERN.exec(value);
+  if (!match) {
+    return false;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  if (month < 1 || month > 12) {
+    return false;
+  }
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day >= 1 && day <= daysInMonth;
+}
+
+/** Upper bounds for user-entered text, enforced both when creating/updating and when loading persisted tasks. */
+export const MAX_TITLE_LENGTH = 200;
+export const MAX_NOTES_LENGTH = 2000;
+
+function isNullOrCalendarDate(value: unknown): value is CalendarDate | null {
+  return value === null || (typeof value === 'string' && isCalendarDate(value));
+}
+
+/**
+ * Validates a single value read from persisted storage against the `Task` schema
+ * (types, required fields and date formats), so a manipulated or corrupted
+ * localStorage entry can be told apart from a genuine task.
+ */
+export function isValidPersistedTask(value: unknown): value is Task {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const task = value as Record<string, unknown>;
+
+  return (
+    typeof task['id'] === 'string' &&
+    task['id'].length > 0 &&
+    typeof task['title'] === 'string' &&
+    task['title'].trim().length > 0 &&
+    (task['notes'] === null || typeof task['notes'] === 'string') &&
+    isNullOrCalendarDate(task['dueDate']) &&
+    typeof task['completed'] === 'boolean' &&
+    isNullOrCalendarDate(task['completedAt']) &&
+    typeof task['createdAt'] === 'string' &&
+    isCalendarDate(task['createdAt']) &&
+    typeof task['updatedAt'] === 'string' &&
+    isCalendarDate(task['updatedAt'])
+  );
+}
+
+/** Clamps title/notes to their defined maximum length, e.g. before persisting or after loading. */
+export function clampTaskTextLengths(task: Task): Task {
+  return {
+    ...task,
+    title: task.title.slice(0, MAX_TITLE_LENGTH),
+    notes: task.notes !== null ? task.notes.slice(0, MAX_NOTES_LENGTH) : null,
+  };
 }
 
 export function toCalendarDate(date: Date): CalendarDate {
@@ -54,7 +118,7 @@ export function createTask(input: CreateTaskInput): Task {
 
   const timestamp = input.createdAt ?? todayAsCalendarDate();
 
-  return {
+  return clampTaskTextLengths({
     id: crypto.randomUUID(),
     title,
     notes: input.notes?.trim() || null,
@@ -63,5 +127,5 @@ export function createTask(input: CreateTaskInput): Task {
     completedAt: null,
     createdAt: timestamp,
     updatedAt: timestamp,
-  };
+  });
 }

@@ -14,6 +14,7 @@ import {
   CalendarDate,
   CreateTaskInput,
   Task,
+  clampTaskTextLengths,
   createTask,
   isCalendarDate,
   todayAsCalendarDate,
@@ -258,12 +259,12 @@ export class TaskStoreService {
       );
     }
 
-    return {
+    return clampTaskTextLengths({
       ...task,
       title,
       notes: changes.notes !== undefined ? changes.notes?.trim() || null : task.notes,
       dueDate: changes.dueDate !== undefined ? changes.dueDate : task.dueDate,
       updatedAt: todayAsCalendarDate(),
-    };
+    });
   }
 }

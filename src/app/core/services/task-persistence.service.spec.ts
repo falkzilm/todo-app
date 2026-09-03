@@ -83,6 +83,66 @@ describe('TaskPersistenceService', () => {
 
       expect(service.load()).toEqual([]);
     });
+
+    it('discards persisted tasks with missing required fields', () => {
+      const withoutTitle: Record<string, unknown> = { ...exampleTask };
+      delete withoutTitle['title'];
+      storage.setItem(
+        'todo-app.tasks',
+        JSON.stringify({ version: 1, tasks: [withoutTitle, exampleTask] }),
+      );
+
+      expect(service.load()).toEqual([exampleTask]);
+    });
+
+    it('discards persisted tasks with a field of the wrong type', () => {
+      const wrongType = { ...exampleTask, completed: 'yes' };
+      storage.setItem(
+        'todo-app.tasks',
+        JSON.stringify({ version: 1, tasks: [wrongType, exampleTask] }),
+      );
+
+      expect(service.load()).toEqual([exampleTask]);
+    });
+
+    it('discards persisted tasks with a malformed date', () => {
+      const badDate = { ...exampleTask, createdAt: '01.09.2026' };
+      storage.setItem(
+        'todo-app.tasks',
+        JSON.stringify({ version: 1, tasks: [badDate, exampleTask] }),
+      );
+
+      expect(service.load()).toEqual([exampleTask]);
+    });
+
+    it('discards persisted tasks with an impossible calendar date', () => {
+      const badDueDate = { ...exampleTask, id: 'bad-due-date', dueDate: '2026-02-30' };
+      const badCompletedAt = { ...exampleTask, id: 'bad-completed-at', completedAt: '2026-99-99' };
+      const badCreatedAt = { ...exampleTask, id: 'bad-created-at', createdAt: '2026-02-30' };
+      const badUpdatedAt = { ...exampleTask, id: 'bad-updated-at', updatedAt: '2026-04-31' };
+      storage.setItem(
+        'todo-app.tasks',
+        JSON.stringify({
+          version: 1,
+          tasks: [badDueDate, badCompletedAt, badCreatedAt, badUpdatedAt, exampleTask],
+        }),
+      );
+
+      expect(service.load()).toEqual([exampleTask]);
+    });
+
+    it('clamps overly long titles and notes to the defined maximum', () => {
+      const longTask = {
+        ...exampleTask,
+        title: 'a'.repeat(500),
+        notes: 'b'.repeat(5000),
+      };
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [longTask] }));
+
+      const [loaded] = service.load();
+      expect(loaded.title.length).toBeLessThanOrEqual(200);
+      expect(loaded.notes?.length).toBeLessThanOrEqual(2000);
+    });
   });
 
   describe('save', () => {
@@ -97,6 +157,20 @@ describe('TaskPersistenceService', () => {
       service.save([exampleTask]);
 
       expect(service.load()).toEqual([exampleTask]);
+    });
+
+    it('clamps overly long titles and notes before writing', () => {
+      const longTask: Task = {
+        ...exampleTask,
+        title: 'a'.repeat(500),
+        notes: 'b'.repeat(5000),
+      };
+      service.save([longTask]);
+
+      const raw = storage.getItem('todo-app.tasks');
+      const { tasks } = JSON.parse(raw as string) as { tasks: Task[] };
+      expect(tasks[0].title.length).toBeLessThanOrEqual(200);
+      expect(tasks[0].notes?.length).toBeLessThanOrEqual(2000);
     });
   });
 });
