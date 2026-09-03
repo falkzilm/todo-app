@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Task, todayAsCalendarDate } from '../models/task.model';
+import { StorageStatusService } from './storage-status.service';
 import { STORAGE } from './storage.token';
 import { TaskStoreService } from './task-store.service';
 
@@ -531,6 +532,56 @@ describe('TaskStoreService', () => {
 
       expect(rolloverStore.todayTasks()).toEqual([]);
       expect(rolloverStore.overdueTasks()).toEqual([task]);
+    });
+  });
+
+  describe('blocked localStorage', () => {
+    // These tests exercise the STORAGE token's real default factory (backed by
+    // jsdom's actual localStorage), unlike the rest of this file which overrides
+    // it with an in-memory mock; clear it so demo data seeded by other spec
+    // files sharing this test process doesn't leak in.
+    beforeEach(() => {
+      window.localStorage.clear();
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      window.localStorage.clear();
+    });
+
+    it('starts up and stays fully usable in in-memory mode when localStorage rejects every access', () => {
+      // jsdom's `localStorage` proxies method lookups straight to its prototype, so
+      // spying on the instance itself has no effect; the prototype method must be
+      // patched instead.
+      vi.spyOn(Object.getPrototypeOf(window.localStorage) as Storage, 'setItem').mockImplementation(
+        () => {
+          throw new DOMException('storage disabled', 'SecurityError');
+        },
+      );
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const blockedStore = TestBed.inject(TaskStoreService);
+      const storageStatus = TestBed.inject(StorageStatusService);
+
+      expect(storageStatus.inMemoryMode()).toBe(true);
+      expect(storageStatus.unavailable()).toBe(true);
+
+      // The blocked-storage fallback is a fresh, empty in-memory store, so it seeds
+      // the usual demo tasks (same as real first-time localStorage usage) on top of
+      // which the app must stay fully usable.
+      const tasksBeforeAdd = blockedStore.tasks().length;
+
+      const task = blockedStore.add({ title: 'Aufgabe' });
+      expect(blockedStore.tasks()).toHaveLength(tasksBeforeAdd + 1);
+      expect(blockedStore.tasks()).toContainEqual(task);
+
+      blockedStore.toggleCompleted(task.id);
+      expect(blockedStore.tasks().find((t) => t.id === task.id)?.completed).toBe(true);
+
+      blockedStore.remove(task.id);
+      expect(blockedStore.tasks()).toHaveLength(tasksBeforeAdd);
+      expect(blockedStore.tasks().some((t) => t.id === task.id)).toBe(false);
     });
   });
 

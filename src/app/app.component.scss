@@ -40,3 +40,11 @@ nav {
 main {
   padding-block: var(--space-6);
 }
+
+.storage-notice {
+  margin-block: 0;
+  padding-block: var(--space-2);
+  background: var(--color-warning-surface);
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+}

@@ -10,6 +10,12 @@
   </div>
 </header>
 
+@if (storageUnavailable()) {
+  <p class="storage-notice app-shell__container" role="status">
+    Änderungen werden in dieser Sitzung nicht gespeichert.
+  </p>
+}
+
 <main class="app-shell__container">
   <router-outlet />
 </main>
