@@ -1,4 +1,15 @@
-import { Component, ElementRef, effect, input, output, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { QuickDueDateToken, resolveQuickDueDate } from '../../../core/date/date-utils';
 import { isTouchDevice } from '../../../core/device/pointer';
@@ -25,6 +36,8 @@ export class TaskItemComponent {
 
   private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
   private readonly notesInput = viewChild<ElementRef<HTMLInputElement>>('notesInput');
+  private readonly titleButton = viewChild<ElementRef<HTMLButtonElement>>('titleButton');
+  private readonly notesButton = viewChild<ElementRef<HTMLButtonElement>>('notesButton');
 
   protected readonly editingTitle = signal(false);
   protected readonly editingNotes = signal(false);
@@ -34,23 +47,38 @@ export class TaskItemComponent {
   /** Drag & drop rescheduling (DEMOPROJEK-45) is disabled on touch devices so it never interferes with scrolling. */
   protected readonly dragEnabled = !isTouchDevice();
 
+  private readonly injector = inject(Injector);
+  private wasEditingTitle = false;
+  private wasEditingNotes = false;
+
   constructor() {
     effect(() => {
-      if (!this.editingTitle()) {
-        return;
+      const editing = this.editingTitle();
+      if (editing) {
+        const element = this.titleInput()?.nativeElement;
+        element?.focus();
+        element?.select();
+      } else if (this.wasEditingTitle) {
+        /** Returns focus to the button that opened the inline editor, so Escape/Enter never drop the keyboard focus into the page body. */
+        afterNextRender(() => this.titleButton()?.nativeElement.focus(), {
+          injector: this.injector,
+        });
       }
-      const element = this.titleInput()?.nativeElement;
-      element?.focus();
-      element?.select();
+      this.wasEditingTitle = editing;
     });
 
     effect(() => {
-      if (!this.editingNotes()) {
-        return;
+      const editing = this.editingNotes();
+      if (editing) {
+        const element = this.notesInput()?.nativeElement;
+        element?.focus();
+        element?.select();
+      } else if (this.wasEditingNotes) {
+        afterNextRender(() => this.notesButton()?.nativeElement.focus(), {
+          injector: this.injector,
+        });
       }
-      const element = this.notesInput()?.nativeElement;
-      element?.focus();
-      element?.select();
+      this.wasEditingNotes = editing;
     });
   }
 

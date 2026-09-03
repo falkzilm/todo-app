@@ -26,7 +26,12 @@
           (keydown)="onTitleKeydown($event)"
         />
       } @else {
-        <button type="button" class="app-task-item__title" (click)="startEditingTitle()">
+        <button
+          #titleButton
+          type="button"
+          class="app-task-item__title"
+          (click)="startEditingTitle()"
+        >
           {{ task().title }}
         </button>
       }
@@ -78,6 +83,7 @@
         />
       } @else {
         <button
+          #notesButton
           type="button"
           class="app-task-item__notes"
           [class.app-task-item__notes--empty]="!task().notes"

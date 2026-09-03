@@ -285,6 +285,30 @@ describe('TaskItemComponent', () => {
       ).toBe('Wocheneinkauf erledigen');
     });
 
+    it('returns focus to the title button when Escape closes the inline editor', async () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const titleButton = fixture.nativeElement.querySelector(
+        '.app-task-item__title',
+      ) as HTMLButtonElement;
+      titleButton.click();
+      fixture.detectChanges();
+
+      const input = fixture.nativeElement.querySelector(
+        '.app-task-item__title-input',
+      ) as HTMLInputElement;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const reshownTitleButton = fixture.nativeElement.querySelector(
+        '.app-task-item__title',
+      ) as HTMLButtonElement;
+      expect(document.activeElement).toBe(reshownTitleButton);
+    });
+
     it('does not save an empty title and keeps the previous one', () => {
       const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
@@ -373,6 +397,30 @@ describe('TaskItemComponent', () => {
       expect(
         fixture.nativeElement.querySelector('.app-task-item__notes')?.textContent?.trim(),
       ).toBe('Ursprüngliche Notiz');
+    });
+
+    it('returns focus to the notes button when Escape closes the inline editor', async () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const notesButton = fixture.nativeElement.querySelector(
+        '.app-task-item__notes',
+      ) as HTMLButtonElement;
+      notesButton.click();
+      fixture.detectChanges();
+
+      const input = fixture.nativeElement.querySelector(
+        '.app-task-item__notes-input',
+      ) as HTMLInputElement;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const reshownNotesButton = fixture.nativeElement.querySelector(
+        '.app-task-item__notes',
+      ) as HTMLButtonElement;
+      expect(document.activeElement).toBe(reshownNotesButton);
     });
   });
 
