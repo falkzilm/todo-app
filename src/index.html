@@ -14,10 +14,18 @@
       werden ausschliesslich per Angular-Interpolation gerendert, nie ueber innerHTML
       oder DomSanitizer.bypassSecurityTrust*, wodurch Skript-Injektion ueber
       Aufgabentexte von vornherein ausgeschlossen ist.
+      "unsafe-inline" gilt ausschliesslich fuer style-src: Angular haengt die
+      Styles jeder Komponente (z. B. task-item.component.scss) zur Laufzeit als
+      eigene <style>-Elemente an den <head> an; ohne eigenen Server kann dafuer
+      kein per-Request-Nonce ausgeliefert werden, ein statisches Nonce im
+      Build-Output waere oeffentlich einsehbar und boete keinen echten Schutz.
+      Da CSS-Injection ueber Aufgabentexte durch die reine Interpolation
+      (kein [innerHTML]/[style]-Binding auf Nutzerinput) ausgeschlossen ist,
+      ist die Lockerung auf style-src beschraenkt.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
     />
   </head>
   <body>
