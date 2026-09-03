@@ -1,3 +1,5 @@
+<a class="skip-link" href="#main-content">Zum Hauptinhalt springen</a>
+
 <header class="app-shell__header">
   <div class="app-shell__container">
     <h1>{{ title() }}</h1>
@@ -16,6 +18,6 @@
   </p>
 }
 
-<main class="app-shell__container">
+<main id="main-content" class="app-shell__container" tabindex="-1">
   <router-outlet />
 </main>

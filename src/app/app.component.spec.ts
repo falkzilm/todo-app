@@ -70,4 +70,16 @@ describe('AppComponent', () => {
     expect(notice.getAttribute('role')).toBe('status');
     expect(notice.textContent).toContain('werden');
   });
+
+  it('offers a skip link as the very first focusable element, pointing at the main landmark', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const skipLink = fixture.nativeElement.querySelector('a.skip-link') as HTMLAnchorElement;
+    const main = fixture.nativeElement.querySelector('main') as HTMLElement;
+
+    expect(skipLink).not.toBeNull();
+    expect(skipLink.getAttribute('href')).toBe('#main-content');
+    expect(main.id).toBe('main-content');
+  });
 });

@@ -1,4 +1,15 @@
-import { Component, ElementRef, effect, input, output, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { QuickDueDateToken, resolveQuickDueDate } from '../../../core/date/date-utils';
 import { isTouchDevice } from '../../../core/device/pointer';
@@ -25,6 +36,8 @@ export class TaskItemComponent {
 
   private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
   private readonly notesInput = viewChild<ElementRef<HTMLInputElement>>('notesInput');
+  private readonly titleButton = viewChild<ElementRef<HTMLButtonElement>>('titleButton');
+  private readonly notesButton = viewChild<ElementRef<HTMLButtonElement>>('notesButton');
 
   protected readonly editingTitle = signal(false);
   protected readonly editingNotes = signal(false);
@@ -34,23 +47,25 @@ export class TaskItemComponent {
   /** Drag & drop rescheduling (DEMOPROJEK-45) is disabled on touch devices so it never interferes with scrolling. */
   protected readonly dragEnabled = !isTouchDevice();
 
+  private readonly injector = inject(Injector);
+
   constructor() {
     effect(() => {
-      if (!this.editingTitle()) {
-        return;
+      const editing = this.editingTitle();
+      if (editing) {
+        const element = this.titleInput()?.nativeElement;
+        element?.focus();
+        element?.select();
       }
-      const element = this.titleInput()?.nativeElement;
-      element?.focus();
-      element?.select();
     });
 
     effect(() => {
-      if (!this.editingNotes()) {
-        return;
+      const editing = this.editingNotes();
+      if (editing) {
+        const element = this.notesInput()?.nativeElement;
+        element?.focus();
+        element?.select();
       }
-      const element = this.notesInput()?.nativeElement;
-      element?.focus();
-      element?.select();
     });
   }
 
@@ -112,14 +127,22 @@ export class TaskItemComponent {
     this.titleSave.emit(title);
   }
 
+  /** Escape and Enter both return focus to the button that opened the editor; a plain blur (e.g. Tab) leaves the browser's normal focus progression alone. */
   protected cancelTitleEdit(): void {
     this.editingTitle.set(false);
+    afterNextRender(() => this.titleButton()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
+  /** Enter has no browser-selected next focus target (unlike Tab-triggered blur), so focus must be moved explicitly or it falls to the document body. */
   protected onTitleKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
       event.preventDefault();
       this.commitTitle();
+      afterNextRender(() => this.titleButton()?.nativeElement.focus(), {
+        injector: this.injector,
+      });
     } else if (event.key === 'Escape') {
       event.preventDefault();
       this.cancelTitleEdit();
@@ -144,14 +167,22 @@ export class TaskItemComponent {
     this.notesSave.emit(notes);
   }
 
+  /** Escape and Enter both return focus to the button that opened the editor; a plain blur (e.g. Tab) leaves the browser's normal focus progression alone. */
   protected cancelNotesEdit(): void {
     this.editingNotes.set(false);
+    afterNextRender(() => this.notesButton()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
+  /** Enter has no browser-selected next focus target (unlike Tab-triggered blur), so focus must be moved explicitly or it falls to the document body. */
   protected onNotesKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
       event.preventDefault();
       this.commitNotes();
+      afterNextRender(() => this.notesButton()?.nativeElement.focus(), {
+        injector: this.injector,
+      });
     } else if (event.key === 'Escape') {
       event.preventDefault();
       this.cancelNotesEdit();
