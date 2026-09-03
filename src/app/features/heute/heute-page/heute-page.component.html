@@ -36,6 +36,7 @@
             (remove)="removeTask(task.id)"
             (titleSave)="saveTitle(task.id, $event)"
             (notesSave)="saveNotes(task.id, $event)"
+            (dueDateSave)="saveDueDate(task.id, $event)"
           />
         } @empty {
           <li class="heute-page__group-empty">Keine Aufgaben für heute fällig.</li>
@@ -53,6 +54,7 @@
             (remove)="removeTask(task.id)"
             (titleSave)="saveTitle(task.id, $event)"
             (notesSave)="saveNotes(task.id, $event)"
+            (dueDateSave)="saveDueDate(task.id, $event)"
           />
         } @empty {
           <li class="heute-page__group-empty">Keine überfälligen Aufgaben.</li>
@@ -96,6 +98,7 @@
               (remove)="removeTask(task.id)"
               (titleSave)="saveTitle(task.id, $event)"
               (notesSave)="saveNotes(task.id, $event)"
+              (dueDateSave)="saveDueDate(task.id, $event)"
             />
           }
         </ul>

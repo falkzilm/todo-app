@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { CalendarDate } from '../../../core/models/task.model';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
@@ -84,5 +85,9 @@ export class HeutePageComponent {
 
   protected saveNotes(id: string, notes: string | null): void {
     this.taskStore.update(id, { notes });
+  }
+
+  protected saveDueDate(id: string, dueDate: CalendarDate): void {
+    this.taskStore.update(id, { dueDate });
   }
 }

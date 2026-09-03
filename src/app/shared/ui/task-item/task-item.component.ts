@@ -1,14 +1,14 @@
-import { DatePipe } from '@angular/common';
 import { Component, ElementRef, effect, input, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Task } from '../../../core/models/task.model';
+import { CalendarDate, Task } from '../../../core/models/task.model';
 import { CheckboxComponent } from '../checkbox/checkbox.component';
+import { DatePickerComponent } from '../date-picker/date-picker.component';
 import { IconButtonComponent } from '../icon-button/icon-button.component';
 
 @Component({
   selector: 'app-task-item',
   standalone: true,
-  imports: [DatePipe, FormsModule, CheckboxComponent, IconButtonComponent],
+  imports: [FormsModule, CheckboxComponent, DatePickerComponent, IconButtonComponent],
   templateUrl: './task-item.component.html',
   styleUrl: './task-item.component.scss',
 })
@@ -19,6 +19,7 @@ export class TaskItemComponent {
   readonly remove = output<void>();
   readonly titleSave = output<string>();
   readonly notesSave = output<string | null>();
+  readonly dueDateSave = output<CalendarDate>();
 
   private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
   private readonly notesInput = viewChild<ElementRef<HTMLInputElement>>('notesInput');
@@ -59,7 +60,8 @@ export class TaskItemComponent {
       target.closest('.app-task-item__checkbox') ||
       target.closest('.app-task-item__actions') ||
       target.closest('.app-task-item__title-field') ||
-      target.closest('.app-task-item__notes-field')
+      target.closest('.app-task-item__notes-field') ||
+      target.closest('.app-task-item__due-date')
     ) {
       return;
     }
@@ -68,6 +70,10 @@ export class TaskItemComponent {
 
   protected onRemove(): void {
     this.remove.emit();
+  }
+
+  protected onDueDateSelect(date: CalendarDate): void {
+    this.dueDateSave.emit(date);
   }
 
   protected startEditingTitle(): void {

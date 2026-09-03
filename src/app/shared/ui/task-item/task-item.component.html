@@ -30,9 +30,12 @@
       }
     </div>
 
-    @if (task().dueDate) {
-      <span class="app-task-item__due-date">{{ task().dueDate | date: 'dd.MM.yyyy' }}</span>
-    }
+    <app-date-picker
+      class="app-task-item__due-date"
+      label="Fälligkeitsdatum ändern"
+      [value]="task().dueDate"
+      (dateSelect)="onDueDateSelect($event)"
+    />
 
     <div class="app-task-item__notes-field">
       @if (editingNotes()) {
