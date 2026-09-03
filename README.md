@@ -169,6 +169,15 @@ Angular zur Laufzeit injizierten Komponenten-Styles werden durch das
 `'unsafe-inline'` in `style-src` abgedeckt, wodurch die App ohne
 CSP-Verstöße lädt und vollständig gestylt gerendert wird.
 
+In `angular.json` ist dafür `optimization.styles.inlineCritical: false` für
+die Produktionskonfiguration gesetzt: Angulars Standardverhalten
+("Critical CSS Inlining") würde das nicht-kritische Stylesheet sonst per
+`<link rel="stylesheet" media="print" onload="this.media='all'">` laden –
+ein Inline-Event-Handler, den `script-src 'self'` ohne `'unsafe-inline'`
+blockiert, wodurch die App ungestylt bliebe. Mit `inlineCritical: false`
+wird das Stylesheet stattdessen als gewöhnlicher `<link rel="stylesheet">`
+ohne Inline-Handler eingebunden.
+
 ## Deployment (statisches Hosting)
 
 Da die App ausschließlich clientseitiges Routing nutzt (`provideRouter`
