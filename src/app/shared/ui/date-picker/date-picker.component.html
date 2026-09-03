@@ -1,0 +1,39 @@
+<div class="date-picker">
+  <button
+    #trigger
+    type="button"
+    class="date-picker__trigger"
+    [class.date-picker__trigger--placeholder]="value() === null"
+    [attr.aria-label]="label()"
+    aria-haspopup="dialog"
+    [attr.aria-expanded]="open()"
+    (click)="toggle()"
+  >
+    {{ displayValue() }}
+  </button>
+
+  @if (open()) {
+    <div
+      class="date-picker__popover"
+      role="dialog"
+      aria-modal="false"
+      [attr.aria-label]="label()"
+      (keydown)="onPopoverKeydown($event)"
+    >
+      <div class="date-picker__nav">
+        <app-icon-button ariaLabel="Vorheriger Monat" (pressed)="previousMonth()"
+          >‹</app-icon-button
+        >
+        <span class="date-picker__nav-label">{{ monthLabel() }}</span>
+        <app-icon-button ariaLabel="Nächster Monat" (pressed)="nextMonth()">›</app-icon-button>
+      </div>
+
+      <app-month-grid
+        [days]="days()"
+        [label]="gridLabel()"
+        [selected]="value()"
+        (daySelect)="onDaySelect($event)"
+      />
+    </div>
+  }
+</div>
