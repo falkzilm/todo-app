@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CalendarDate, Task, todayAsCalendarDate } from '../../../core/models/task.model';
+import { AnnouncerService } from '../../../core/services/announcer.service';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.component';
@@ -30,6 +31,7 @@ interface PendingUndo {
 })
 export class TasksPageComponent {
   private readonly taskStore = inject(TaskStoreService);
+  private readonly announcer = inject(AnnouncerService);
 
   private readonly titleInput = viewChild.required<ElementRef<HTMLInputElement>>('titleInput');
 
@@ -58,12 +60,18 @@ export class TasksPageComponent {
 
     this.showEmptyTitleHint = false;
     this.taskStore.add({ title, dueDate: todayAsCalendarDate() });
+    this.announcer.announce(`„${title}“ hinzugefügt.`);
     this.newTaskTitle = '';
     this.titleInput().nativeElement.focus();
   }
 
   protected toggleTask(id: string): void {
+    const task = this.taskStore.tasks().find((candidate) => candidate.id === id);
     this.taskStore.toggleCompleted(id);
+    if (task) {
+      const completed = !task.completed;
+      this.announcer.announce(`„${task.title}“ als ${completed ? 'erledigt' : 'offen'} markiert.`);
+    }
   }
 
   protected removeTask(id: string): void {

@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { getMonthGrid } from '../../../core/date/date-utils';
 import { createTask } from '../../../core/models/task.model';
+import { AnnouncerService } from '../../../core/services/announcer.service';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { HeutePageComponent } from './heute-page.component';
@@ -19,6 +20,7 @@ function createMockStore(
     todayTotalCount: signal(todayTotalCount),
     todayCompletedCount: signal(todayCompletedCount),
     todayCompletedTasks: signal(todayCompletedTasks),
+    toggleCompleted: () => undefined,
     remove: () => undefined,
     update: () => undefined,
   };
@@ -113,6 +115,48 @@ describe('HeutePageComponent', () => {
     expect(text).toContain('Heute fällig');
     expect(text).toContain('Überfällig');
     expect(text).not.toContain('Heute steht nichts an.');
+  });
+
+  describe('Live-Region-Ankündigungen', () => {
+    it('announces toggling a task via the live region', () => {
+      const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
+
+      TestBed.configureTestingModule({
+        imports: [HeutePageComponent],
+        providers: [
+          { provide: TaskStoreService, useValue: createMockStore([todayTask], []) },
+          { provide: STORAGE, useValue: createMockStorage() },
+        ],
+      });
+
+      const fixture = TestBed.createComponent(HeutePageComponent);
+      fixture.detectChanges();
+      const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
+
+      fixture.componentInstance['toggleTask'](todayTask.id);
+
+      expect(announceSpy).toHaveBeenCalledWith('„Heute fällig“ als erledigt markiert.');
+    });
+
+    it('announces removing a task via the live region', () => {
+      const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
+
+      TestBed.configureTestingModule({
+        imports: [HeutePageComponent],
+        providers: [
+          { provide: TaskStoreService, useValue: createMockStore([todayTask], []) },
+          { provide: STORAGE, useValue: createMockStorage() },
+        ],
+      });
+
+      const fixture = TestBed.createComponent(HeutePageComponent);
+      fixture.detectChanges();
+      const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
+
+      fixture.componentInstance['removeTask'](todayTask.id);
+
+      expect(announceSpy).toHaveBeenCalledWith('„Heute fällig“ gelöscht.');
+    });
   });
 
   describe('Tagesfortschritt', () => {

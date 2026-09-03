@@ -29,7 +29,7 @@
   } @else {
     <section class="heute-page__group" aria-label="Heute fällige Aufgaben">
       <h3 class="heute-page__group-title">Heute</h3>
-      <ul class="task-list">
+      <ul class="task-list" role="list" aria-label="Heute fällige Aufgaben">
         @for (task of todayTasks(); track task.id) {
           <li
             app-task-item
@@ -48,7 +48,7 @@
 
     <section class="heute-page__group" aria-label="Überfällige Aufgaben">
       <h3 class="heute-page__group-title">Überfällig</h3>
-      <ul class="task-list">
+      <ul class="task-list" role="list" aria-label="Überfällige Aufgaben">
         @for (task of overdueTasks(); track task.id) {
           <li
             app-task-item
@@ -93,7 +93,7 @@
       </h3>
 
       @if (completedExpanded()) {
-        <ul id="heute-completed-list" class="task-list">
+        <ul id="heute-completed-list" class="task-list" role="list" aria-label="Erledigte Aufgaben">
           @for (task of completedTasks(); track task.id) {
             <li
               app-task-item
