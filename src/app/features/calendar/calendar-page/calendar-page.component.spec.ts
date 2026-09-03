@@ -22,6 +22,7 @@ function createMockStore(
     toggleCompleted: () => undefined,
     remove: () => undefined,
     update: () => undefined,
+    add: (input) => createTask(input),
   };
 }
 
@@ -167,13 +168,98 @@ describe('CalendarPageComponent', () => {
       expect(fixture.nativeElement.textContent).toContain('Per Enter ausgewählt');
     });
 
-    it('shows an empty state with a hint to create a task for a day without tasks', () => {
+    it('shows an empty state for a day without tasks', () => {
       const fixture = setUp();
 
       expect(taskListItems(fixture)).toHaveLength(0);
       expect(
         fixture.nativeElement.querySelector('.calendar-page__empty-state')?.textContent,
-      ).toContain('Lege');
+      ).toContain('Keine Aufgaben');
+    });
+
+    function quickAddInput(fixture: ReturnType<typeof setUp>): HTMLInputElement {
+      return fixture.nativeElement.querySelector('.calendar-page__day input[name="newDayTask"]');
+    }
+
+    function quickAddForm(fixture: ReturnType<typeof setUp>): HTMLFormElement {
+      return fixture.nativeElement.querySelector('.calendar-page__day form');
+    }
+
+    /**
+     * NgModel registers itself with its parent form asynchronously (to avoid an
+     * ExpressionChangedAfterItHasBeenCheckedError), so the very first
+     * detectChanges() alone isn't enough for it to start reflecting model changes.
+     */
+    async function setUpStable(
+      taskSummaryByDate?: ReadonlyMap<CalendarDate, DayTaskSummary>,
+      tasks?: Task[],
+    ) {
+      TestBed.configureTestingModule({
+        imports: [CalendarPageComponent],
+        providers: [
+          { provide: TaskStoreService, useValue: createMockStore(taskSummaryByDate, tasks) },
+        ],
+      });
+
+      const fixture = TestBed.createComponent(CalendarPageComponent);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    async function enterQuickAddTitle(fixture: ReturnType<typeof setUp>, title: string) {
+      const input = quickAddInput(fixture);
+      input.value = title;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    it('adds a task with the selected day as due date via the quick-add form', async () => {
+      const otherDate = anotherDayThisMonth();
+      const fixture = await setUpStable();
+      const addSpy = vi.spyOn(TestBed.inject(TaskStoreService), 'add');
+
+      cellForDate(fixture, otherDate).click();
+      fixture.detectChanges();
+
+      await enterQuickAddTitle(fixture, 'Neue Aufgabe für den Tag');
+
+      quickAddForm(fixture).dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      expect(addSpy).toHaveBeenCalledWith({
+        title: 'Neue Aufgabe für den Tag',
+        dueDate: otherDate,
+      });
+    });
+
+    it('shows a hint instead of adding a task when the title is empty', async () => {
+      const fixture = await setUpStable();
+      const addSpy = vi.spyOn(TestBed.inject(TaskStoreService), 'add');
+
+      quickAddForm(fixture).dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      expect(addSpy).not.toHaveBeenCalled();
+      expect(fixture.nativeElement.querySelector('.task-form__hint')).not.toBeNull();
+    });
+
+    it('resets the quick-add field when the selected day changes', async () => {
+      const otherDate = anotherDayThisMonth();
+      const fixture = await setUpStable();
+
+      await enterQuickAddTitle(fixture, 'Angefangener Titel');
+      expect(quickAddInput(fixture).value).toBe('Angefangener Titel');
+
+      cellForDate(fixture, otherDate).click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(quickAddInput(fixture).value).toBe('');
     });
 
     it('toggling a task in the day list is backed by the shared task store', () => {
