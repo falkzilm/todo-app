@@ -9,6 +9,7 @@ describe('MonthGridComponent', () => {
     referenceDate: Date,
     today = '2026-09-02',
     taskSummaries?: ReadonlyMap<CalendarDate, DayTaskSummary>,
+    selected?: CalendarDate,
   ) {
     TestBed.configureTestingModule({
       imports: [MonthGridComponent],
@@ -20,6 +21,9 @@ describe('MonthGridComponent', () => {
     fixture.componentRef.setInput('today', today);
     if (taskSummaries) {
       fixture.componentRef.setInput('taskSummaries', taskSummaries);
+    }
+    if (selected) {
+      fixture.componentRef.setInput('selected', selected);
     }
     fixture.detectChanges();
 
@@ -151,6 +155,59 @@ describe('MonthGridComponent', () => {
 
     expect(cells[0].getAttribute('tabindex')).toBe('0');
     expect(active).toBe(cells[0]);
+  });
+
+  describe('day selection', () => {
+    const referenceDate = new Date(2026, 8, 1);
+
+    it('marks the selected day with a class and aria-selected', () => {
+      const fixture = setUp(referenceDate, '2026-09-02', undefined, '2026-09-05');
+
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      expect(cell.classList.contains('month-grid__day--selected')).toBe(true);
+      expect(cell.getAttribute('aria-selected')).toBe('true');
+
+      const otherCell = cellFor(fixture, referenceDate, '2026-09-02');
+      expect(otherCell.classList.contains('month-grid__day--selected')).toBe(false);
+      expect(otherCell.getAttribute('aria-selected')).toBeNull();
+    });
+
+    it('emits daySelect and moves the roving tabindex when a day is clicked', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const emitted: CalendarDate[] = [];
+      fixture.componentInstance.daySelect.subscribe((date) => emitted.push(date));
+
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      cell.click();
+      fixture.detectChanges();
+
+      expect(emitted).toEqual(['2026-09-05']);
+      expect(cell.getAttribute('tabindex')).toBe('0');
+    });
+
+    it('emits daySelect when Enter is pressed on a focused day', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const emitted: CalendarDate[] = [];
+      fixture.componentInstance.daySelect.subscribe((date) => emitted.push(date));
+
+      const cell = cellFor(fixture, referenceDate, '2026-09-02');
+      cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(emitted).toEqual(['2026-09-02']);
+    });
+
+    it('emits daySelect when Space is pressed on a focused day', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+      const emitted: CalendarDate[] = [];
+      fixture.componentInstance.daySelect.subscribe((date) => emitted.push(date));
+
+      const cell = cellFor(fixture, referenceDate, '2026-09-02');
+      cell.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(emitted).toEqual(['2026-09-02']);
+    });
   });
 
   describe('task indicators', () => {

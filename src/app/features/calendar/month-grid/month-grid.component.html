@@ -15,10 +15,13 @@
           class="month-grid__day"
           [class.month-grid__day--muted]="!day.inCurrentMonth"
           [class.month-grid__day--today]="isToday(day)"
+          [class.month-grid__day--selected]="isSelected(day)"
           role="gridcell"
           [tabindex]="isFocusable(day) ? 0 : -1"
           [attr.aria-label]="dayAriaLabel(day)"
           [attr.aria-current]="isToday(day) ? 'date' : null"
+          [attr.aria-selected]="isSelected(day) ? 'true' : null"
+          (click)="onClick(day)"
           (keydown)="onKeydown($event, day)"
         >
           <span class="month-grid__day-number">{{ day.dayOfMonth }}</span>

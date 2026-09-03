@@ -17,3 +17,53 @@
     margin-inline-start: auto;
   }
 }
+
+.calendar-page__layout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+.calendar-page__calendar,
+.calendar-page__day {
+  width: 100%;
+}
+
+.calendar-page__day-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.calendar-page__empty-state {
+  padding: var(--space-4) 0;
+  color: var(--color-text-muted);
+}
+
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+// Desktop: Kalender und Tagesliste stehen nebeneinander statt untereinander.
+@media (min-width: 640px) {
+  .calendar-page__layout {
+    flex-direction: row;
+  }
+
+  .calendar-page__calendar {
+    flex: 1 1 20rem;
+  }
+
+  .calendar-page__day {
+    flex: 1 1 16rem;
+  }
+}
