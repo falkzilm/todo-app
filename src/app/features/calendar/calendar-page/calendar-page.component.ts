@@ -5,7 +5,7 @@ import { CalendarDate, todayAsCalendarDate } from '../../../core/models/task.mod
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.component';
-import { MonthGridComponent } from '../month-grid/month-grid.component';
+import { MonthGridComponent } from '../../../shared/ui/month-grid/month-grid.component';
 
 @Component({
   selector: 'app-calendar-page',

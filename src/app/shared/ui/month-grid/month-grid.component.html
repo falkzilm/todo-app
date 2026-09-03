@@ -1,0 +1,44 @@
+<div class="month-grid" role="grid" [attr.aria-label]="label()">
+  <div class="month-grid__row month-grid__row--header" role="row">
+    @for (weekday of weekdays; track weekday.short) {
+      <div class="month-grid__weekday" role="columnheader" [attr.aria-label]="weekday.full">
+        {{ weekday.short }}
+      </div>
+    }
+  </div>
+
+  @for (week of weeks(); track $index) {
+    <div class="month-grid__row" role="row">
+      @for (day of week; track day.date) {
+        <div
+          #cell
+          class="month-grid__day"
+          [class.month-grid__day--muted]="!day.inCurrentMonth"
+          [class.month-grid__day--today]="isToday(day)"
+          [class.month-grid__day--selected]="isSelected(day)"
+          role="gridcell"
+          [tabindex]="isFocusable(day) ? 0 : -1"
+          [attr.aria-label]="dayAriaLabel(day)"
+          [attr.aria-current]="isToday(day) ? 'date' : null"
+          [attr.aria-selected]="isSelected(day) ? 'true' : null"
+          (click)="onClick(day)"
+          (keydown)="onKeydown($event, day)"
+        >
+          <span class="month-grid__day-number">{{ day.dayOfMonth }}</span>
+          @if (taskSummaryFor(day); as summary) {
+            @if (summary.openCount > 0) {
+              <span class="month-grid__indicator month-grid__indicator--open" aria-hidden="true">{{
+                summary.openCount
+              }}</span>
+            } @else if (summary.allCompleted) {
+              <span
+                class="month-grid__indicator month-grid__indicator--done"
+                aria-hidden="true"
+              ></span>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
