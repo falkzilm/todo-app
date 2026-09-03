@@ -206,6 +206,40 @@ describe('HeutePageComponent', () => {
 
       expect(updateSpy).toHaveBeenCalledWith(todayTask.id, { dueDate: '2026-09-12' });
     });
+
+    it('reschedules an overdue task via its quick-action buttons, without opening the calendar', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 8, 2));
+
+      const overdueTask = createTask({ title: 'Überfällig', dueDate: '2026-08-30' });
+      const store = createMockStore([], [overdueTask]);
+      const updateSpy = vi.fn();
+      store.update = updateSpy;
+
+      TestBed.configureTestingModule({
+        imports: [HeutePageComponent],
+        providers: [
+          { provide: TaskStoreService, useValue: store },
+          { provide: STORAGE, useValue: createMockStorage() },
+        ],
+      });
+
+      const fixture = TestBed.createComponent(HeutePageComponent);
+      fixture.detectChanges();
+
+      const quickDateButtons = Array.from(
+        fixture.nativeElement.querySelectorAll('.app-task-item__quick-date'),
+      ) as HTMLButtonElement[];
+      const todayButton = quickDateButtons.find((button) => button.textContent?.trim() === 'Heute');
+      expect(todayButton).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.date-picker__popover')).toBeNull();
+
+      todayButton?.click();
+
+      expect(updateSpy).toHaveBeenCalledWith(overdueTask.id, { dueDate: '2026-09-02' });
+
+      vi.useRealTimers();
+    });
   });
 
   describe('Erledigte Aufgaben', () => {

@@ -51,6 +51,27 @@ export function isSameCalendarDay(a: Date, b: Date): boolean {
   return toCalendarDate(a) === toCalendarDate(b);
 }
 
+export type QuickDueDateToken = 'today' | 'tomorrow' | 'nextWeek';
+
+const QUICK_DUE_DATE_OFFSETS: Record<QuickDueDateToken, number> = {
+  today: 0,
+  tomorrow: 1,
+  nextWeek: 7,
+};
+
+/**
+ * Resolves a quick due-date shortcut (e.g. "tomorrow") to a concrete calendar date,
+ * relative to `reference`. Adds days via `Date` arithmetic (not string manipulation
+ * on the `YYYY-MM-DD` value) so the result rolls over month and year boundaries
+ * correctly.
+ */
+export function resolveQuickDueDate(token: QuickDueDateToken, reference: Date): CalendarDate {
+  const offset = QUICK_DUE_DATE_OFFSETS[token];
+  return toCalendarDate(
+    new Date(reference.getFullYear(), reference.getMonth(), reference.getDate() + offset),
+  );
+}
+
 /**
  * Groups items by calendar date, e.g. tasks by due date. Items for which `dateOf`
  * returns `null` are omitted; insertion order is preserved within each group.
