@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   input,
+  output,
   signal,
   viewChildren,
 } from '@angular/core';
@@ -54,6 +55,9 @@ export class MonthGridComponent {
   readonly label = input.required<string>();
   readonly today = input<CalendarDate>(todayAsCalendarDate());
   readonly taskSummaries = input<ReadonlyMap<CalendarDate, DayTaskSummary>>(new Map());
+  readonly selected = input<CalendarDate | null>(null);
+
+  readonly daySelect = output<CalendarDate>();
 
   protected readonly weekdays = WEEKDAYS;
 
@@ -93,6 +97,10 @@ export class MonthGridComponent {
     return day.date === this.today();
   }
 
+  protected isSelected(day: MonthGridDay): boolean {
+    return day.date === this.selected();
+  }
+
   protected dayAriaLabel(day: MonthGridDay): string {
     const date = new Date(`${day.date}T00:00:00`);
     const label = date.toLocaleDateString('de-DE', {
@@ -128,7 +136,17 @@ export class MonthGridComponent {
     return summary.allCompleted ? 'alle Aufgaben erledigt' : null;
   }
 
+  protected onClick(day: MonthGridDay): void {
+    this.selectDay(day);
+  }
+
   protected onKeydown(event: KeyboardEvent, day: MonthGridDay): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.selectDay(day);
+      return;
+    }
+
     const delta = ARROW_KEY_DELTAS[event.key];
     if (delta === undefined) {
       return;
@@ -145,5 +163,11 @@ export class MonthGridComponent {
     const nextDay = days[nextIndex];
     this.focusedDate.set(nextDay.date);
     this.cellElements()[nextIndex]?.nativeElement.focus();
+  }
+
+  /** Selecting a day also moves the roving tabindex to it, so keyboard navigation continues from the clicked/activated cell. */
+  private selectDay(day: MonthGridDay): void {
+    this.focusedDate.set(day.date);
+    this.daySelect.emit(day.date);
   }
 }

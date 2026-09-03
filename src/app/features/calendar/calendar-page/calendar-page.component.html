@@ -7,4 +7,36 @@
   <button type="button" class="calendar-nav__today" (click)="goToToday()">Heute</button>
 </div>
 
-<app-month-grid [days]="days()" [label]="gridLabel()" [taskSummaries]="taskSummaries()" />
+<div class="calendar-page__layout">
+  <app-month-grid
+    class="calendar-page__calendar"
+    [days]="days()"
+    [label]="gridLabel()"
+    [taskSummaries]="taskSummaries()"
+    [selected]="selectedDate()"
+    (daySelect)="selectDay($event)"
+  />
+
+  <section class="calendar-page__day" [attr.aria-label]="'Aufgaben für ' + selectedDateLabel()">
+    <h3 class="calendar-page__day-title">{{ selectedDateLabel() }}</h3>
+
+    @if (selectedDayTasks().length === 0) {
+      <p class="calendar-page__empty-state">
+        Keine Aufgaben für diesen Tag. Lege in der Aufgabenübersicht eine neue Aufgabe mit diesem
+        Datum an.
+      </p>
+    } @else {
+      <ul class="task-list">
+        @for (task of selectedDayTasks(); track task.id) {
+          <app-task-item
+            [task]="task"
+            (toggleCompleted)="toggleTask(task.id)"
+            (remove)="removeTask(task.id)"
+            (titleSave)="saveTitle(task.id, $event)"
+            (notesSave)="saveNotes(task.id, $event)"
+          />
+        }
+      </ul>
+    }
+  </section>
+</div>

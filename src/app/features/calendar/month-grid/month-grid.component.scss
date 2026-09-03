@@ -39,7 +39,7 @@
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
     color: var(--color-text);
-    cursor: default;
+    cursor: pointer;
 
     &--muted {
       color: var(--color-text-muted);
@@ -49,6 +49,14 @@
       background-color: var(--color-accent);
       color: var(--color-accent-contrast);
       font-weight: var(--font-weight-semibold);
+
+      &.month-grid__day--selected {
+        box-shadow: inset 0 0 0 2px var(--color-accent-contrast);
+      }
+    }
+
+    &--selected {
+      box-shadow: inset 0 0 0 2px var(--color-accent);
     }
 
     &:focus-visible {
