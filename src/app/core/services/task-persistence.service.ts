@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { createDemoTasks } from '../models/demo-tasks';
-import { Task } from '../models/task.model';
+import { Task, clampTaskTextLengths, isValidPersistedTask } from '../models/task.model';
 import { STORAGE } from './storage.token';
 
 const STORAGE_KEY = 'todo-app.tasks';
@@ -56,7 +56,26 @@ export function migrateToCurrentSchema(raw: unknown): PersistedStateV1 {
     return { version: CURRENT_SCHEMA_VERSION, tasks: [] };
   }
 
-  return { version: CURRENT_SCHEMA_VERSION, tasks: data['tasks'] as Task[] };
+  return { version: CURRENT_SCHEMA_VERSION, tasks: sanitizeTasks(data['tasks']) };
+}
+
+/**
+ * Validates each persisted task against the `Task` schema and clamps text
+ * lengths, dropping (and logging) any entry that doesn't match instead of
+ * letting manipulated or corrupted localStorage data reach the app.
+ */
+function sanitizeTasks(rawTasks: unknown[]): Task[] {
+  const tasks: Task[] = [];
+
+  for (const rawTask of rawTasks) {
+    if (isValidPersistedTask(rawTask)) {
+      tasks.push(clampTaskTextLengths(rawTask));
+    } else {
+      console.warn('Discarding invalid persisted task.', rawTask);
+    }
+  }
+
+  return tasks;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -82,7 +101,10 @@ export class TaskPersistenceService {
   }
 
   save(tasks: Task[]): void {
-    const state: PersistedStateV1 = { version: CURRENT_SCHEMA_VERSION, tasks };
+    const state: PersistedStateV1 = {
+      version: CURRENT_SCHEMA_VERSION,
+      tasks: tasks.map(clampTaskTextLengths),
+    };
     this.storage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 }
