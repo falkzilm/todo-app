@@ -1,10 +1,22 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { CalendarDate, todayAsCalendarDate } from '../../../core/models/task.model';
+import { DayTaskSummary, TaskStoreService } from '../../../core/services/task-store.service';
 import { CalendarPageComponent } from './calendar-page.component';
 
+function createMockStore(
+  taskSummaryByDate: ReadonlyMap<CalendarDate, DayTaskSummary> = new Map(),
+): Partial<TaskStoreService> {
+  return {
+    taskSummaryByDate: signal(taskSummaryByDate),
+  };
+}
+
 describe('CalendarPageComponent', () => {
-  function setUp() {
+  function setUp(taskSummaryByDate?: ReadonlyMap<CalendarDate, DayTaskSummary>) {
     TestBed.configureTestingModule({
       imports: [CalendarPageComponent],
+      providers: [{ provide: TaskStoreService, useValue: createMockStore(taskSummaryByDate) }],
     });
 
     const fixture = TestBed.createComponent(CalendarPageComponent);
@@ -70,5 +82,17 @@ describe('CalendarPageComponent', () => {
     todayButton.click();
     fixture.detectChanges();
     expect(label()).toBe(initialLabel);
+  });
+
+  it('passes the task summaries from the store through to the month grid', () => {
+    const today = todayAsCalendarDate();
+    const fixture = setUp(new Map([[today, { openCount: 2, allCompleted: false }]]));
+
+    const todayCell = (
+      Array.from(fixture.nativeElement.querySelectorAll('[role="gridcell"]')) as HTMLElement[]
+    ).find((cell) => cell.classList.contains('month-grid__day--today'))!;
+
+    expect(todayCell.querySelector('.month-grid__indicator--open')?.textContent?.trim()).toBe('2');
+    expect(todayCell.getAttribute('aria-label')).toContain('2 offene Aufgaben');
   });
 });

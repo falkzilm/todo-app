@@ -1,9 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { getMonthGrid } from '../../../core/date/date-utils';
+import { CalendarDate } from '../../../core/models/task.model';
+import { DayTaskSummary } from '../../../core/services/task-store.service';
 import { MonthGridComponent } from './month-grid.component';
 
 describe('MonthGridComponent', () => {
-  function setUp(referenceDate: Date, today = '2026-09-02') {
+  function setUp(
+    referenceDate: Date,
+    today = '2026-09-02',
+    taskSummaries?: ReadonlyMap<CalendarDate, DayTaskSummary>,
+  ) {
     TestBed.configureTestingModule({
       imports: [MonthGridComponent],
     });
@@ -12,9 +18,24 @@ describe('MonthGridComponent', () => {
     fixture.componentRef.setInput('days', getMonthGrid(referenceDate));
     fixture.componentRef.setInput('label', 'Kalender September 2026');
     fixture.componentRef.setInput('today', today);
+    if (taskSummaries) {
+      fixture.componentRef.setInput('taskSummaries', taskSummaries);
+    }
     fixture.detectChanges();
 
     return fixture;
+  }
+
+  function cellFor(
+    fixture: ReturnType<typeof setUp>,
+    referenceDate: Date,
+    date: CalendarDate,
+  ): HTMLElement {
+    const cells = Array.from(
+      fixture.nativeElement.querySelectorAll('[role="gridcell"]'),
+    ) as HTMLElement[];
+    const index = getMonthGrid(referenceDate).findIndex((day) => day.date === date);
+    return cells[index];
   }
 
   it('renders 42 day cells, labeled as a grid for screen readers', () => {
@@ -130,5 +151,57 @@ describe('MonthGridComponent', () => {
 
     expect(cells[0].getAttribute('tabindex')).toBe('0');
     expect(active).toBe(cells[0]);
+  });
+
+  describe('task indicators', () => {
+    const referenceDate = new Date(2026, 8, 1);
+
+    it('shows a count badge for days with open tasks', () => {
+      const fixture = setUp(
+        referenceDate,
+        '2026-09-02',
+        new Map([['2026-09-05', { openCount: 3, allCompleted: false }]]),
+      );
+
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+      const badge = cell.querySelector('.month-grid__indicator--open');
+
+      expect(badge?.textContent?.trim()).toBe('3');
+      expect(cell.querySelector('.month-grid__indicator--done')).toBeNull();
+    });
+
+    it('marks the aria-label of a day with open tasks for screen readers', () => {
+      const fixture = setUp(
+        referenceDate,
+        '2026-09-02',
+        new Map([['2026-09-05', { openCount: 3, allCompleted: false }]]),
+      );
+
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+
+      expect(cell.getAttribute('aria-label')).toContain('3 offene Aufgaben');
+    });
+
+    it('shows a dedicated indicator, distinct from the open-task badge, for fully completed days', () => {
+      const fixture = setUp(
+        referenceDate,
+        '2026-09-02',
+        new Map([['2026-09-05', { openCount: 0, allCompleted: true }]]),
+      );
+
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+
+      expect(cell.querySelector('.month-grid__indicator--done')).not.toBeNull();
+      expect(cell.querySelector('.month-grid__indicator--open')).toBeNull();
+      expect(cell.getAttribute('aria-label')).toContain('alle Aufgaben erledigt');
+    });
+
+    it('shows no indicator for days without any tasks', () => {
+      const fixture = setUp(referenceDate, '2026-09-02');
+
+      const cell = cellFor(fixture, referenceDate, '2026-09-05');
+
+      expect(cell.querySelector('.month-grid__indicator')).toBeNull();
+    });
   });
 });

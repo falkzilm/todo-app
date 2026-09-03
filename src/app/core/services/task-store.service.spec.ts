@@ -354,6 +354,68 @@ describe('TaskStoreService', () => {
     });
   });
 
+  describe('taskSummaryByDate', () => {
+    it('counts open tasks per date and marks the day as not fully completed', () => {
+      store.add({ title: 'Eins', dueDate: '2026-09-05' });
+      store.add({ title: 'Zwei', dueDate: '2026-09-05' });
+      store.add({ title: 'Anderer Tag', dueDate: '2026-09-06' });
+
+      const summary = store.taskSummaryByDate().get('2026-09-05');
+
+      expect(summary).toEqual({ openCount: 2, allCompleted: false });
+    });
+
+    it('marks a day as fully completed once every task due that day is done', () => {
+      const task = store.add({ title: 'Erledigt', dueDate: '2026-09-05' });
+      store.toggleCompleted(task.id);
+
+      expect(store.taskSummaryByDate().get('2026-09-05')).toEqual({
+        openCount: 0,
+        allCompleted: true,
+      });
+    });
+
+    it('reflects a mix of open and completed tasks on the same day as still open', () => {
+      const task = store.add({ title: 'Erledigt', dueDate: '2026-09-05' });
+      store.add({ title: 'Offen', dueDate: '2026-09-05' });
+      store.toggleCompleted(task.id);
+
+      expect(store.taskSummaryByDate().get('2026-09-05')).toEqual({
+        openCount: 1,
+        allCompleted: false,
+      });
+    });
+
+    it('omits dates without any tasks', () => {
+      store.add({ title: 'Aufgabe', dueDate: '2026-09-05' });
+
+      expect(store.taskSummaryByDate().has('2026-09-06')).toBe(false);
+    });
+
+    it('omits tasks without a due date', () => {
+      store.add({ title: 'Ohne Datum' });
+
+      expect(store.taskSummaryByDate().size).toBe(0);
+    });
+
+    it('updates immediately when a task is added, toggled or removed', () => {
+      const task = store.add({ title: 'Aufgabe', dueDate: '2026-09-05' });
+      expect(store.taskSummaryByDate().get('2026-09-05')).toEqual({
+        openCount: 1,
+        allCompleted: false,
+      });
+
+      store.toggleCompleted(task.id);
+      expect(store.taskSummaryByDate().get('2026-09-05')).toEqual({
+        openCount: 0,
+        allCompleted: true,
+      });
+
+      store.remove(task.id);
+      expect(store.taskSummaryByDate().has('2026-09-05')).toBe(false);
+    });
+  });
+
   describe('todayTasks', () => {
     it('returns tasks due today', () => {
       const today = todayAsCalendarDate();

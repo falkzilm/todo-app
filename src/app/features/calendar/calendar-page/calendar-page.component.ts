@@ -1,5 +1,6 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { getMonthGrid } from '../../../core/date/date-utils';
+import { TaskStoreService } from '../../../core/services/task-store.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import { MonthGridComponent } from '../month-grid/month-grid.component';
 
@@ -11,6 +12,10 @@ import { MonthGridComponent } from '../month-grid/month-grid.component';
   styleUrl: './calendar-page.component.scss',
 })
 export class CalendarPageComponent {
+  private readonly taskStore = inject(TaskStoreService);
+
+  protected readonly taskSummaries = this.taskStore.taskSummaryByDate;
+
   protected readonly referenceDate = signal(new Date());
 
   protected readonly monthLabel = computed(() =>

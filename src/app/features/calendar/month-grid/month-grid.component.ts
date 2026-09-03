@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { MonthGridDay } from '../../../core/date/date-utils';
 import { CalendarDate, todayAsCalendarDate } from '../../../core/models/task.model';
+import { DayTaskSummary } from '../../../core/services/task-store.service';
 
 const DAYS_PER_WEEK = 7;
 
@@ -38,7 +39,9 @@ const ARROW_KEY_DELTAS: Readonly<Record<string, number>> = {
 /**
  * Reine Darstellungskomponente für ein Monatsraster (6x7 Tage). Kennt keine
  * Aufgabenlogik; sie erhält die Tage fertig berechnet (siehe `getMonthGrid`)
- * und stellt sie als barrierefreies Grid mit Roving-Tabindex dar.
+ * sowie optionale Aufgaben-Indikatoren pro Tag fertig aggregiert (siehe
+ * `TaskStoreService#taskSummaryByDate`) und stellt beides als barrierefreies
+ * Grid mit Roving-Tabindex dar.
  */
 @Component({
   selector: 'app-month-grid',
@@ -50,6 +53,7 @@ export class MonthGridComponent {
   readonly days = input.required<readonly MonthGridDay[]>();
   readonly label = input.required<string>();
   readonly today = input<CalendarDate>(todayAsCalendarDate());
+  readonly taskSummaries = input<ReadonlyMap<CalendarDate, DayTaskSummary>>(new Map());
 
   protected readonly weekdays = WEEKDAYS;
 
@@ -97,7 +101,31 @@ export class MonthGridComponent {
       month: 'long',
       year: 'numeric',
     });
-    return this.isToday(day) ? `${label}, heute` : label;
+    const parts = [this.isToday(day) ? `${label}, heute` : label];
+
+    const summaryLabel = this.taskSummaryAriaLabel(day);
+    if (summaryLabel !== null) {
+      parts.push(summaryLabel);
+    }
+
+    return parts.join(', ');
+  }
+
+  protected taskSummaryFor(day: MonthGridDay): DayTaskSummary | undefined {
+    return this.taskSummaries().get(day.date);
+  }
+
+  private taskSummaryAriaLabel(day: MonthGridDay): string | null {
+    const summary = this.taskSummaryFor(day);
+    if (summary === undefined) {
+      return null;
+    }
+
+    if (summary.openCount > 0) {
+      return summary.openCount === 1 ? '1 offene Aufgabe' : `${summary.openCount} offene Aufgaben`;
+    }
+
+    return summary.allCompleted ? 'alle Aufgaben erledigt' : null;
   }
 
   protected onKeydown(event: KeyboardEvent, day: MonthGridDay): void {

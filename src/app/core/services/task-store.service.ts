@@ -8,6 +8,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { groupByCalendarDate } from '../date/date-utils';
 import { createDemoTasks } from '../models/demo-tasks';
 import {
   CalendarDate,
@@ -23,6 +24,13 @@ export interface UpdateTaskInput {
   title?: string;
   notes?: string | null;
   dueDate?: CalendarDate | null;
+}
+
+/** Aggregated task state for a single calendar day, e.g. for the calendar's day indicators. */
+export interface DayTaskSummary {
+  readonly openCount: number;
+  /** `true` only when the day has at least one task and all of them are completed. */
+  readonly allCompleted: boolean;
 }
 
 /** Time to wait after the last change before persisting, so bursts of edits result in one write. */
@@ -220,6 +228,19 @@ export class TaskStoreService {
   tasksForDate(date: CalendarDate): Signal<Task[]> {
     return computed(() => this.tasks().filter((task) => task.dueDate === date));
   }
+
+  /** Per-day task summaries (open count, all-completed flag), for the calendar's day indicators. */
+  readonly taskSummaryByDate: Signal<ReadonlyMap<CalendarDate, DayTaskSummary>> = computed(() => {
+    const grouped = groupByCalendarDate(this.tasks(), (task) => task.dueDate);
+    const summaries = new Map<CalendarDate, DayTaskSummary>();
+
+    for (const [date, tasks] of grouped) {
+      const openCount = tasks.filter((task) => !task.completed).length;
+      summaries.set(date, { openCount, allCompleted: openCount === 0 });
+    }
+
+    return summaries;
+  });
 
   private applyUpdate(task: Task, id: string, changes: UpdateTaskInput): Task {
     if (task.id !== id) {
