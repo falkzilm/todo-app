@@ -18,6 +18,7 @@ Alle Daten liegen ausschließlich im Browser, es gibt kein Backend.
 - [Design-Prinzipien und Design-Tokens](#design-prinzipien-und-design-tokens)
 - [Barrierefreiheit](#barrierefreiheit)
 - [Sicherheit](#sicherheit)
+- [Performance und Bundle-Budget](#performance-und-bundle-budget)
 - [Deployment (statisches Hosting)](#deployment-statisches-hosting)
 - [Bekannte Grenzen und offene Fragen](#bekannte-grenzen-und-offene-fragen)
 
@@ -465,6 +466,62 @@ ein Inline-Event-Handler, den `script-src 'self'` ohne `'unsafe-inline'`
 blockiert, wodurch die App ungestylt bliebe. Mit `inlineCritical: false`
 wird das Stylesheet stattdessen als gewöhnlicher `<link rel="stylesheet">`
 ohne Inline-Handler eingebunden.
+
+## Performance und Bundle-Budget
+
+Damit eine bewusst minimalistische App wie diese nicht unbemerkt über die Zeit
+wächst, sind in `angular.json` (Produktionskonfiguration) Größenbudgets
+hinterlegt, die den Build ab einem `maximumError`-Schwellwert fehlschlagen
+lassen (`ng build` bricht mit Exit-Code ≠ 0 ab):
+
+| Budget-Typ         | Warnung | Fehler | Betrifft                                                        |
+| ------------------ | ------- | ------ | ---------------------------------------------------------------- |
+| `initial`          | 320 kB  | 450 kB | Summe aller initial geladenen JS-/CSS-Dateien (Raw-Size)          |
+| `anyComponentStyle` | 3 kB    | 5 kB   | Kompiliertes Stylesheet einer einzelnen Komponente                |
+
+Die Werte orientieren sich an den tatsächlichen Größen und lassen bewusst nur
+moderaten Spielraum für organisches Wachstum, statt der sehr weiten
+CLI-Standardwerte (500 kB/1 MB bzw. 4 kB/8 kB), die bei dieser kleinen App
+Verdopplungen unbemerkt durchließen.
+
+Aktueller Stand eines Produktions-Builds (`npm run build`, Angular
+`21.2.22`, ungzippt/"Raw size"):
+
+```
+Initial chunk files   | Names               |  Raw size | Estimated transfer size
+chunk-622DW6YV.js     | -                   | 150.90 kB |                43.96 kB
+chunk-QIWV3FMO.js     | -                   |  88.25 kB |                22.24 kB
+polyfills-5CFQRCPP.js | polyfills           |  34.59 kB |                11.33 kB
+main-KGJAKJB3.js      | main                |   3.73 kB |                 1.36 kB
+styles-UGZUCUP7.css   | styles              |   2.80 kB |               814 bytes
+chunk-44AGDEVN.js     | -                   | 799 bytes |               799 bytes
+
+                      | Initial total       | 281.06 kB |                80.51 kB
+```
+
+Das initiale Bundle liegt damit bei rund 281 kB und damit unter der
+320-kB-Warnschwelle bzw. deutlich unter der 450-kB-Fehlerschwelle. Die größte
+kompilierte Komponenten-Stylesheet (`task-item.component.scss`) liegt bei
+rund 2.46 kB und damit unter dem 3-kB/5-kB-Budget für `anyComponentStyle`.
+
+### Lazy Loading
+
+Die beiden über die Navigation erreichbaren Feature-Routen werden per
+`loadChildren`-Dynamic-Import lazy geladen (`src/app/app.routes.ts`):
+
+```ts
+{ path: 'heute', loadChildren: () => import('./features/heute/heute.routes').then(...) },
+{ path: 'kalender', loadChildren: () => import('./features/calendar/calendar.routes').then(...) },
+```
+
+Dadurch landet Kalender-spezifischer Code (u. a. `CalendarPageComponent`,
+`MonthGridComponent`) nicht im initialen Bundle, sondern in einem eigenen
+Lazy-Chunk (`calendar-routes`, ca. 7.05 kB Raw-Size / 2.31 kB Transfer-Size
+laut obigem Build), der erst beim Navigieren zu `/kalender` nachgeladen wird.
+Analog gilt das für `/heute` (`heute-routes`-Chunk). Ein zusätzliches
+`loadComponent` innerhalb der jeweiligen Routen-Datei wäre hier kein
+weiterer Gewinn: Jede Route hat nur eine einzige Seiten-Komponente, sodass
+das Splitting bereits auf Routen-Ebene vollständig greift.
 
 ## Deployment (statisches Hosting)
 
