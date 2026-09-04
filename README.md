@@ -532,6 +532,46 @@ Analog gilt das für `/heute` (`heute-routes`-Chunk). Ein zusätzliches
 weiterer Gewinn: Jede Route hat nur eine einzige Seiten-Komponente, sodass
 das Splitting bereits auf Routen-Ebene vollständig greift.
 
+## CI/CD (GitHub Actions)
+
+Die Pipeline liegt in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+und läuft bei jedem Push sowie jedem Pull Request auf vier Jobs:
+
+- **Lint** – `npm run lint` (ESLint inkl. `angular-eslint`, siehe
+  `eslint.config.js`).
+- **Test** – `npm test -- --watch=false` (Vitest, headless über `jsdom`,
+  siehe Abschnitt „Tests" oben).
+- **Build** – `npm run build -- --base-href=/<repo>/` (Produktions-Build,
+  siehe Abschnitt „Produktions-Build" oben) plus SPA-Fallback (`404.html`,
+  analog zu `scripts/deploy-static.sh`); das Ergebnis wird als
+  Workflow-Artefakt (`dist`) hochgeladen.
+
+Alle drei Jobs laufen unabhängig voneinander und unabhängig vom Branch – ein
+fehlerhafter Pull Request wird also unabhängig vom Zielbranch durch
+fehlschlagende Checks sichtbar.
+
+- **Deploy** – veröffentlicht den Build-Artefakt-Inhalt über
+  [`actions/deploy-pages`](https://github.com/actions/deploy-pages) auf
+  GitHub Pages. Dieser Job läuft ausschließlich, wenn **alle drei** Jobs
+  (Lint/Test/Build) erfolgreich waren **und** der Trigger ein Push auf
+  `main` ist (`if: github.ref == 'refs/heads/main' && github.event_name ==
+  'push'`) – für Pull Requests und alle anderen Branches entfällt er
+  komplett. So wird nur ein bereits geprüfter Stand von `main`
+  veröffentlicht.
+
+Das Deployment nutzt die native GitHub-Pages-Integration (Quelle „GitHub
+Actions", nicht der klassische `gh-pages`-Branch): Es sind keine Secrets
+nötig, die Berechtigung läuft über den kurzlebigen `id-token` des Workflows
+(`permissions: pages: write, id-token: write` im `deploy`-Job).
+
+> **Einmalige manuelle Voraussetzung:** Damit der `deploy`-Job tatsächlich
+> etwas veröffentlicht, muss in den Repository-Einstellungen unter
+> **Settings → Pages → Build and deployment → Source** einmalig „GitHub
+> Actions" ausgewählt werden. Das ist eine reine Repository-Konfiguration
+> und kann nicht durch den Workflow selbst gesetzt werden. Ist die Quelle
+> einmal gesetzt, veröffentlicht jeder Push auf `main` automatisch die
+> aktuelle Version unter `https://<user>.github.io/<repo>/`.
+
 ## Deployment (statisches Hosting)
 
 ```bash
@@ -592,19 +632,27 @@ Ziel-Host hochgeladen werden.
 
 ### Beispiel: GitHub Pages
 
+Für dieses Repository läuft die Veröffentlichung auf GitHub Pages
+automatisiert über GitHub Actions bei jedem Push auf `main` (siehe
+Abschnitt „CI/CD (GitHub Actions)" oben) – die folgenden Schritte sind dafür
+**nicht** nötig und dienen nur als manuelle Alternative (z. B. lokal zum
+Testen oder für ein Repository ohne GitHub-Actions-Pipeline):
+
 ```bash
 npm run deploy:static -- /todo-app/
 npx gh-pages -d dist/todo-app/browser
 ```
 
 `gh-pages` veröffentlicht den Ordnerinhalt (inkl. `404.html`) auf dem
-`gh-pages`-Branch des Repositories. Der `base-href` muss dabei zum
+`gh-pages`-Branch des Repositories – ein anderer Mechanismus als die
+CI-Pipeline, die den `gh-pages`-Branch nicht verwendet, sondern direkt über
+`actions/deploy-pages` ausliefert. Der `base-href` muss dabei zum
 Repository-Namen passen, unter dem GitHub Pages die Seite ausliefert
 (`https://<user>.github.io/<repo>/`). Andere Hosting-Ziele (internes Nginx,
 Netlify, S3 + CDN, ...) funktionieren analog: `base-href` passend zum
 Ziel-Unterpfad setzen und den Inhalt von `dist/todo-app/browser` inkl.
-SPA-Fallback-Konfiguration des jeweiligen Hosts ausliefern. Das konkrete
-Hosting-Ziel ist für dieses Projekt noch offen (siehe unten).
+SPA-Fallback-Konfiguration des jeweiligen Hosts ausliefern. Das
+Deployment-Skript ist bewusst hosting-neutral gehalten.
 
 ## Bekannte Grenzen und offene Fragen
 
@@ -629,9 +677,11 @@ Offene Produktfragen:
   ausschließlich in den Templates (nicht im TypeScript-Code) hinterlegt.
   Offen: Soll die Anwendung von Beginn an mit `@angular/localize`
   i18n-fähig gebaut werden?
-- **Hosting-Ziel:** Das konkrete Hosting-Ziel für ein Deployment (internes
-  Nginx, Netlify, GitHub Pages, S3 + CDN, ...) ist noch nicht festgelegt;
-  das Deployment-Skript ist deshalb bewusst hosting-neutral gehalten (siehe
+- **Hosting-Ziel:** Für das automatisierte Deployment ist mit dieser Story
+  GitHub Pages über GitHub Actions festgelegt (siehe Abschnitt „CI/CD
+  (GitHub Actions)" oben). Das Deployment-Skript selbst bleibt bewusst
+  hosting-neutral gehalten, für andere bzw. manuelle Hosting-Ziele (internes
+  Nginx, Netlify, S3 + CDN, ...) (siehe
   [Deployment](#deployment-statisches-hosting)).
 - **Datepicker-Fokus-Trap:** Das Datumsauswahl-Popover fängt den
   Tab-Fokus nicht ein (siehe
