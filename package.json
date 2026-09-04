@@ -13,8 +13,8 @@
     "test": "ng test",
     "a11y": "ng test --include=\"src/**/*.a11y.spec.ts\" --watch=false",
     "lint": "ng lint",
-    "pree2e": "playwright install --with-deps chromium",
     "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
     "format": "prettier --write \"src/**/*.{ts,html,scss}\"",
     "deploy:static": "bash scripts/deploy-static.sh"
   },
