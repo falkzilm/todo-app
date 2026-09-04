@@ -41,3 +41,9 @@ Thumbs.db
 
 # Local scratch files
 check-touch.mjs
+
+# Playwright
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache

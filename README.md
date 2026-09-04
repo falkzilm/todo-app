@@ -100,6 +100,41 @@ aktuellen und künftigen Komponenten) `transition`/`animation` per
 `@media (prefers-reduced-motion: reduce)`, statt dies einzeln pro Komponente
 nachzuziehen.
 
+## E2E-Tests (DEMOPROJEK-52)
+
+```bash
+npm run e2e
+```
+
+Führt [Playwright](https://playwright.dev/) headless gegen einen von
+Playwright selbst gestarteten `ng serve` aus (`webServer` in
+`playwright.config.ts`, Port `4399`); es ist kein manueller Setup-Schritt
+nötig. Die Spezifikationen liegen unter `e2e/` (außerhalb der
+TypeScript-Scopes von `ng build`/`ng test`/`ng lint`, siehe
+`tsconfig*.json` bzw. `angular.json`).
+
+Abgedeckte Kernflüsse (`e2e/task-flows.spec.ts`):
+
+- Aufgabe anlegen
+- Aufgabe abhaken
+- Persistenz einer (abgehakten) Aufgabe über einen Reload
+- Tag im Kalender auswählen und eine Aufgabe darüber auf einen anderen Tag
+  umplanen
+
+Jeder Test startet über den Helper `gotoFresh` (`e2e/support.ts`) mit einem
+explizit auf einen leeren Zustand gesetzten `localStorage`-Eintrag
+(`todo-app.tasks`). Das ist nötig, weil die Persistenz-Schicht nur beim
+allerersten Laden (noch nie gespeicherter Zustand) Demo-Aufgaben einsät –
+ohne das explizite Zurücksetzen würde der Startzustand eines Tests vom
+Ergebnis vorheriger Testläufe abhängen. Dadurch sind die Tests voneinander
+unabhängig und wiederholbar grün.
+
+Die Selektoren nutzen durchgehend ARIA-Rollen/-Labels
+(`getByRole('checkbox' | 'button' | 'gridcell' | 'dialog' | 'region' | 'listitem', ...)`)
+statt CSS-Klassen oder Test-IDs und bauen damit auf der unter
+["Barrierefreiheit"](#barrierefreiheit) dokumentierten Accessibility-Semantik
+der App auf.
+
 ## Produktions-Build
 
 ```bash
