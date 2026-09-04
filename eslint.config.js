@@ -80,7 +80,12 @@ module.exports = defineConfig([
       "@angular-eslint/component-selector": [
         "error",
         {
-          type: "element",
+          // "attribute" zusätzlich zu "element" erlaubt, damit Komponenten wie
+          // TaskItemComponent per Attribut-Selektor auf einem semantisch
+          // vorgegebenen Host-Tag (z. B. <li app-task-item>) sitzen können,
+          // statt die Tag-Struktur (hier: direktes <li>-Kind einer <ul>) durch
+          // ein eigenes Custom-Element zu brechen.
+          type: ["element", "attribute"],
           prefix: "app",
           style: "kebab-case",
         },

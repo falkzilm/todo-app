@@ -41,14 +41,15 @@
     } @else {
       <ul class="task-list" role="list" [attr.aria-label]="'Aufgaben für ' + selectedDateLabel()">
         @for (task of selectedDayTasks(); track task.id) {
-          <app-task-item
+          <li
+            app-task-item
             [task]="task"
             (toggleCompleted)="toggleTask(task.id)"
             (remove)="removeTask(task.id)"
             (titleSave)="saveTitle(task.id, $event)"
             (notesSave)="saveNotes(task.id, $event)"
             (dueDateSave)="saveDueDate(task.id, $event)"
-          />
+          ></li>
         }
       </ul>
     }

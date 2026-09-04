@@ -6,7 +6,6 @@ name: CI
 # Job "deploy" unten sowie README.md, Abschnitt "CI/CD (GitHub Actions)").
 on:
   push:
-    branches: [main]
   pull_request:
 
 # Restriktive Default-Rechte fuer den GITHUB_TOKEN; der deploy-Job hebt die
