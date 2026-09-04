@@ -1,0 +1,130 @@
+name: CI
+
+# Lint, Test und Build laufen bei jedem Push und jedem Pull Request, damit
+# fehlerhafte Aenderungen frueh auffallen. Das Deployment auf GitHub Pages
+# laeuft ausschliesslich zusaetzlich dazu und nur auf dem main-Branch (siehe
+# Job "deploy" unten sowie README.md, Abschnitt "CI/CD (GitHub Actions)").
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Restriktive Default-Rechte fuer den GITHUB_TOKEN; der deploy-Job hebt die
+# fuer sich benoetigten Rechte gezielt selbst an.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Abhaengigkeiten installieren
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Abhaengigkeiten installieren
+        run: npm ci
+
+      # Vitest laeuft ueber jsdom (kein echter Browser noetig) und ist damit
+      # bereits headless CI-tauglich, siehe README.md, Abschnitt "Tests".
+      - name: Tests
+        run: npm test -- --watch=false
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Abhaengigkeiten installieren
+        run: npm ci
+
+      # base-href passend zum GitHub-Pages-Unterpfad
+      # (https://<user>.github.io/<repo>/), siehe README.md, Abschnitt
+      # "base-href fuer Unterpfade". Der Build laeuft in jedem Fall (auch fuer
+      # Pull Requests), damit Build-Fehler unabhaengig vom Deployment
+      # auffallen; hochgeladen und veroeffentlicht wird das Ergebnis aber nur
+      # ueber den deploy-Job auf main.
+      - name: Produktions-Build
+        run: npm run build -- --base-href=/${{ github.event.repository.name }}/
+
+      # SPA-Fallback fuer GitHub Pages, siehe scripts/deploy-static.sh und
+      # README.md, Abschnitt "Deployment (statisches Hosting)".
+      - name: SPA-Fallback (404.html) ergaenzen
+        run: cp dist/todo-app/browser/index.html dist/todo-app/browser/404.html
+
+      - name: Build-Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/todo-app/browser
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    name: Deploy (GitHub Pages)
+    # Nur auf main und nur nach einem Push (nicht fuer Pull Requests), damit
+    # ausschliesslich der abgenommene Stand von main veroeffentlicht wird.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [lint, test, build]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Build-Artefakt herunterladen
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Fuer GitHub Pages verpacken
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Auf GitHub Pages veroeffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4
