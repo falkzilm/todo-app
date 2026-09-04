@@ -76,6 +76,8 @@ versions` aktuelle stabile Version ist `22.1.4` (CLI/Build-Tooling `22.1.6`). Di
 | `npm test`              | `ng test`                                                 | Unit-/Komponententests mit Vitest, inkl. Coverage (siehe [Tests](#tests)).                                                   |
 | `npm run a11y`          | `ng test --include="src/**/*.a11y.spec.ts" --watch=false` | Nur die Barrierefreiheits-Spezifikationen (axe-core), als eigenständiges Gate (siehe [Barrierefreiheit](#barrierefreiheit)). |
 | `npm run lint`          | `ng lint`                                                 | ESLint (inkl. Angular- und Barrierefreiheits-/Sicherheitsregeln aus `eslint.config.js`).                                     |
+| `npm run e2e`           | `playwright test`                                          | Headless E2E-Smoke-Tests der Kernflüsse (siehe [E2E-Tests](#e2e-tests-demoprojek-52)); setzt einen vorhandenen Chromium-Browser voraus. |
+| `npm run e2e:install`   | `playwright install --with-deps chromium`                  | Einmaliger, expliziter Bootstrap: installiert Chromium samt Systemabhängigkeiten (benötigt i. d. R. Root-/Sudo-Rechte). |
 | `npm run format`        | `prettier --write "src/**/*.{ts,html,scss}"`              | Formatiert `.ts`/`.html`/`.scss` unter `src/` gemäß `.prettierrc.json`.                                                      |
 | `npm run deploy:static` | `bash scripts/deploy-static.sh`                           | Produktions-Build mit SPA-Fallback für statisches Hosting (siehe [Deployment](#deployment-statisches-hosting)).              |
 | `npm run ng`            | `ng`                                                      | Direkter Zugriff auf die Angular-CLI, z. B. für `ng generate`.                                                               |
@@ -345,6 +347,53 @@ aria-modal="false"`) fängt den Tab-Fokus nicht ein: Per Tab kann der
   Fokus-Trap (oder `aria-modal="true"` mit entsprechendem Trap) ist ein
   separates, größeres Stück Arbeit und war nicht Teil dieses ARIA-/
   Live-Region-Tickets – als Folge-Ticket vorzumerken.
+
+## E2E-Tests (DEMOPROJEK-52)
+
+```bash
+npm run e2e
+```
+
+Führt [Playwright](https://playwright.dev/) headless gegen einen von
+Playwright selbst gestarteten `ng serve` aus (`webServer` in
+`playwright.config.ts`, Port `4399`). Vorausgesetzt wird ein bereits
+installierter Chromium-Browser; einmalig (lokal oder im Setup-Image der
+CI-Umgebung) mit
+
+```bash
+npm run e2e:install
+```
+
+bereitstellen (`playwright install --with-deps chromium`, benötigt i. d. R.
+Root-/Sudo-Rechte für die Systemabhängigkeiten). `npm run e2e` selbst löst
+keine Installation aus, damit der Testlauf nicht von Netzwerk- oder
+Paketmanager-Verfügbarkeit abhängt und auch in nicht-privilegierten,
+nicht-interaktiven CI-Umgebungen funktioniert, sobald Chromium dort einmalig
+bereitgestellt wurde. Die Spezifikationen liegen unter `e2e/` (außerhalb der
+TypeScript-Scopes von `ng build`/`ng test`/`ng lint`, siehe `tsconfig*.json`
+bzw. `angular.json`).
+
+Abgedeckte Kernflüsse (`e2e/task-flows.spec.ts`):
+
+- Aufgabe anlegen
+- Aufgabe abhaken
+- Persistenz einer (abgehakten) Aufgabe über einen Reload
+- Tag im Kalender auswählen und eine Aufgabe darüber auf einen anderen Tag
+  umplanen
+
+Jeder Test startet über den Helper `gotoFresh` (`e2e/support.ts`) mit einem
+explizit auf einen leeren Zustand gesetzten `localStorage`-Eintrag
+(`todo-app.tasks`). Das ist nötig, weil die Persistenz-Schicht nur beim
+allerersten Laden (noch nie gespeicherter Zustand) Demo-Aufgaben einsät –
+ohne das explizite Zurücksetzen würde der Startzustand eines Tests vom
+Ergebnis vorheriger Testläufe abhängen. Dadurch sind die Tests voneinander
+unabhängig und wiederholbar grün.
+
+Die Selektoren nutzen durchgehend ARIA-Rollen/-Labels
+(`getByRole('checkbox' | 'button' | 'gridcell' | 'dialog' | 'region' | 'listitem', ...)`)
+statt CSS-Klassen oder Test-IDs und bauen damit auf der unter
+["Barrierefreiheit"](#barrierefreiheit) dokumentierten Accessibility-Semantik
+der App auf.
 
 ## Sicherheit
 
