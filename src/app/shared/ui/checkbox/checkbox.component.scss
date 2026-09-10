@@ -2,6 +2,10 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  // Mindest-Trefferfläche 24x24px (WCAG 2.5.5), auch wenn kein Label-Text
+  // vorhanden ist und die sichtbare Box kleiner ist.
+  min-width: var(--space-6);
+  min-height: var(--space-6);
   cursor: pointer;
   font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
@@ -29,14 +33,21 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
+    // Content-Box, damit der Rand zur Innenfläche hinzukommt: 20px Fläche +
+    // 1.5px Rand beidseitig ≈ 22px Außenmaß, wie im FocusDay-Referenzbild.
+    box-sizing: content-box;
     width: var(--space-5);
     height: var(--space-5);
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-border);
     border-radius: var(--radius-sm);
     background-color: var(--color-surface);
     transition:
       background-color var(--motion-duration-fast) var(--motion-easing-standard),
       border-color var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+
+  &:hover:not(&--disabled) &__input:not(:checked) + &__box {
+    border-color: var(--color-gray-400);
   }
 
   &__input:checked + &__box {
