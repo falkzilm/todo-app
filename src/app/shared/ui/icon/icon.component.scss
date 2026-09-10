@@ -1,0 +1,16 @@
+.app-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--space-6); // 24px
+  height: var(--space-6);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  &--sm {
+    width: var(--space-5); // 20px
+    height: var(--space-5);
+  }
+}
