@@ -1,9 +1,13 @@
 <button
   class="app-button"
   [class.app-button--secondary]="variant() === 'secondary'"
+  [class.app-button--sm]="size() === 'sm'"
   [type]="type()"
   [disabled]="disabled()"
   (click)="onClick()"
 >
+  @if (icon(); as iconName) {
+    <app-icon class="app-button__icon" [name]="iconName" [size]="size()" />
+  }
   <ng-content />
 </button>
