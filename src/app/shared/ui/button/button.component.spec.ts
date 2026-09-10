@@ -16,6 +16,13 @@ class HostComponent {
   }
 }
 
+@Component({
+  standalone: true,
+  imports: [ButtonComponent],
+  template: `<app-button variant="secondary" size="sm" icon="star">Wichtig</app-button>`,
+})
+class IconHostComponent {}
+
 describe('ButtonComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -51,5 +58,21 @@ describe('ButtonComponent', () => {
 
     button.click();
     expect(fixture.componentInstance.pressedCount).toBe(0);
+  });
+
+  it('renders a leading icon before the projected label and applies size/variant classes', async () => {
+    await TestBed.configureTestingModule({
+      imports: [IconHostComponent],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(IconHostComponent);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.classList.contains('app-button--secondary')).toBe(true);
+    expect(button.classList.contains('app-button--sm')).toBe(true);
+
+    expect(button.firstElementChild?.tagName.toLowerCase()).toBe('app-icon');
+    expect(button.textContent).toContain('Wichtig');
   });
 });
