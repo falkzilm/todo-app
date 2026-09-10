@@ -9,20 +9,45 @@
   color-scheme: light dark;
 
   // --- Farbe: neutrale Graustufen -------------------------------------
-  --color-gray-50: #fafafa;
-  --color-gray-100: #f4f4f5;
-  --color-gray-200: #e4e4e7;
-  --color-gray-300: #d4d4d8;
-  --color-gray-400: #a1a1aa;
-  --color-gray-500: #71717a;
-  --color-gray-600: #52525b;
-  --color-gray-700: #3f3f46;
-  --color-gray-800: #27272a;
-  --color-gray-900: #18181b;
+  --color-gray-50: #ffffff;
+  --color-gray-100: #f7f9fa;
+  --color-gray-200: #eef1f2;
+  --color-gray-300: #dce2e4;
+  --color-gray-400: #b9c2c6;
+  --color-gray-500: #7a8a93;
+  --color-gray-600: #64747c;
+  --color-gray-700: #3e4c53;
+  --color-gray-800: #253138;
+  --color-gray-900: #16343b;
 
-  // --- Farbe: eine Akzentfarbe -----------------------------------------
-  --color-accent: #1a56db;
+  // --- Farbe: Primär-/Akzentgrün ----------------------------------------
+  // Primär: gefüllte Buttons, gefüllter "Heute"-Chip.
+  // Akzent: Logo-Kreis, Progress-Ring, aktive Checkbox (grafisch/Icon-Kontext).
+  --color-primary: #0b7a5a;
+  --color-primary-contrast: #ffffff;
+  --color-accent: #10a37f;
+  --color-accent-tint: #e8f5ef;
   --color-accent-contrast: #ffffff;
+
+  // --- Farbe: Kategoriefarben --------------------------------------------
+  // Je Kategorie ein Farbton (Punkt-/Balken-Füllung) plus dezente Tint-Fläche.
+  --color-category-violet: #8b5cf6;
+  --color-category-violet-tint: #f3eefe;
+  --color-category-green: #22c55e;
+  --color-category-green-tint: #e9fbf0;
+  --color-category-orange: #f59e0b;
+  --color-category-orange-tint: #fef3da;
+  --color-category-blue: #3b82f6;
+  --color-category-blue-tint: #eaf1fe;
+
+  // --- Farbe: Prioritätsfarben ---------------------------------------------
+  // Jeweils Text-Ton (Badge-Beschriftung) plus dezente Flächenfarbe.
+  --color-priority-high: #e0364b;
+  --color-priority-high-surface: #ffe9e9;
+  --color-priority-medium: #c2751a;
+  --color-priority-medium-surface: #fff3da;
+  --color-priority-low: #3b72e0;
+  --color-priority-low-surface: #e7f0ff;
 
   // --- Farbe: Zustandsfarben (Erfolg, Warnung, Fehler) -----------------
   // Jeweils als Text-/Kontur-Farbton (AA-tauglich) plus dezenter Fläche.
@@ -38,7 +63,7 @@
   --color-surface: #ffffff;
   --color-text: var(--color-gray-900);
   --color-text-muted: var(--color-gray-600);
-  --color-border: var(--color-gray-300);
+  --color-border: var(--color-gray-200);
 
   // --- Typografie --------------------------------------------------------
   --font-family-base: system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -50,6 +75,7 @@
   --font-size-xl: 1.25rem; // 20px
   --font-size-2xl: 1.5rem; // 24px
   --font-size-3xl: 1.875rem; // 30px
+  --font-size-display: 1.875rem; // 30px, Begrüßungstext ("Guten Morgen, …")
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -73,15 +99,17 @@
   --space-16: 4rem; // 64px
 
   // --- Radien ------------------------------------------------------------
-  --radius-sm: 0.25rem; // 4px
-  --radius-md: 0.5rem; // 8px
-  --radius-lg: 0.75rem; // 12px
-  --radius-full: 9999px;
+  --radius-sm: 0.375rem; // 6px, Checkbox
+  --radius-md: 0.625rem; // 10px, Buttons/Inputs
+  --radius-lg: 0.875rem; // 14px, Karten
+  --radius-full: 9999px; // Chips/Pills/Avatare
 
   // --- Schatten ------------------------------------------------------------
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);
-  --shadow-md: 0 2px 6px rgb(0 0 0 / 8%);
-  --shadow-lg: 0 8px 24px rgb(0 0 0 / 12%);
+  // Sehr weich und flach: niedrige Deckkraft, großer Blur, kaum Versatz,
+  // damit Karten nahezu randlos statt mit hartem Rahmen wirken.
+  --shadow-sm: 0 1px 2px rgb(16 24 32 / 4%);
+  --shadow-md: 0 4px 12px rgb(16 24 32 / 6%);
+  --shadow-lg: 0 12px 32px rgb(16 24 32 / 8%);
 
   // --- Motion --------------------------------------------------------------
   --motion-duration-fast: 120ms;
@@ -90,32 +118,58 @@
   --motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
   // --- Layout ----------------------------------------------------------
-  // Maximalbreite der zentrierten Inhaltsspalte (Header- und Hauptbereich).
-  --layout-content-max-width: 48rem; // 768px
+  --layout-sidebar-width: 15.625rem; // 250px
+  --layout-content-padding: 2rem; // 32px
+  // Maximalbreite der Inhaltsspalte neben der Sidebar (volle Breite statt
+  // schmaler zentrierter Spalte).
+  --layout-content-max-width: 90rem; // 1440px
 }
 
 // --- Dunkles Farbschema -------------------------------------------------
 // Ausschließlich Farb-Tokens werden umgeschaltet (Systemeinstellung via
-// prefers-color-scheme). Spacing, Typografie, Radien etc. bleiben
-// unverändert, damit kein Layout-Sprung entsteht. Kontrastwerte:
+// prefers-color-scheme). Spacing, Typografie, Radien, Schatten und Motion
+// bleiben unverändert, damit kein Layout-Sprung entsteht. Das Referenzbild
+// zeigt nur ein helles Schema — die folgenden Dunkel-Werte sind eine
+// Ableitung aus den hellen Tokens, kein abgenommenes Design. Kontrastwerte:
 // src/styles/tokens.md.
 @media (prefers-color-scheme: dark) {
   :root {
     // --- Farbe: neutrale Graustufen (Skala invertiert) -----------------
-    --color-gray-50: #18181b;
-    --color-gray-100: #27272a;
-    --color-gray-200: #3f3f46;
-    --color-gray-300: #52525b;
-    --color-gray-400: #71717a;
-    --color-gray-500: #a1a1aa;
-    --color-gray-600: #d4d4d8;
-    --color-gray-700: #e4e4e7;
-    --color-gray-800: #f4f4f5;
-    --color-gray-900: #fafafa;
+    --color-gray-50: #10181c;
+    --color-gray-100: #17222a;
+    --color-gray-200: #24343d;
+    --color-gray-300: #34454e;
+    --color-gray-400: #4c5d66;
+    --color-gray-500: #7a8a93;
+    --color-gray-600: #9dacb3;
+    --color-gray-700: #c2cdd2;
+    --color-gray-800: #e2e8ea;
+    --color-gray-900: #f5f8f9;
 
-    // --- Farbe: eine Akzentfarbe -----------------------------------------
-    --color-accent: #6a91e8;
+    // --- Farbe: Primär-/Akzentgrün ----------------------------------------
+    --color-primary: #22c55e;
+    --color-primary-contrast: var(--color-gray-50);
+    --color-accent: #34d399;
+    --color-accent-tint: #123528;
     --color-accent-contrast: var(--color-gray-50);
+
+    // --- Farbe: Kategoriefarben --------------------------------------------
+    --color-category-violet: #a78bfa;
+    --color-category-violet-tint: #241c3d;
+    --color-category-green: #4ade80;
+    --color-category-green-tint: #14291b;
+    --color-category-orange: #fbbf24;
+    --color-category-orange-tint: #362a12;
+    --color-category-blue: #60a5fa;
+    --color-category-blue-tint: #16253f;
+
+    // --- Farbe: Prioritätsfarben ---------------------------------------------
+    --color-priority-high: #ff8a97;
+    --color-priority-high-surface: #3a1620;
+    --color-priority-medium: #ffc069;
+    --color-priority-medium-surface: #3a2a10;
+    --color-priority-low: #8fb4ff;
+    --color-priority-low-surface: #152540;
 
     // --- Farbe: Zustandsfarben (Erfolg, Warnung, Fehler) -----------------
     --color-success: #4ade80;
@@ -130,6 +184,6 @@
     --color-surface: var(--color-gray-100);
     --color-text: var(--color-gray-900);
     --color-text-muted: var(--color-gray-600);
-    --color-border: var(--color-gray-300);
+    --color-border: var(--color-gray-200);
   }
 }

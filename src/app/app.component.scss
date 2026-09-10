@@ -24,14 +24,14 @@
   z-index: 100;
   padding: var(--space-2) var(--space-4);
   background: var(--color-surface);
-  color: var(--color-accent);
+  color: var(--color-primary);
   border-radius: var(--radius-sm);
   transform: translateY(-200%);
   transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
 
   &:focus-visible {
     transform: translateY(0);
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 }
@@ -70,7 +70,7 @@ nav {
 
     &.is-active {
       font-weight: var(--font-weight-semibold);
-      color: var(--color-accent);
+      color: var(--color-primary);
     }
   }
 }

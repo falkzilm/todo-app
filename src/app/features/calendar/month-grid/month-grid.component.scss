@@ -46,12 +46,12 @@
     }
 
     &--today {
-      background-color: var(--color-accent);
-      color: var(--color-accent-contrast);
+      background-color: var(--color-primary);
+      color: var(--color-primary-contrast);
       font-weight: var(--font-weight-semibold);
 
       &.month-grid__day--selected {
-        box-shadow: inset 0 0 0 2px var(--color-accent-contrast);
+        box-shadow: inset 0 0 0 2px var(--color-primary-contrast);
       }
     }
 
@@ -83,8 +83,8 @@
     font-weight: var(--font-weight-semibold);
 
     &--open {
-      background-color: var(--color-accent);
-      color: var(--color-accent-contrast);
+      background-color: var(--color-primary);
+      color: var(--color-primary-contrast);
     }
 
     &--done {
@@ -97,7 +97,7 @@
   }
 
   &__day--today &__indicator--open {
-    background-color: var(--color-accent-contrast);
-    color: var(--color-accent);
+    background-color: var(--color-primary-contrast);
+    color: var(--color-primary);
   }
 }

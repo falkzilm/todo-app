@@ -6,8 +6,8 @@
   padding: var(--space-2) var(--space-4);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background-color: var(--color-accent);
-  color: var(--color-accent-contrast);
+  background-color: var(--color-primary);
+  color: var(--color-primary-contrast);
   font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -20,7 +20,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 
