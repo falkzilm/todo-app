@@ -1,0 +1,15 @@
+@if (paths(); as iconPaths) {
+  <svg
+    class="app-icon"
+    [class.app-icon--sm]="size() === 'sm'"
+    [attr.viewBox]="viewBox"
+    [attr.role]="ariaLabel() ? 'img' : null"
+    [attr.aria-label]="ariaLabel() ?? null"
+    [attr.aria-hidden]="ariaLabel() ? null : 'true'"
+    [attr.focusable]="ariaLabel() ? null : 'false'"
+  >
+    @for (d of iconPaths; track d) {
+      <path [attr.d]="d" />
+    }
+  </svg>
+}
