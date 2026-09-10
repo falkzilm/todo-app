@@ -1,0 +1,11 @@
+<button
+  type="button"
+  class="app-filter-chip"
+  [class.app-filter-chip--active]="active()"
+  [attr.aria-pressed]="active()"
+  (click)="onClick()"
+  (keydown)="onKeydown($event)"
+>
+  <app-icon [name]="icon()" size="sm" />
+  <span class="app-filter-chip__label">{{ label() }}</span>
+</button>
