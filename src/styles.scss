@@ -18,6 +18,63 @@ body {
   background: var(--color-bg);
 }
 
+// Listen ohne Aufzählungszeichen/Innenabstand als neutrale Basis, damit
+// Komponenten (Nav, Task-Liste, …) sie ohne zusätzlichen Reset verwenden.
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Buttons ohne UA-Styling als neutrale Basis für die Button-Komponenten.
+// Auf `button[class]` beschränkt, damit unstylisierte, klassenlose <button>
+// (z. B. Formular-Submit-Buttons, Kalender-Vor/Zurück) ihre UA-Rahmen/
+// -Innenabstand behalten, statt ohne sichtbare Affordanz zu verbleiben.
+button[class] {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+// Sichtbarer, konsistenter Fokusring in der Akzentfarbe für alle
+// interaktiven Elemente ohne eigenes Fokus-Styling (Komponenten wie Button,
+// Checkbox, Input überschreiben dies bei Bedarf spezifischer). Breite/Abstand
+// aus dem Spacing-Token abgeleitet (kein eigenes Fokusring-Token vorhanden),
+// statt eines hart kodierten Größenwerts.
+*:focus-visible {
+  outline: calc(var(--space-1) / 2) solid var(--color-accent);
+  outline-offset: calc(var(--space-1) / 2);
+}
+
+::selection {
+  background-color: var(--color-accent-tint);
+  color: var(--color-text);
+}
+
+// Scrollbar an das Farbschema anpassen (WebKit/Blink).
+::-webkit-scrollbar {
+  width: var(--space-3);
+  height: var(--space-3);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-gray-300);
+  border-radius: var(--radius-full);
+}
+
+// Scrollbar-Farben für Firefox.
+html {
+  scrollbar-color: var(--color-gray-300) var(--color-bg);
+}
+
 // Nutzer:innen mit Systemeinstellung "Bewegung reduzieren" respektieren:
 // Übergänge und Animationen global deaktivieren statt komponentenweise
 // einzeln zu deaktivieren, damit auch künftig neue Komponenten automatisch
