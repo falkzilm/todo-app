@@ -2,14 +2,20 @@
   @if (label()) {
     <span class="app-input__label">{{ label() }}</span>
   }
-  <input
-    class="app-input__field"
-    [id]="id"
-    [type]="type()"
-    [placeholder]="placeholder()"
-    [value]="value"
-    [disabled]="disabled"
-    (input)="onInput($event)"
-    (blur)="onBlur()"
-  />
+  <span class="app-input__wrapper">
+    @if (icon(); as iconName) {
+      <app-icon class="app-input__icon" [name]="iconName" size="sm" />
+    }
+    <input
+      class="app-input__field"
+      [class.app-input__field--has-icon]="icon()"
+      [id]="id"
+      [type]="type()"
+      [placeholder]="placeholder()"
+      [value]="value"
+      [disabled]="disabled"
+      (input)="onInput($event)"
+      (blur)="onBlur()"
+    />
+  </span>
 </label>

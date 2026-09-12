@@ -1,11 +1,13 @@
 import { Component, forwardRef, input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { IconComponent, IconName } from '../icon/icon.component';
 
 let nextId = 0;
 
 @Component({
   selector: 'app-input',
   standalone: true,
+  imports: [IconComponent],
   templateUrl: './input.component.html',
   styleUrl: './input.component.scss',
   providers: [
@@ -20,6 +22,7 @@ export class InputComponent implements ControlValueAccessor {
   readonly label = input<string>();
   readonly placeholder = input('');
   readonly type = input<'text' | 'email' | 'password' | 'number'>('text');
+  readonly icon = input<IconName>();
   protected readonly id = `app-input-${nextId++}`;
 
   protected value = '';

@@ -285,6 +285,14 @@ im Referenzdesign:
 | `--radius-lg`   | `0.875rem` (14px)      | Karten                  |
 | `--radius-full` | `9999px` (Pill/Kreis)  | Chips, Pills, Avatare   |
 
+## Rahmen & Fokus
+
+| Token                  | Wert   | Verwendung                                                    |
+| ------------------------ | ------ | ---------------------------------------------------------------- |
+| `--border-width-sm`     | `1px`  | Standard-Randstärke (Karten, Inputs, Chips)                     |
+| `--focus-ring-width`    | `2px`  | Fokusring-Stärke — macht den Fokus auch ohne Farbunterscheidung sichtbar |
+| `--focus-ring-offset`   | `2px`  | Abstand des Fokusrings zum Element (`outline-offset`)            |
+
 ## Schatten
 
 Sehr weich und flach (niedrige Deckkraft, großer Blur, kaum Versatz) statt

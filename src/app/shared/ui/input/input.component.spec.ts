@@ -12,6 +12,13 @@ class HostComponent {
   control = new FormControl('', { nonNullable: true });
 }
 
+@Component({
+  standalone: true,
+  imports: [InputComponent],
+  template: `<app-input icon="calendar" placeholder="Suchen" />`,
+})
+class IconHostComponent {}
+
 describe('InputComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -45,5 +52,18 @@ describe('InputComponent', () => {
 
     const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
     expect(input.disabled).toBe(true);
+  });
+
+  it('renders the leading icon when set', async () => {
+    await TestBed.configureTestingModule({
+      imports: [IconHostComponent],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(IconHostComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.app-input__icon')).toBeTruthy();
+    expect(compiled.querySelector('.app-input__field--has-icon')).toBeTruthy();
   });
 });
