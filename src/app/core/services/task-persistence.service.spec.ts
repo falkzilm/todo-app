@@ -32,6 +32,13 @@ const exampleTask: Task = {
   completedAt: null,
   createdAt: '2026-09-01',
   updatedAt: '2026-09-01',
+  categoryId: null,
+  priority: null,
+  startTime: null,
+  endTime: null,
+  subtitle: null,
+  attendeeCount: null,
+  hasAttachment: false,
 };
 
 describe('TaskPersistenceService', () => {

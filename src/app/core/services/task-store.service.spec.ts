@@ -613,6 +613,13 @@ describe('TaskStoreService', () => {
           completedAt: null,
           createdAt: '2026-09-01',
           updatedAt: '2026-09-01',
+          categoryId: null,
+          priority: null,
+          startTime: null,
+          endTime: null,
+          subtitle: null,
+          attendeeCount: null,
+          hasAttachment: false,
         },
       ];
       storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: persisted }));

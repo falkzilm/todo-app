@@ -3,6 +3,7 @@ import {
   MAX_TITLE_LENGTH,
   createTask,
   isCalendarDate,
+  isTimeOfDay,
   isValidPersistedTask,
 } from './task.model';
 
@@ -98,6 +99,85 @@ describe('createTask', () => {
 
     expect(task.notes?.length).toBe(MAX_NOTES_LENGTH);
   });
+
+  it('defaults the new agenda fields to null/false when not provided', () => {
+    const task = createTask({ title: 'Aufgabe' });
+
+    expect(task.categoryId).toBeNull();
+    expect(task.priority).toBeNull();
+    expect(task.startTime).toBeNull();
+    expect(task.endTime).toBeNull();
+    expect(task.subtitle).toBeNull();
+    expect(task.attendeeCount).toBeNull();
+    expect(task.hasAttachment).toBe(false);
+  });
+
+  it('stores the given category, priority, time range, subtitle, attendee count and attachment flag', () => {
+    const task = createTask({
+      title: 'Sprint-Planung vorbereiten',
+      categoryId: 'arbeit',
+      priority: 'high',
+      startTime: '09:00',
+      endTime: '10:00',
+      subtitle: 'Besprechungsraum 2',
+      attendeeCount: 4,
+      hasAttachment: true,
+    });
+
+    expect(task.categoryId).toBe('arbeit');
+    expect(task.priority).toBe('high');
+    expect(task.startTime).toBe('09:00');
+    expect(task.endTime).toBe('10:00');
+    expect(task.subtitle).toBe('Besprechungsraum 2');
+    expect(task.attendeeCount).toBe(4);
+    expect(task.hasAttachment).toBe(true);
+  });
+
+  it('rejects a malformed startTime', () => {
+    expect(() => createTask({ title: 'Aufgabe', startTime: '9:00' })).toThrow();
+  });
+
+  it('rejects a malformed endTime', () => {
+    expect(() => createTask({ title: 'Aufgabe', endTime: '24:00' })).toThrow();
+  });
+
+  it('throws when endTime is before startTime', () => {
+    expect(() => createTask({ title: 'Aufgabe', startTime: '10:00', endTime: '09:00' })).toThrow();
+  });
+
+  it('allows endTime to equal startTime', () => {
+    const task = createTask({ title: 'Aufgabe', startTime: '09:00', endTime: '09:00' });
+
+    expect(task.startTime).toBe('09:00');
+    expect(task.endTime).toBe('09:00');
+  });
+});
+
+describe('isTimeOfDay', () => {
+  it('accepts times from "00:00" to "23:59"', () => {
+    expect(isTimeOfDay('00:00')).toBe(true);
+    expect(isTimeOfDay('09:00')).toBe(true);
+    expect(isTimeOfDay('23:59')).toBe(true);
+  });
+
+  it('rejects "24:00"', () => {
+    expect(isTimeOfDay('24:00')).toBe(false);
+  });
+
+  it('rejects a single-digit hour', () => {
+    expect(isTimeOfDay('9:00')).toBe(false);
+  });
+
+  it('rejects an out-of-range minute', () => {
+    expect(isTimeOfDay('09:60')).toBe(false);
+  });
+
+  it('rejects non-string values', () => {
+    expect(isTimeOfDay(900)).toBe(false);
+    expect(isTimeOfDay(null)).toBe(false);
+    expect(isTimeOfDay(undefined)).toBe(false);
+    expect(isTimeOfDay({})).toBe(false);
+  });
 });
 
 describe('isValidPersistedTask', () => {
@@ -141,6 +221,67 @@ describe('isValidPersistedTask', () => {
     expect(isValidPersistedTask({ ...validTask, completedAt: '2026-99-99' })).toBe(false);
     expect(isValidPersistedTask({ ...validTask, createdAt: '2026-02-30' })).toBe(false);
     expect(isValidPersistedTask({ ...validTask, updatedAt: '2026-02-30' })).toBe(false);
+  });
+
+  it('accepts a task without any of the new agenda fields (persisted before they existed)', () => {
+    expect(isValidPersistedTask(validTask)).toBe(true);
+  });
+
+  it('accepts a task with the new agenda fields correctly typed', () => {
+    const withAgendaFields = {
+      ...validTask,
+      categoryId: 'arbeit',
+      priority: 'high',
+      startTime: '09:00',
+      endTime: '10:00',
+      subtitle: 'Besprechungsraum 2',
+      attendeeCount: 4,
+      hasAttachment: true,
+    };
+
+    expect(isValidPersistedTask(withAgendaFields)).toBe(true);
+  });
+
+  it('accepts a task with the new agenda fields explicitly null', () => {
+    const withNullAgendaFields = {
+      ...validTask,
+      categoryId: null,
+      priority: null,
+      startTime: null,
+      endTime: null,
+      subtitle: null,
+      attendeeCount: null,
+    };
+
+    expect(isValidPersistedTask(withNullAgendaFields)).toBe(true);
+  });
+
+  it('rejects a task with a wrongly typed categoryId', () => {
+    expect(isValidPersistedTask({ ...validTask, categoryId: 42 })).toBe(false);
+  });
+
+  it('rejects a task with an invalid priority', () => {
+    expect(isValidPersistedTask({ ...validTask, priority: 'urgent' })).toBe(false);
+  });
+
+  it('rejects a task with a malformed startTime', () => {
+    expect(isValidPersistedTask({ ...validTask, startTime: '9:00' })).toBe(false);
+  });
+
+  it('rejects a task with a malformed endTime', () => {
+    expect(isValidPersistedTask({ ...validTask, endTime: '24:00' })).toBe(false);
+  });
+
+  it('rejects a task with a wrongly typed subtitle', () => {
+    expect(isValidPersistedTask({ ...validTask, subtitle: 42 })).toBe(false);
+  });
+
+  it('rejects a task with a wrongly typed attendeeCount', () => {
+    expect(isValidPersistedTask({ ...validTask, attendeeCount: '4' })).toBe(false);
+  });
+
+  it('rejects a task with a wrongly typed hasAttachment', () => {
+    expect(isValidPersistedTask({ ...validTask, hasAttachment: 'yes' })).toBe(false);
   });
 });
 
