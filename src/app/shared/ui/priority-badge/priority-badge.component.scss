@@ -1,0 +1,31 @@
+.app-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+
+  &--high {
+    background-color: var(--color-priority-high-surface);
+    color: var(--color-priority-high);
+  }
+
+  &--medium {
+    background-color: var(--color-priority-medium-surface);
+    color: var(--color-priority-medium);
+  }
+
+  &--low {
+    background-color: var(--color-priority-low-surface);
+    color: var(--color-priority-low);
+  }
+
+  &__icon {
+    flex-shrink: 0;
+  }
+}

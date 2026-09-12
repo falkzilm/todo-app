@@ -1,6 +1,7 @@
 @if (paths(); as iconPaths) {
   <svg
     class="app-icon"
+    [class.app-icon--xs]="size() === 'xs'"
     [class.app-icon--sm]="size() === 'sm'"
     [attr.viewBox]="viewBox"
     [attr.role]="ariaLabel() ? 'img' : null"
