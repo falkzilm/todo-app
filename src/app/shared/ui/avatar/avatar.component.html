@@ -1,0 +1,18 @@
+<span class="app-avatar" [attr.aria-hidden]="decorative() ? 'true' : null">
+  @if (showImage()) {
+    <img
+      class="app-avatar__image"
+      [src]="src()"
+      [attr.alt]="decorative() ? '' : label()"
+      (error)="onImageError()"
+    />
+  } @else {
+    <span
+      class="app-avatar__initials"
+      [attr.role]="decorative() ? null : 'img'"
+      [attr.aria-label]="decorative() ? null : label()"
+    >
+      {{ initials() }}
+    </span>
+  }
+</span>
