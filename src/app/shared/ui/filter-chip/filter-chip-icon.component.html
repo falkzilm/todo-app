@@ -1,0 +1,11 @@
+<button
+  type="button"
+  class="app-filter-chip-icon"
+  [class.app-filter-chip-icon--active]="active()"
+  [attr.aria-pressed]="active()"
+  [attr.aria-label]="ariaLabel()"
+  (click)="onClick()"
+  (keydown)="onKeydown($event)"
+>
+  <app-icon [name]="icon()" size="sm" />
+</button>
