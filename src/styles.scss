@@ -28,7 +28,10 @@ ol {
 }
 
 // Buttons ohne UA-Styling als neutrale Basis für die Button-Komponenten.
-button {
+// Auf `button[class]` beschränkt, damit unstylisierte, klassenlose <button>
+// (z. B. Formular-Submit-Buttons, Kalender-Vor/Zurück) ihre UA-Rahmen/
+// -Innenabstand behalten, statt ohne sichtbare Affordanz zu verbleiben.
+button[class] {
   padding: 0;
   border: none;
   background: none;
@@ -39,10 +42,12 @@ button {
 
 // Sichtbarer, konsistenter Fokusring in der Akzentfarbe für alle
 // interaktiven Elemente ohne eigenes Fokus-Styling (Komponenten wie Button,
-// Checkbox, Input überschreiben dies bei Bedarf spezifischer).
+// Checkbox, Input überschreiben dies bei Bedarf spezifischer). Breite/Abstand
+// aus dem Spacing-Token abgeleitet (kein eigenes Fokusring-Token vorhanden),
+// statt eines hart kodierten Größenwerts.
 *:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: calc(var(--space-1) / 2) solid var(--color-accent);
+  outline-offset: calc(var(--space-1) / 2);
 }
 
 ::selection {
