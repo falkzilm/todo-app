@@ -45,4 +45,18 @@
     background-color: var(--color-accent);
     border: 2px solid var(--color-surface);
   }
+
+  // Screenreader-Zustandsbeschreibung des Indikators (per aria-describedby
+  // verknüpft); visuell verborgen nach dem gängigen "visually hidden"-Muster.
+  &__visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }
