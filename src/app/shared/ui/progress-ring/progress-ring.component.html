@@ -1,0 +1,25 @@
+<div
+  class="app-progress-ring"
+  role="progressbar"
+  [attr.aria-label]="ariaLabel()"
+  aria-valuemin="0"
+  [attr.aria-valuemax]="max()"
+  [attr.aria-valuenow]="value()"
+  [attr.aria-valuetext]="ariaValueText()"
+>
+  <svg class="app-progress-ring__svg" viewBox="0 0 100 100" aria-hidden="true">
+    <circle class="app-progress-ring__track" cx="50" cy="50" [attr.r]="radius" />
+    <circle
+      class="app-progress-ring__progress"
+      cx="50"
+      cy="50"
+      [attr.r]="radius"
+      [attr.stroke-dasharray]="circumference"
+      [attr.stroke-dashoffset]="dashOffset()"
+    />
+  </svg>
+  <span class="app-progress-ring__label" aria-hidden="true"
+    ><span class="app-progress-ring__value">{{ value() }}</span
+    ><span class="app-progress-ring__max">/{{ max() }}</span></span
+  >
+</div>
