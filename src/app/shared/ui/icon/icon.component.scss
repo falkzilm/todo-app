@@ -9,6 +9,11 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 
+  &--xs {
+    width: var(--space-3); // 12px
+    height: var(--space-3);
+  }
+
   &--sm {
     width: var(--space-5); // 20px
     height: var(--space-5);
