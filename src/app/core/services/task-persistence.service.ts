@@ -1,6 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { createDemoTasks } from '../models/demo-tasks';
-import { Task, clampTaskTextLengths, isValidPersistedTask } from '../models/task.model';
+import {
+  Task,
+  clampTaskTextLengths,
+  isValidPersistedTask,
+  normalizePersistedTask,
+} from '../models/task.model';
 import { StorageStatusService } from './storage-status.service';
 import { STORAGE } from './storage.token';
 
@@ -70,7 +75,7 @@ function sanitizeTasks(rawTasks: unknown[]): Task[] {
 
   for (const rawTask of rawTasks) {
     if (isValidPersistedTask(rawTask)) {
-      tasks.push(clampTaskTextLengths(rawTask));
+      tasks.push(clampTaskTextLengths(normalizePersistedTask(rawTask)));
     } else {
       console.warn('Discarding invalid persisted task.', rawTask);
     }

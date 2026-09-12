@@ -123,6 +123,17 @@ export function isValidTimeRange(startTime: TimeOfDay | null, endTime: TimeOfDay
 }
 
 /**
+ * Same as `isValidTimeRange`, but also accepts `undefined` endpoints (treated like `null`,
+ * i.e. no constraint) so it can validate persisted tasks from before these fields existed.
+ */
+function isValidPersistedTimeRange(startTime: unknown, endTime: unknown): boolean {
+  return isValidTimeRange(
+    (startTime ?? null) as TimeOfDay | null,
+    (endTime ?? null) as TimeOfDay | null,
+  );
+}
+
+/**
  * Validates a single value read from persisted storage against the `Task` schema
  * (types, required fields and date formats), so a manipulated or corrupted
  * localStorage entry can be told apart from a genuine task.
@@ -153,6 +164,7 @@ export function isValidPersistedTask(value: unknown): value is Task {
     isMissingNullOrTaskPriority(task['priority']) &&
     isMissingNullOrTimeOfDay(task['startTime']) &&
     isMissingNullOrTimeOfDay(task['endTime']) &&
+    isValidPersistedTimeRange(task['startTime'], task['endTime']) &&
     (task['subtitle'] === undefined ||
       task['subtitle'] === null ||
       typeof task['subtitle'] === 'string') &&
@@ -161,6 +173,26 @@ export function isValidPersistedTask(value: unknown): value is Task {
       typeof task['attendeeCount'] === 'number') &&
     (task['hasAttachment'] === undefined || typeof task['hasAttachment'] === 'boolean')
   );
+}
+
+/**
+ * Fills in defaults for the agenda fields on a task persisted before they existed.
+ * `isValidPersistedTask` accepts such legacy records with those fields `undefined` (not `null`),
+ * even though `Task` declares them as always present; normalizing here right after validation
+ * keeps that gap from leaking into the rest of the app (e.g. `TaskStoreService.update`, which
+ * would otherwise see `undefined` `startTime`/`endTime` and reject a legitimate update).
+ */
+export function normalizePersistedTask(task: Task): Task {
+  return {
+    ...task,
+    categoryId: task.categoryId ?? null,
+    priority: task.priority ?? null,
+    startTime: task.startTime ?? null,
+    endTime: task.endTime ?? null,
+    subtitle: task.subtitle ?? null,
+    attendeeCount: task.attendeeCount ?? null,
+    hasAttachment: task.hasAttachment ?? false,
+  };
 }
 
 /** Clamps title/notes/subtitle to their defined maximum length, e.g. before persisting or after loading. */

@@ -198,6 +198,37 @@ describe('TaskStoreService', () => {
       expect(() => store.update(task.id, { dueDate: 'invalid' })).toThrow();
       expect(store.tasks()[0].dueDate).toBe('2026-09-01');
     });
+
+    it('allows updating a task persisted before the agenda fields existed', () => {
+      const legacyTask = {
+        id: 'legacy-task',
+        title: 'Alte Aufgabe',
+        notes: null,
+        dueDate: null,
+        completed: false,
+        completedAt: null,
+        createdAt: '2026-08-01',
+        updatedAt: '2026-08-01',
+        // categoryId/priority/startTime/endTime/subtitle/attendeeCount/hasAttachment
+        // are intentionally absent, as they never existed in this record.
+      };
+      const storage = createMockStorage();
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [legacyTask] }));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [{ provide: STORAGE, useValue: storage }],
+      });
+      const legacyStore = TestBed.inject(TaskStoreService);
+
+      expect(() =>
+        legacyStore.update('legacy-task', { title: 'Neuer Titel' }),
+      ).not.toThrow();
+
+      const updated = legacyStore.tasks()[0];
+      expect(updated.title).toBe('Neuer Titel');
+      expect(updated.startTime).toBeNull();
+      expect(updated.endTime).toBeNull();
+    });
   });
 
   describe('toggleCompleted', () => {

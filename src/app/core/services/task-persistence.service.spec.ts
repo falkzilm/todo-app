@@ -139,6 +139,41 @@ describe('TaskPersistenceService', () => {
       expect(service.load()).toEqual([exampleTask]);
     });
 
+    it('normalizes a task persisted before the agenda fields existed to explicit null/false defaults', () => {
+      const legacyTask = {
+        id: 'legacy-task',
+        title: 'Alte Aufgabe',
+        notes: null,
+        dueDate: null,
+        completed: false,
+        completedAt: null,
+        createdAt: '2026-08-01',
+        updatedAt: '2026-08-01',
+        // categoryId/priority/startTime/endTime/subtitle/attendeeCount/hasAttachment intentionally absent.
+      };
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [legacyTask] }));
+
+      const [loaded] = service.load();
+
+      expect(loaded.categoryId).toBeNull();
+      expect(loaded.priority).toBeNull();
+      expect(loaded.startTime).toBeNull();
+      expect(loaded.endTime).toBeNull();
+      expect(loaded.subtitle).toBeNull();
+      expect(loaded.attendeeCount).toBeNull();
+      expect(loaded.hasAttachment).toBe(false);
+    });
+
+    it('discards a persisted task whose endTime is before its startTime', () => {
+      const invertedRange = { ...exampleTask, startTime: '10:00', endTime: '09:00' };
+      storage.setItem(
+        'todo-app.tasks',
+        JSON.stringify({ version: 1, tasks: [invertedRange, exampleTask] }),
+      );
+
+      expect(service.load()).toEqual([exampleTask]);
+    });
+
     it('clamps overly long titles and notes to the defined maximum', () => {
       const longTask = {
         ...exampleTask,

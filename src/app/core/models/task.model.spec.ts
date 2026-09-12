@@ -283,6 +283,18 @@ describe('isValidPersistedTask', () => {
   it('rejects a task with a wrongly typed hasAttachment', () => {
     expect(isValidPersistedTask({ ...validTask, hasAttachment: 'yes' })).toBe(false);
   });
+
+  it('rejects a task whose endTime is before its startTime', () => {
+    expect(isValidPersistedTask({ ...validTask, startTime: '10:00', endTime: '09:00' })).toBe(
+      false,
+    );
+  });
+
+  it('accepts a task whose endTime equals its startTime', () => {
+    expect(isValidPersistedTask({ ...validTask, startTime: '09:00', endTime: '09:00' })).toBe(
+      true,
+    );
+  });
 });
 
 describe('isCalendarDate', () => {
