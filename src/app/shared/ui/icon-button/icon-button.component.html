@@ -1,9 +1,15 @@
 <button
   class="app-icon-button"
+  [class.app-icon-button--outline]="variant() === 'outline'"
   type="button"
   [attr.aria-label]="ariaLabel()"
+  [attr.aria-describedby]="indicator() ? indicatorId : null"
   [disabled]="disabled()"
   (click)="onClick()"
 >
   <ng-content />
+  @if (indicator(); as description) {
+    <span class="app-icon-button__indicator" aria-hidden="true"></span>
+    <span class="app-icon-button__visually-hidden" [id]="indicatorId">{{ description }}</span>
+  }
 </button>

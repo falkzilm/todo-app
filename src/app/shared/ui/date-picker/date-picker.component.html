@@ -21,11 +21,16 @@
       (keydown)="onPopoverKeydown($event)"
     >
       <div class="date-picker__nav">
-        <app-icon-button ariaLabel="Vorheriger Monat" (pressed)="previousMonth()"
+        <app-icon-button
+          ariaLabel="Vorheriger Monat"
+          variant="outline"
+          (pressed)="previousMonth()"
           >‹</app-icon-button
         >
         <span class="date-picker__nav-label">{{ monthLabel() }}</span>
-        <app-icon-button ariaLabel="Nächster Monat" (pressed)="nextMonth()">›</app-icon-button>
+        <app-icon-button ariaLabel="Nächster Monat" variant="outline" (pressed)="nextMonth()"
+          >›</app-icon-button
+        >
       </div>
 
       <app-month-grid

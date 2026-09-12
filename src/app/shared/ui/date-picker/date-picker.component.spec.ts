@@ -121,4 +121,20 @@ describe('DatePickerComponent', () => {
       expect(fixture.nativeElement.ownerDocument.activeElement).toBe(trigger(fixture));
     });
   });
+
+  describe('Monatsnavigation', () => {
+    it('renders the previous/next month buttons in the outline variant', () => {
+      const fixture = setUp('2026-09-05');
+
+      open(fixture);
+
+      const navButtons = fixture.nativeElement.querySelectorAll(
+        '.date-picker__nav .app-icon-button',
+      ) as NodeListOf<HTMLButtonElement>;
+      expect(navButtons.length).toBe(2);
+      navButtons.forEach((button) => {
+        expect(button.classList.contains('app-icon-button--outline')).toBe(true);
+      });
+    });
+  });
 });
