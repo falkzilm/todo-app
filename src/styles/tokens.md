@@ -57,9 +57,16 @@ Flächenfarbe (Badge-Hintergrund):
 
 | Priorität | Text-Token                    | Wert      | Flächen-Token                     | Wert      |
 | --------- | ------------------------------ | --------- | ------------------------------------ | --------- |
-| Hoch      | `--color-priority-high`        | `#e0364b` | `--color-priority-high-surface`      | `#ffe9e9` |
-| Mittel    | `--color-priority-medium`      | `#c2751a` | `--color-priority-medium-surface`    | `#fff3da` |
-| Niedrig   | `--color-priority-low`         | `#3b72e0` | `--color-priority-low-surface`       | `#e7f0ff` |
+| Hoch      | `--color-priority-high`        | `#c21630` | `--color-priority-high-surface`      | `#ffe9e9` |
+| Mittel    | `--color-priority-medium`      | `#935c0b` | `--color-priority-medium-surface`    | `#fff3da` |
+| Niedrig   | `--color-priority-low`         | `#2c5ac4` | `--color-priority-low-surface`       | `#e7f0ff` |
+
+Die Priorität steht im `app-priority-badge`-Primitive immer als Textlabel
+("Hoch"/"Mittel"/"Niedrig") sichtbar neben der Tönungsfläche — Farbe ist
+hier bewusst nicht der einzige Bedeutungsträger (WCAG SC 1.4.1). Da der
+Badge-Text selbst die Bedeutung trägt, gilt für ihn die
+Fließtext-Kontrastanforderung (≥ 4.5 : 1), nicht die schwächere
+UI-Komponenten-Schwelle (≥ 3 : 1) der übrigen Badges/Punkte oben.
 
 ### Neutrale Graustufen
 
@@ -127,14 +134,14 @@ Text auf `--color-accent-tint` (`#e8f5ef`), z. B. Label des aktiven
 Nav-Items in `--color-primary`: **4.75 : 1** ✅ (Fließtext-Anforderung
 erfüllt).
 
-Badge-Kontraste (Text-Token auf eigener Flächenfarbe), Anforderung
-≥ 3 : 1 für Badges/große Texte:
+Badge-Kontraste (Text-Token auf eigener Flächenfarbe) — Anforderung
+≥ 4.5 : 1, da der Prioritätstext selbst die Bedeutung trägt (siehe oben):
 
 | Priorität | Text auf Fläche             | Kontrast |
 | --------- | ----------------------------- | -------: |
-| Hoch      | `#e0364b` auf `#ffe9e9`       | 3.77 : 1 |
-| Mittel    | `#c2751a` auf `#fff3da`       | 3.26 : 1 |
-| Niedrig   | `#3b72e0` auf `#e7f0ff`       | 3.92 : 1 |
+| Hoch      | `#c21630` auf `#ffe9e9`       | 5.24 : 1 |
+| Mittel    | `#935c0b` auf `#fff3da`       | 5.05 : 1 |
+| Niedrig   | `#2c5ac4` auf `#e7f0ff`       | 5.44 : 1 |
 
 Kategoriefarbe auf eigener Tint-Fläche (zur Referenz, ebenfalls
 dekorativ/kein Fließtext): violett 3.72 : 1, grün 2.12 : 1, orange
@@ -174,11 +181,11 @@ Design gegenzuprüfen.
 | `--color-category-orange-tint`       | `#fef3da` | `#362a12` |
 | `--color-category-blue`              | `#3b82f6` | `#60a5fa` |
 | `--color-category-blue-tint`         | `#eaf1fe` | `#16253f` |
-| `--color-priority-high`              | `#e0364b` | `#ff8a97` |
+| `--color-priority-high`              | `#c21630` | `#ff8a97` |
 | `--color-priority-high-surface`      | `#ffe9e9` | `#3a1620` |
-| `--color-priority-medium`            | `#c2751a` | `#ffc069` |
+| `--color-priority-medium`            | `#935c0b` | `#ffc069` |
 | `--color-priority-medium-surface`    | `#fff3da` | `#3a2a10` |
-| `--color-priority-low`               | `#3b72e0` | `#8fb4ff` |
+| `--color-priority-low`               | `#2c5ac4` | `#8fb4ff` |
 | `--color-priority-low-surface`       | `#e7f0ff` | `#152540` |
 | `--color-success`                    | `#15803d` | `#4ade80` |
 | `--color-success-surface`            | `#f0fdf4` | `#10281a` |
@@ -212,7 +219,8 @@ jeweilige Fläche selbst (7.88 : 1 / 9.34 : 1), da symmetrisch.
 Text auf `--color-accent-tint` dunkel (`#123528`) in `--color-accent`:
 **6.98 : 1** ✅.
 
-Badge-Kontraste dunkel (Text-Token auf eigener Flächenfarbe):
+Badge-Kontraste dunkel (Text-Token auf eigener Flächenfarbe), Anforderung
+≥ 4.5 : 1 (siehe hell, gleiche Begründung):
 
 | Priorität | Text auf Fläche              | Kontrast |
 | --------- | ------------------------------ | -------: |

@@ -3,7 +3,7 @@ import { ICON_VIEW_BOX, ICONS, IconName } from './icon-registry';
 
 export type { IconName } from './icon-registry';
 
-export type IconSize = 'sm' | 'md';
+export type IconSize = 'xs' | 'sm' | 'md';
 
 @Component({
   selector: 'app-icon',

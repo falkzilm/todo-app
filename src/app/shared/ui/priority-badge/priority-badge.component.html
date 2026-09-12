@@ -1,0 +1,12 @@
+<span
+  class="app-priority-badge"
+  [class.app-priority-badge--high]="priority() === 'high'"
+  [class.app-priority-badge--medium]="priority() === 'medium'"
+  [class.app-priority-badge--low]="priority() === 'low'"
+  [attr.aria-label]="ariaLabel()"
+>
+  {{ label() }}
+  @if (priority() === 'high') {
+    <app-icon class="app-priority-badge__icon" name="flag" size="xs" />
+  }
+</span>
