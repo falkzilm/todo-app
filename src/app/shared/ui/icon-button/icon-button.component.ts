@@ -1,5 +1,7 @@
 import { Component, input, output } from '@angular/core';
 
+export type IconButtonVariant = 'ghost' | 'outline';
+
 @Component({
   selector: 'app-icon-button',
   standalone: true,
@@ -9,6 +11,14 @@ import { Component, input, output } from '@angular/core';
 export class IconButtonComponent {
   readonly ariaLabel = input.required<string>();
   readonly disabled = input(false);
+  readonly variant = input<IconButtonVariant>('ghost');
+  /**
+   * Rein visueller Hinweis-Punkt (z. B. ungelesene Benachrichtigungen).
+   * Der Zustand muss zusätzlich über `ariaLabel` sprachlich transportiert
+   * werden (z. B. "Benachrichtigungen, 1 neue") — der Punkt selbst ist
+   * `aria-hidden`.
+   */
+  readonly indicator = input(false);
 
   readonly pressed = output<void>();
 

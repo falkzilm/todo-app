@@ -20,6 +20,17 @@ class HostComponent {
   }
 }
 
+@Component({
+  standalone: true,
+  imports: [IconButtonComponent],
+  template: `
+    <app-icon-button ariaLabel="Benachrichtigungen, 1 neue" [indicator]="true">
+      <svg viewBox="0 0 24 24"></svg>
+    </app-icon-button>
+  `,
+})
+class IndicatorHostComponent {}
+
 describe('IconButtonComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -56,5 +67,17 @@ describe('IconButtonComponent', () => {
 
     button.click();
     expect(fixture.componentInstance.pressedCount).toBe(0);
+  });
+
+  it('renders a visually-only indicator dot alongside a descriptive aria-label', () => {
+    const fixture = TestBed.createComponent(IndicatorHostComponent);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.getAttribute('aria-label')).toBe('Benachrichtigungen, 1 neue');
+
+    const indicator = button.querySelector('.app-icon-button__indicator');
+    expect(indicator).not.toBeNull();
+    expect(indicator?.getAttribute('aria-hidden')).toBe('true');
   });
 });
