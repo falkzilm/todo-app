@@ -104,6 +104,11 @@
   --radius-lg: 0.875rem; // 14px, Karten
   --radius-full: 9999px; // Chips/Pills/Avatare
 
+  // --- Rahmen & Fokus ------------------------------------------------------
+  --border-width-sm: 1px; // Standard-Randstärke (Karten, Inputs, Chips)
+  --focus-ring-width: 2px; // Fokusring-Stärke (auch ohne Farbunterscheidung erkennbar)
+  --focus-ring-offset: 2px; // Abstand Fokusring zum Element
+
   // --- Schatten ------------------------------------------------------------
   // Sehr weich und flach: niedrige Deckkraft, großer Blur, kaum Versatz,
   // damit Karten nahezu randlos statt mit hartem Rahmen wirken.
