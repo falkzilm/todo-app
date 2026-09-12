@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { getMonthGrid } from '../../../core/date/date-utils';
+import { getTimeOfDayGreeting } from '../../../core/date/greeting';
 import { createTask } from '../../../core/models/task.model';
 import { AnnouncerService } from '../../../core/services/announcer.service';
 import { STORAGE } from '../../../core/services/storage.token';
@@ -79,6 +80,22 @@ describe('HeutePageComponent', () => {
       year: 'numeric',
     });
     expect(fixture.nativeElement.textContent).toContain(expectedLabel);
+  });
+
+  it('shows a personalized time-of-day greeting for the default demo profile', () => {
+    TestBed.configureTestingModule({
+      imports: [HeutePageComponent],
+      providers: [
+        { provide: TaskStoreService, useValue: createMockStore() },
+        { provide: STORAGE, useValue: createMockStorage() },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(HeutePageComponent);
+    fixture.detectChanges();
+
+    const expectedGreeting = `${getTimeOfDayGreeting(new Date())}, Laura! 👋`;
+    expect(fixture.nativeElement.textContent).toContain(expectedGreeting);
   });
 
   it('shows a quiet empty state when there are no open tasks at all', () => {

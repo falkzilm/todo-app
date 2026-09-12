@@ -84,6 +84,16 @@ describe('AppComponent', () => {
     expect(main.id).toBe('main-content');
   });
 
+  it('shows the default demo user in the header user card', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.app-shell__user') as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card.textContent).toContain('Laura Becker');
+    expect(card.textContent).toContain('laura@focusday.de');
+  });
+
   it('renders an always-present live region that announces messages from the AnnouncerService', () => {
     vi.useFakeTimers();
     const fixture = TestBed.createComponent(AppComponent);
