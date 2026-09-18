@@ -10,8 +10,10 @@ export interface UserProfile {
 }
 
 /**
- * Fixed demo profile used until settings offer editing (see TDP-20): a
- * dedicated login/registration flow is out of scope for this local-only app.
+ * Product decision for TDP-20: only this fixed demo profile is shown for now
+ * (values match the reference design). A settings UI to edit it is
+ * intentionally deferred to a later ticket; the setters below already exist
+ * and persist via `STORAGE`, so that UI can land without a model change.
  */
 const DEFAULT_PROFILE: UserProfile = {
   displayName: 'Laura Becker',
