@@ -1,8 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { getTimeOfDayGreeting } from '../../../core/date/greeting';
 import { CalendarDate, Task } from '../../../core/models/task.model';
 import { AnnouncerService } from '../../../core/services/announcer.service';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
+import { UserProfileService } from '../../../core/services/user-profile.service';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.component';
 
@@ -20,6 +22,7 @@ export class HeutePageComponent {
   private readonly taskStore = inject(TaskStoreService);
   private readonly storage = inject(STORAGE);
   private readonly announcer = inject(AnnouncerService);
+  private readonly userProfile = inject(UserProfileService);
 
   private readonly today = signal(new Date());
 
@@ -31,6 +34,11 @@ export class HeutePageComponent {
       year: 'numeric',
     }),
   );
+
+  protected readonly greeting = computed(() => {
+    const firstName = this.userProfile.displayName().split(' ')[0];
+    return `${getTimeOfDayGreeting(this.today())}, ${firstName}! 👋`;
+  });
 
   protected readonly todayTasks = this.taskStore.todayTasks;
   protected readonly overdueTasks = this.taskStore.overdueTasks;
