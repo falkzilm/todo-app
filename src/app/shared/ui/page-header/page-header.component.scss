@@ -5,6 +5,12 @@
     margin: 0 0 var(--space-1);
   }
 
+  &__greeting {
+    margin: 0 0 var(--space-1);
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-semibold);
+  }
+
   &__subtitle {
     margin: 0;
     color: var(--color-text-muted);

@@ -11,6 +11,13 @@
         >Kalender</a
       >
     </nav>
+    <div class="app-shell__user">
+      <app-avatar [name]="userDisplayName()" [src]="userAvatarSrc()" [decorative]="true" />
+      <span class="app-shell__user-info">
+        <span class="app-shell__user-name">{{ userDisplayName() }}</span>
+        <span class="app-shell__user-email">{{ userEmail() }}</span>
+      </span>
+    </div>
   </div>
 </header>
 

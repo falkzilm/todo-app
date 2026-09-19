@@ -41,4 +41,21 @@ describe('PageHeaderComponent', () => {
       'Manage your tasks',
     );
   });
+
+  it('renders the greeting only when provided', () => {
+    const fixture = TestBed.createComponent(PageHeaderComponent);
+    fixture.componentRef.setInput('title', 'Tasks');
+    fixture.detectChanges();
+
+    let compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.page-header__greeting')).toBeNull();
+
+    fixture.componentRef.setInput('greeting', 'Guten Morgen, Laura! 👋');
+    fixture.detectChanges();
+
+    compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.page-header__greeting')?.textContent).toContain(
+      'Guten Morgen, Laura! 👋',
+    );
+  });
 });
