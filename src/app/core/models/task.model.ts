@@ -13,6 +13,11 @@ export type CalendarDate = string;
  */
 export const TASK_DRAG_DATA_FORMAT = 'application/x-fleetview-task-id';
 
+/** A time of day without a date component, in 24h `HH:mm` format, e.g. "09:00". */
+export type TimeOfDay = string;
+
+export type TaskPriority = 'high' | 'medium' | 'low';
+
 export interface Task {
   readonly id: string;
   readonly title: string;
@@ -22,6 +27,20 @@ export interface Task {
   readonly completedAt: CalendarDate | null;
   readonly createdAt: CalendarDate;
   readonly updatedAt: CalendarDate;
+  /** References a `Category.id`, or `null` when the task is uncategorized. */
+  readonly categoryId: string | null;
+  readonly priority: TaskPriority | null;
+  readonly startTime: TimeOfDay | null;
+  readonly endTime: TimeOfDay | null;
+  /** Location or project context, e.g. "Besprechungsraum 2". */
+  readonly subtitle: string | null;
+  /**
+   * Display-only; there is no UI to manage attendees, so this is only ever
+   * set from demo data.
+   */
+  readonly attendeeCount: number | null;
+  /** Display-only; there is no attachment management UI. */
+  readonly hasAttachment: boolean;
 }
 
 export interface CreateTaskInput {
@@ -29,6 +48,13 @@ export interface CreateTaskInput {
   notes?: string | null;
   dueDate?: CalendarDate | null;
   createdAt?: CalendarDate;
+  categoryId?: string | null;
+  priority?: TaskPriority | null;
+  startTime?: TimeOfDay | null;
+  endTime?: TimeOfDay | null;
+  subtitle?: string | null;
+  attendeeCount?: number | null;
+  hasAttachment?: boolean;
 }
 
 const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -59,9 +85,52 @@ export function isCalendarDate(value: string): value is CalendarDate {
 /** Upper bounds for user-entered text, enforced both when creating/updating and when loading persisted tasks. */
 export const MAX_TITLE_LENGTH = 200;
 export const MAX_NOTES_LENGTH = 2000;
+export const MAX_SUBTITLE_LENGTH = 200;
+
+const TIME_OF_DAY_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Matches the 24h `HH:mm` format, e.g. "09:00"–"23:59"; rejects "24:00", single-digit hours and out-of-range minutes. */
+export function isTimeOfDay(value: unknown): value is TimeOfDay {
+  return typeof value === 'string' && TIME_OF_DAY_PATTERN.test(value);
+}
 
 function isNullOrCalendarDate(value: unknown): value is CalendarDate | null {
   return value === null || (typeof value === 'string' && isCalendarDate(value));
+}
+
+/** Absent (`undefined`) is accepted too, so tasks persisted before these fields existed still validate. */
+function isMissingNullOrTimeOfDay(value: unknown): boolean {
+  return value === undefined || value === null || isTimeOfDay(value);
+}
+
+/** Absent (`undefined`) is accepted too, so tasks persisted before these fields existed still validate. */
+function isMissingNullOrTaskPriority(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === null ||
+    value === 'high' ||
+    value === 'medium' ||
+    value === 'low'
+  );
+}
+
+/** `endTime` must not be before `startTime`; equal times (zero-length range) are allowed. */
+export function isValidTimeRange(startTime: TimeOfDay | null, endTime: TimeOfDay | null): boolean {
+  if (startTime === null || endTime === null) {
+    return true;
+  }
+  return endTime >= startTime;
+}
+
+/**
+ * Same as `isValidTimeRange`, but also accepts `undefined` endpoints (treated like `null`,
+ * i.e. no constraint) so it can validate persisted tasks from before these fields existed.
+ */
+function isValidPersistedTimeRange(startTime: unknown, endTime: unknown): boolean {
+  return isValidTimeRange(
+    (startTime ?? null) as TimeOfDay | null,
+    (endTime ?? null) as TimeOfDay | null,
+  );
 }
 
 /**
@@ -88,16 +157,51 @@ export function isValidPersistedTask(value: unknown): value is Task {
     typeof task['createdAt'] === 'string' &&
     isCalendarDate(task['createdAt']) &&
     typeof task['updatedAt'] === 'string' &&
-    isCalendarDate(task['updatedAt'])
+    isCalendarDate(task['updatedAt']) &&
+    (task['categoryId'] === undefined ||
+      task['categoryId'] === null ||
+      typeof task['categoryId'] === 'string') &&
+    isMissingNullOrTaskPriority(task['priority']) &&
+    isMissingNullOrTimeOfDay(task['startTime']) &&
+    isMissingNullOrTimeOfDay(task['endTime']) &&
+    isValidPersistedTimeRange(task['startTime'], task['endTime']) &&
+    (task['subtitle'] === undefined ||
+      task['subtitle'] === null ||
+      typeof task['subtitle'] === 'string') &&
+    (task['attendeeCount'] === undefined ||
+      task['attendeeCount'] === null ||
+      typeof task['attendeeCount'] === 'number') &&
+    (task['hasAttachment'] === undefined || typeof task['hasAttachment'] === 'boolean')
   );
 }
 
-/** Clamps title/notes to their defined maximum length, e.g. before persisting or after loading. */
+/**
+ * Fills in defaults for the agenda fields on a task persisted before they existed.
+ * `isValidPersistedTask` accepts such legacy records with those fields `undefined` (not `null`),
+ * even though `Task` declares them as always present; normalizing here right after validation
+ * keeps that gap from leaking into the rest of the app (e.g. `TaskStoreService.update`, which
+ * would otherwise see `undefined` `startTime`/`endTime` and reject a legitimate update).
+ */
+export function normalizePersistedTask(task: Task): Task {
+  return {
+    ...task,
+    categoryId: task.categoryId ?? null,
+    priority: task.priority ?? null,
+    startTime: task.startTime ?? null,
+    endTime: task.endTime ?? null,
+    subtitle: task.subtitle ?? null,
+    attendeeCount: task.attendeeCount ?? null,
+    hasAttachment: task.hasAttachment ?? false,
+  };
+}
+
+/** Clamps title/notes/subtitle to their defined maximum length, e.g. before persisting or after loading. */
 export function clampTaskTextLengths(task: Task): Task {
   return {
     ...task,
     title: task.title.slice(0, MAX_TITLE_LENGTH),
     notes: task.notes !== null ? task.notes.slice(0, MAX_NOTES_LENGTH) : null,
+    subtitle: task.subtitle != null ? task.subtitle.slice(0, MAX_SUBTITLE_LENGTH) : null,
   };
 }
 
@@ -124,6 +228,22 @@ export function createTask(input: CreateTaskInput): Task {
     );
   }
 
+  if (input.startTime != null && !isTimeOfDay(input.startTime)) {
+    throw new Error(
+      `Task startTime must be a time-of-day string (HH:mm), got "${input.startTime}".`,
+    );
+  }
+
+  if (input.endTime != null && !isTimeOfDay(input.endTime)) {
+    throw new Error(`Task endTime must be a time-of-day string (HH:mm), got "${input.endTime}".`);
+  }
+
+  const startTime = input.startTime ?? null;
+  const endTime = input.endTime ?? null;
+  if (!isValidTimeRange(startTime, endTime)) {
+    throw new Error(`Task endTime ("${endTime}") must not be before startTime ("${startTime}").`);
+  }
+
   const timestamp = input.createdAt ?? todayAsCalendarDate();
 
   return clampTaskTextLengths({
@@ -135,5 +255,12 @@ export function createTask(input: CreateTaskInput): Task {
     completedAt: null,
     createdAt: timestamp,
     updatedAt: timestamp,
+    categoryId: input.categoryId ?? null,
+    priority: input.priority ?? null,
+    startTime,
+    endTime,
+    subtitle: input.subtitle?.trim() || null,
+    attendeeCount: input.attendeeCount ?? null,
+    hasAttachment: input.hasAttachment ?? false,
   });
 }
