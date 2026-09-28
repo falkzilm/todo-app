@@ -14,14 +14,24 @@ describe('AppComponent', () => {
     }).compileComponents();
   });
 
-  it('redirects / to /heute', async () => {
+  it('redirects / to /aufgaben', async () => {
     const fixture = TestBed.createComponent(AppComponent);
     const router = TestBed.inject(Router);
     fixture.detectChanges();
 
     await router.navigateByUrl('/');
 
-    expect(router.url).toBe('/heute');
+    expect(router.url).toBe('/aufgaben');
+  });
+
+  it('redirects /heute to /aufgaben', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const router = TestBed.inject(Router);
+    fixture.detectChanges();
+
+    await router.navigateByUrl('/heute');
+
+    expect(router.url).toBe('/aufgaben');
   });
 
   it('renders the fallback page for unknown paths', async () => {
