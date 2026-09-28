@@ -14,14 +14,24 @@ describe('AppComponent', () => {
     }).compileComponents();
   });
 
-  it('redirects / to /heute', async () => {
+  it('redirects / to /aufgaben', async () => {
     const fixture = TestBed.createComponent(AppComponent);
     const router = TestBed.inject(Router);
     fixture.detectChanges();
 
     await router.navigateByUrl('/');
 
-    expect(router.url).toBe('/heute');
+    expect(router.url).toBe('/aufgaben');
+  });
+
+  it('redirects /heute to /aufgaben', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const router = TestBed.inject(Router);
+    fixture.detectChanges();
+
+    await router.navigateByUrl('/heute');
+
+    expect(router.url).toBe('/aufgaben');
   });
 
   it('marks the active nav link with aria-current and the active class', async () => {
@@ -33,12 +43,12 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     const links = fixture.nativeElement.querySelectorAll('nav a') as NodeListOf<HTMLAnchorElement>;
-    const [heuteLink, kalenderLink] = Array.from(links);
+    const [, , kalenderLink, , einstellungenLink] = Array.from(links);
 
     expect(kalenderLink.classList.contains('is-active')).toBe(true);
     expect(kalenderLink.getAttribute('aria-current')).toBe('page');
-    expect(heuteLink.classList.contains('is-active')).toBe(false);
-    expect(heuteLink.hasAttribute('aria-current')).toBe(false);
+    expect(einstellungenLink.classList.contains('is-active')).toBe(false);
+    expect(einstellungenLink.hasAttribute('aria-current')).toBe(false);
   });
 
   it('renders the fallback page for unknown paths', async () => {
