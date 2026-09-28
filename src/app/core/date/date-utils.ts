@@ -43,6 +43,17 @@ function toMondayFirstWeekday(jsDay: number): number {
 }
 
 /**
+ * Returns the calendar date of the Sunday that ends the Monday-first week
+ * containing `reference`, e.g. for a "this week" filter that runs Mo–So.
+ */
+export function endOfWeekAsCalendarDate(reference: Date): CalendarDate {
+  const daysUntilSunday = 6 - toMondayFirstWeekday(reference.getDay());
+  return toCalendarDate(
+    new Date(reference.getFullYear(), reference.getMonth(), reference.getDate() + daysUntilSunday),
+  );
+}
+
+/**
  * Compares two dates as calendar days (year/month/day in local time), ignoring the
  * time of day. Unlike comparing `Date#getTime()` or `Date#toISOString()` (both
  * UTC-based), this stays correct across timezones and daylight-saving changeovers.

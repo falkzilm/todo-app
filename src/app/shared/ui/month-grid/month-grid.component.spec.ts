@@ -21,7 +21,11 @@ function createDataTransfer(data: Record<string, string> = {}): DataTransfer {
   } as unknown as DataTransfer;
 }
 
-function dragEvent(type: string, dataTransfer: DataTransfer, relatedTarget: EventTarget | null = null): Event {
+function dragEvent(
+  type: string,
+  dataTransfer: DataTransfer,
+  relatedTarget: EventTarget | null = null,
+): Event {
   const event = new Event(type, { bubbles: true, cancelable: true });
   Object.defineProperty(event, 'dataTransfer', { value: dataTransfer });
   Object.defineProperty(event, 'relatedTarget', { value: relatedTarget });
@@ -241,7 +245,7 @@ describe('MonthGridComponent', () => {
       const fixture = setUp(
         referenceDate,
         '2026-09-02',
-        new Map([['2026-09-05', { openCount: 3, allCompleted: false }]]),
+        new Map([['2026-09-05', { openCount: 3, allCompleted: false, categoryColors: [] }]]),
       );
 
       const cell = cellFor(fixture, referenceDate, '2026-09-05');
@@ -255,7 +259,7 @@ describe('MonthGridComponent', () => {
       const fixture = setUp(
         referenceDate,
         '2026-09-02',
-        new Map([['2026-09-05', { openCount: 3, allCompleted: false }]]),
+        new Map([['2026-09-05', { openCount: 3, allCompleted: false, categoryColors: [] }]]),
       );
 
       const cell = cellFor(fixture, referenceDate, '2026-09-05');
@@ -267,7 +271,7 @@ describe('MonthGridComponent', () => {
       const fixture = setUp(
         referenceDate,
         '2026-09-02',
-        new Map([['2026-09-05', { openCount: 0, allCompleted: true }]]),
+        new Map([['2026-09-05', { openCount: 0, allCompleted: true, categoryColors: [] }]]),
       );
 
       const cell = cellFor(fixture, referenceDate, '2026-09-05');

@@ -104,7 +104,9 @@ describe('CalendarPageComponent', () => {
 
   it('passes the task summaries from the store through to the month grid', () => {
     const today = todayAsCalendarDate();
-    const fixture = setUp(new Map([[today, { openCount: 2, allCompleted: false }]]));
+    const fixture = setUp(
+      new Map([[today, { openCount: 2, allCompleted: false, categoryColors: [] }]]),
+    );
 
     const todayCell = (
       Array.from(fixture.nativeElement.querySelectorAll('[role="gridcell"]')) as HTMLElement[]

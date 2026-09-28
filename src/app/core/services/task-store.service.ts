@@ -8,7 +8,8 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { groupByCalendarDate } from '../date/date-utils';
+import { endOfWeekAsCalendarDate, groupByCalendarDate } from '../date/date-utils';
+import { CategoryColor, DEFAULT_CATEGORIES } from '../models/category.model';
 import { createDemoTasks } from '../models/demo-tasks';
 import {
   CalendarDate,
@@ -24,6 +25,66 @@ import {
   todayAsCalendarDate,
 } from '../models/task.model';
 import { TaskPersistenceService } from './task-persistence.service';
+
+/** Category color per category id, resolved once since `DEFAULT_CATEGORIES` is a fixed constant. */
+const CATEGORY_COLOR_BY_ID = new Map(
+  DEFAULT_CATEGORIES.map((category) => [category.id, category.color]),
+);
+
+/**
+ * Orders tasks by `startTime` ascending, with tasks that have no `startTime` last.
+ * Completion state is intentionally not a sort key: a completed task keeps the slot
+ * its own time gives it instead of moving to a separate section (see the design).
+ * `Array#sort` is stable, so tasks tied on `startTime` (e.g. two without one) keep
+ * their original relative order.
+ */
+function compareByStartTime(a: Task, b: Task): number {
+  if (a.startTime === null || b.startTime === null) {
+    return a.startTime === b.startTime ? 0 : a.startTime === null ? 1 : -1;
+  }
+  return a.startTime.localeCompare(b.startTime);
+}
+
+/** Grouped, chronologically sorted agenda entries for a calendar day list. */
+export interface AgendaGroup {
+  readonly date: CalendarDate;
+  readonly tasks: readonly Task[];
+}
+
+const MAX_CATEGORY_DOTS = 3;
+
+/**
+ * Keeps the first `max` distinct values, preserving order of first appearance.
+ * Exported for direct unit testing of the cap, since the app's current fixed
+ * category set (`DEFAULT_CATEGORIES`) only has 2 colors and can't exercise it.
+ */
+export function capDistinct<T>(values: readonly T[], max: number): T[] {
+  const result: T[] = [];
+
+  for (const value of values) {
+    if (result.includes(value)) {
+      continue;
+    }
+
+    result.push(value);
+    if (result.length === max) {
+      break;
+    }
+  }
+
+  return result;
+}
+
+/** Up to 3 distinct category colors among `tasks`, in first-seen order; uncategorized/unknown categories are skipped. */
+function categoryColorsFor(tasks: readonly Task[]): CategoryColor[] {
+  const colors = tasks
+    .map((task) =>
+      task.categoryId !== null ? CATEGORY_COLOR_BY_ID.get(task.categoryId) : undefined,
+    )
+    .filter((color): color is CategoryColor => color !== undefined);
+
+  return capDistinct(colors, MAX_CATEGORY_DOTS);
+}
 
 export interface UpdateTaskInput {
   title?: string;
@@ -43,6 +104,8 @@ export interface DayTaskSummary {
   readonly openCount: number;
   /** `true` only when the day has at least one task and all of them are completed. */
   readonly allCompleted: boolean;
+  /** Up to 3 distinct category colors among the day's tasks, in first-seen order, for the month grid's dots. */
+  readonly categoryColors: readonly CategoryColor[];
 }
 
 /** Time to wait after the last change before persisting, so bursts of edits result in one write. */
@@ -96,6 +159,41 @@ export class TaskStoreService {
   readonly todayCompletedTasks = computed(() =>
     this.allTodayTasks().filter((task) => task.completed),
   );
+
+  /**
+   * Chip-bar filter: tasks due today, open and completed alike (a completed task stays
+   * inline at its sorted position instead of moving to a separate section).
+   */
+  readonly tasksToday = computed(() => this.allTodayTasks().slice().sort(compareByStartTime));
+
+  /** Chip-bar filter: tasks due from today through the end of the current Mo–So week. */
+  readonly tasksThisWeek = computed(() => {
+    const today = this.currentDate();
+    const weekEnd = endOfWeekAsCalendarDate(new Date(`${today}T00:00:00`));
+
+    return this.tasks()
+      .filter((task) => task.dueDate !== null && task.dueDate >= today && task.dueDate <= weekEnd)
+      .sort(compareByStartTime);
+  });
+
+  /** Chip-bar filter: all tasks with high priority, regardless of due date. */
+  readonly importantTasks = computed(() =>
+    this.tasks()
+      .filter((task) => task.priority === 'high')
+      .sort(compareByStartTime),
+  );
+
+  /** Tasks with a time range (start and end), grouped by due date and sorted chronologically, for the calendar's day agenda. */
+  readonly agenda: Signal<readonly AgendaGroup[]> = computed(() => {
+    const withTimeRange = this.tasks().filter(
+      (task) => task.dueDate !== null && task.startTime !== null && task.endTime !== null,
+    );
+    const grouped = groupByCalendarDate(withTimeRange, (task) => task.dueDate);
+
+    return Array.from(grouped.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, tasks]) => ({ date, tasks: tasks.slice().sort(compareByStartTime) }));
+  });
 
   /** Latest tasks not yet written to storage; cleared once a write completes. */
   private pendingTasks: Task[] | null = null;
@@ -248,7 +346,11 @@ export class TaskStoreService {
 
     for (const [date, tasks] of grouped) {
       const openCount = tasks.filter((task) => !task.completed).length;
-      summaries.set(date, { openCount, allCompleted: openCount === 0 });
+      summaries.set(date, {
+        openCount,
+        allCompleted: openCount === 0,
+        categoryColors: categoryColorsFor(tasks),
+      });
     }
 
     return summaries;
