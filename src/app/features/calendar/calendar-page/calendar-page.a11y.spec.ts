@@ -47,9 +47,10 @@ describe('CalendarPageComponent a11y', () => {
       providers: [
         {
           provide: TaskStoreService,
-          useValue: createMockStore(new Map([[today, { openCount: 1, allCompleted: false }]]), [
-            task,
-          ]),
+          useValue: createMockStore(
+            new Map([[today, { openCount: 1, allCompleted: false, categoryColors: [] }]]),
+            [task],
+          ),
         },
       ],
     });

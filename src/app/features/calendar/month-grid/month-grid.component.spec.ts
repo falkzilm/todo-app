@@ -217,7 +217,7 @@ describe('MonthGridComponent', () => {
       const fixture = setUp(
         referenceDate,
         '2026-09-02',
-        new Map([['2026-09-05', { openCount: 3, allCompleted: false }]]),
+        new Map([['2026-09-05', { openCount: 3, allCompleted: false, categoryColors: [] }]]),
       );
 
       const cell = cellFor(fixture, referenceDate, '2026-09-05');
@@ -231,7 +231,7 @@ describe('MonthGridComponent', () => {
       const fixture = setUp(
         referenceDate,
         '2026-09-02',
-        new Map([['2026-09-05', { openCount: 3, allCompleted: false }]]),
+        new Map([['2026-09-05', { openCount: 3, allCompleted: false, categoryColors: [] }]]),
       );
 
       const cell = cellFor(fixture, referenceDate, '2026-09-05');
@@ -243,7 +243,7 @@ describe('MonthGridComponent', () => {
       const fixture = setUp(
         referenceDate,
         '2026-09-02',
-        new Map([['2026-09-05', { openCount: 0, allCompleted: true }]]),
+        new Map([['2026-09-05', { openCount: 0, allCompleted: true, categoryColors: [] }]]),
       );
 
       const cell = cellFor(fixture, referenceDate, '2026-09-05');

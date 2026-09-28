@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
+import { CategoryColor } from '../models/category.model';
 import { Task, todayAsCalendarDate } from '../models/task.model';
 import { StorageStatusService } from './storage-status.service';
 import { STORAGE } from './storage.token';
-import { TaskStoreService } from './task-store.service';
+import { capDistinct, TaskStoreService } from './task-store.service';
 
 function createMockStorage(): Storage {
   const store = new Map<string, string>();
@@ -21,6 +22,20 @@ function createMockStorage(): Storage {
       return store.size;
     },
   };
+}
+
+/**
+ * Sets the fake system time and creates a fresh store on top of it, so `todayAsCalendarDate()`
+ * (read once at construction) resolves to a controlled date. Callers must `vi.useFakeTimers()`
+ * beforehand and `vi.useRealTimers()` in an `afterEach`.
+ */
+function createStoreAtSystemTime(systemTime: string): TaskStoreService {
+  vi.setSystemTime(new Date(systemTime));
+  const storage = createMockStorage();
+  storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({ providers: [{ provide: STORAGE, useValue: storage }] });
+  return TestBed.inject(TaskStoreService);
 }
 
 describe('TaskStoreService', () => {
@@ -199,6 +214,55 @@ describe('TaskStoreService', () => {
       expect(store.tasks()[0].dueDate).toBe('2026-09-01');
     });
 
+    it('sets categoryId, priority, startTime and endTime', () => {
+      const task = store.add({ title: 'Aufgabe' });
+
+      store.update(task.id, {
+        categoryId: 'arbeit',
+        priority: 'high',
+        startTime: '09:00',
+        endTime: '10:00',
+      });
+
+      const updated = store.tasks()[0];
+      expect(updated.categoryId).toBe('arbeit');
+      expect(updated.priority).toBe('high');
+      expect(updated.startTime).toBe('09:00');
+      expect(updated.endTime).toBe('10:00');
+    });
+
+    it('resets categoryId, priority, startTime and endTime to null', () => {
+      const task = store.add({
+        title: 'Aufgabe',
+        categoryId: 'arbeit',
+        priority: 'high',
+        startTime: '09:00',
+        endTime: '10:00',
+      });
+
+      store.update(task.id, { categoryId: null, priority: null, startTime: null, endTime: null });
+
+      const updated = store.tasks()[0];
+      expect(updated.categoryId).toBeNull();
+      expect(updated.priority).toBeNull();
+      expect(updated.startTime).toBeNull();
+      expect(updated.endTime).toBeNull();
+    });
+
+    it('throws when updating endTime to before the existing startTime', () => {
+      const task = store.add({ title: 'Aufgabe', startTime: '09:00', endTime: '10:00' });
+
+      expect(() => store.update(task.id, { endTime: '08:00' })).toThrow();
+      expect(store.tasks()[0].endTime).toBe('10:00');
+    });
+
+    it('throws when updating startTime to after the existing endTime', () => {
+      const task = store.add({ title: 'Aufgabe', startTime: '09:00', endTime: '10:00' });
+
+      expect(() => store.update(task.id, { startTime: '11:00' })).toThrow();
+      expect(store.tasks()[0].startTime).toBe('09:00');
+    });
+
     it('allows updating a task persisted before the agenda fields existed', () => {
       const legacyTask = {
         id: 'legacy-task',
@@ -220,9 +284,7 @@ describe('TaskStoreService', () => {
       });
       const legacyStore = TestBed.inject(TaskStoreService);
 
-      expect(() =>
-        legacyStore.update('legacy-task', { title: 'Neuer Titel' }),
-      ).not.toThrow();
+      expect(() => legacyStore.update('legacy-task', { title: 'Neuer Titel' })).not.toThrow();
 
       const updated = legacyStore.tasks()[0];
       expect(updated.title).toBe('Neuer Titel');
@@ -394,7 +456,7 @@ describe('TaskStoreService', () => {
 
       const summary = store.taskSummaryByDate().get('2026-09-05');
 
-      expect(summary).toEqual({ openCount: 2, allCompleted: false });
+      expect(summary).toEqual({ openCount: 2, allCompleted: false, categoryColors: [] });
     });
 
     it('marks a day as fully completed once every task due that day is done', () => {
@@ -404,6 +466,7 @@ describe('TaskStoreService', () => {
       expect(store.taskSummaryByDate().get('2026-09-05')).toEqual({
         openCount: 0,
         allCompleted: true,
+        categoryColors: [],
       });
     });
 
@@ -415,6 +478,7 @@ describe('TaskStoreService', () => {
       expect(store.taskSummaryByDate().get('2026-09-05')).toEqual({
         openCount: 1,
         allCompleted: false,
+        categoryColors: [],
       });
     });
 
@@ -435,16 +499,48 @@ describe('TaskStoreService', () => {
       expect(store.taskSummaryByDate().get('2026-09-05')).toEqual({
         openCount: 1,
         allCompleted: false,
+        categoryColors: [],
       });
 
       store.toggleCompleted(task.id);
       expect(store.taskSummaryByDate().get('2026-09-05')).toEqual({
         openCount: 0,
         allCompleted: true,
+        categoryColors: [],
       });
 
       store.remove(task.id);
       expect(store.taskSummaryByDate().has('2026-09-05')).toBe(false);
+    });
+
+    it('collects up to 3 distinct category colors among the day tasks, in first-seen order', () => {
+      store.add({ title: 'Arbeit 1', dueDate: '2026-09-05', categoryId: 'arbeit' });
+      store.add({ title: 'Privat', dueDate: '2026-09-05', categoryId: 'privat' });
+      store.add({ title: 'Arbeit 2 (Duplikat)', dueDate: '2026-09-05', categoryId: 'arbeit' });
+
+      expect(store.taskSummaryByDate().get('2026-09-05')?.categoryColors).toEqual([
+        'violet',
+        'green',
+      ]);
+    });
+
+    it('ignores uncategorized tasks and tasks with an unknown category id when collecting colors', () => {
+      store.add({ title: 'Ohne Kategorie', dueDate: '2026-09-05' });
+      store.add({ title: 'Unbekannte Kategorie', dueDate: '2026-09-05', categoryId: 'unbekannt' });
+
+      expect(store.taskSummaryByDate().get('2026-09-05')?.categoryColors).toEqual([]);
+    });
+  });
+
+  describe('capDistinct', () => {
+    it('keeps only the first `max` distinct values, in order of first appearance', () => {
+      const colors: CategoryColor[] = ['violet', 'green', 'violet', 'orange', 'blue'];
+
+      expect(capDistinct(colors, 3)).toEqual(['violet', 'green', 'orange']);
+    });
+
+    it('returns all distinct values when there are fewer than `max`', () => {
+      expect(capDistinct(['violet', 'violet'], 3)).toEqual(['violet']);
     });
   });
 
@@ -534,6 +630,161 @@ describe('TaskStoreService', () => {
       const middle = store.add({ title: 'Mittel überfällig', dueDate: '2023-06-15' });
 
       expect(store.overdueTasks()).toEqual([oldest, middle, recent]);
+    });
+  });
+
+  describe('tasksToday', () => {
+    it('returns tasks due today, sorted by startTime ascending with untimed tasks last', () => {
+      const today = todayAsCalendarDate();
+      const late = store.add({ title: 'Später', dueDate: today, startTime: '15:00' });
+      const noTime = store.add({ title: 'Ohne Uhrzeit', dueDate: today });
+      const early = store.add({ title: 'Früh', dueDate: today, startTime: '08:00' });
+
+      expect(store.tasksToday().map((task) => task.id)).toEqual([early.id, late.id, noTime.id]);
+    });
+
+    it('excludes tasks without a due date', () => {
+      store.add({ title: 'Ohne Datum' });
+
+      expect(store.tasksToday()).toEqual([]);
+    });
+
+    it('excludes tasks due on a different day', () => {
+      store.add({ title: 'Anderer Tag', dueDate: '2099-01-01' });
+
+      expect(store.tasksToday()).toEqual([]);
+    });
+
+    it('includes a completed task inline at its sorted position, not in a separate section', () => {
+      const today = todayAsCalendarDate();
+      const early = store.add({ title: 'Früh', dueDate: today, startTime: '08:00' });
+      const done = store.add({ title: 'Erledigt', dueDate: today, startTime: '09:00' });
+      const late = store.add({ title: 'Spät', dueDate: today, startTime: '10:00' });
+      store.toggleCompleted(done.id);
+
+      expect(store.tasksToday().map((task) => task.id)).toEqual([early.id, done.id, late.id]);
+    });
+  });
+
+  describe('tasksThisWeek', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('includes tasks due from today through the end of the current Mo–So week', () => {
+      vi.useFakeTimers();
+      // 2026-09-02 is a Wednesday; its Mo–So week runs 2026-08-31 to 2026-09-06.
+      const weekStore = createStoreAtSystemTime('2026-09-02T10:00:00');
+
+      const today = weekStore.add({ title: 'Heute', dueDate: '2026-09-02' });
+      const sunday = weekStore.add({ title: 'Sonntag (Wochenende)', dueDate: '2026-09-06' });
+      const lastMonday = weekStore.add({
+        title: 'Letzten Montag (bereits vorbei)',
+        dueDate: '2026-08-31',
+      });
+      const nextMonday = weekStore.add({
+        title: 'Nächster Montag (nächste Woche)',
+        dueDate: '2026-09-07',
+      });
+
+      const ids = weekStore.tasksThisWeek().map((task) => task.id);
+      expect(ids).toContain(today.id);
+      expect(ids).toContain(sunday.id);
+      expect(ids).not.toContain(lastMonday.id);
+      expect(ids).not.toContain(nextMonday.id);
+    });
+
+    it('excludes tasks without a due date', () => {
+      vi.useFakeTimers();
+      const weekStore = createStoreAtSystemTime('2026-09-02T10:00:00');
+
+      weekStore.add({ title: 'Ohne Datum' });
+
+      expect(weekStore.tasksThisWeek()).toEqual([]);
+    });
+
+    it('includes a completed task due this week inline at its sorted position', () => {
+      vi.useFakeTimers();
+      const weekStore = createStoreAtSystemTime('2026-09-02T10:00:00');
+
+      const early = weekStore.add({ title: 'Früh', dueDate: '2026-09-03', startTime: '08:00' });
+      const done = weekStore.add({ title: 'Erledigt', dueDate: '2026-09-04', startTime: '09:00' });
+      weekStore.toggleCompleted(done.id);
+
+      expect(weekStore.tasksThisWeek().map((task) => task.id)).toEqual([early.id, done.id]);
+    });
+  });
+
+  describe('importantTasks', () => {
+    it('returns only tasks with high priority', () => {
+      const important = store.add({ title: 'Wichtig', priority: 'high' });
+      store.add({ title: 'Mittel', priority: 'medium' });
+      store.add({ title: 'Ohne Priorität' });
+
+      expect(store.importantTasks()).toEqual([important]);
+    });
+
+    it('includes a high-priority task even without a due date', () => {
+      const task = store.add({ title: 'Wichtig, ohne Datum', priority: 'high' });
+
+      expect(store.importantTasks()).toEqual([task]);
+    });
+
+    it('sorts by startTime ascending, with untimed tasks last', () => {
+      const noTime = store.add({ title: 'Ohne Uhrzeit', priority: 'high' });
+      const late = store.add({ title: 'Spät', priority: 'high', startTime: '15:00' });
+      const early = store.add({ title: 'Früh', priority: 'high', startTime: '08:00' });
+
+      expect(store.importantTasks().map((task) => task.id)).toEqual([early.id, late.id, noTime.id]);
+    });
+
+    it('includes a completed high-priority task inline at its sorted position', () => {
+      const early = store.add({ title: 'Früh', priority: 'high', startTime: '08:00' });
+      const done = store.add({ title: 'Erledigt', priority: 'high', startTime: '09:00' });
+      store.toggleCompleted(done.id);
+
+      expect(store.importantTasks().map((task) => task.id)).toEqual([early.id, done.id]);
+    });
+  });
+
+  describe('agenda', () => {
+    it('groups tasks with a time range by due date, sorted chronologically across and within days', () => {
+      const laterDayLate = store.add({
+        title: 'Später Tag, spät',
+        dueDate: '2026-09-06',
+        startTime: '14:00',
+        endTime: '15:30',
+      });
+      const laterDayEarly = store.add({
+        title: 'Später Tag, früh',
+        dueDate: '2026-09-06',
+        startTime: '09:00',
+        endTime: '10:00',
+      });
+      const earlierDay = store.add({
+        title: 'Früherer Tag',
+        dueDate: '2026-09-02',
+        startTime: '19:00',
+        endTime: '20:30',
+      });
+
+      expect(store.agenda()).toEqual([
+        { date: '2026-09-02', tasks: [earlierDay] },
+        { date: '2026-09-06', tasks: [laterDayEarly, laterDayLate] },
+      ]);
+    });
+
+    it('excludes tasks that do not have both a startTime and an endTime', () => {
+      store.add({ title: 'Nur Startzeit', dueDate: '2026-09-02', startTime: '09:00' });
+      store.add({ title: 'Ohne Uhrzeit', dueDate: '2026-09-02' });
+
+      expect(store.agenda()).toEqual([]);
+    });
+
+    it('excludes tasks without a due date, even with a time range', () => {
+      store.add({ title: 'Ohne Datum', startTime: '09:00', endTime: '10:00' });
+
+      expect(store.agenda()).toEqual([]);
     });
   });
 
