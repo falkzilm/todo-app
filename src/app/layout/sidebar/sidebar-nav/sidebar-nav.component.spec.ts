@@ -12,6 +12,26 @@ describe('SidebarNavComponent', () => {
     }).compileComponents();
   });
 
+  it('renders all five entries in order with their labels and icons', () => {
+    const fixture = TestBed.createComponent(SidebarNavComponent);
+    fixture.detectChanges();
+
+    const nav = fixture.nativeElement.querySelector('nav');
+    expect(nav).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('nav > ul')).toBeTruthy();
+
+    const items = fixture.nativeElement.querySelectorAll('li');
+    const labels = Array.from(items as NodeListOf<HTMLLIElement>).map((item) =>
+      item.querySelector('.sidebar-nav__label')?.textContent?.trim(),
+    );
+
+    expect(labels).toEqual(['Dashboard', 'Aufgaben', 'Kalender', 'Projekte', 'Einstellungen']);
+
+    for (const item of Array.from(items as NodeListOf<HTMLLIElement>)) {
+      expect(item.querySelector('app-icon')).toBeTruthy();
+    }
+  });
+
   it('marks the active nav link with aria-current and the active class', async () => {
     const fixture = TestBed.createComponent(SidebarNavComponent);
     const router = TestBed.inject(Router);
@@ -23,11 +43,29 @@ describe('SidebarNavComponent', () => {
     const links = fixture.nativeElement.querySelectorAll(
       'a',
     ) as NodeListOf<HTMLAnchorElement>;
-    const [heuteLink, kalenderLink] = Array.from(links);
+    const [, aufgabenLink, kalenderLink] = Array.from(links);
 
     expect(kalenderLink.classList.contains('is-active')).toBe(true);
     expect(kalenderLink.getAttribute('aria-current')).toBe('page');
-    expect(heuteLink.classList.contains('is-active')).toBe(false);
-    expect(heuteLink.hasAttribute('aria-current')).toBe(false);
+    expect(aufgabenLink.classList.contains('is-active')).toBe(false);
+    expect(aufgabenLink.hasAttribute('aria-current')).toBe(false);
+  });
+
+  it('marks exactly one entry as active for a different route', async () => {
+    const fixture = TestBed.createComponent(SidebarNavComponent);
+    const router = TestBed.inject(Router);
+    fixture.detectChanges();
+
+    await router.navigateByUrl('/projekte');
+    fixture.detectChanges();
+
+    const links = Array.from(
+      fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
+    );
+    const activeLinks = links.filter((link) => link.classList.contains('is-active'));
+
+    expect(activeLinks.length).toBe(1);
+    expect(activeLinks[0].getAttribute('aria-current')).toBe('page');
+    expect(activeLinks[0].textContent).toContain('Projekte');
   });
 });
