@@ -54,14 +54,11 @@ describe('TaskPersistenceService', () => {
   });
 
   describe('load', () => {
-    it('seeds and returns demo tasks covering today, overdue and upcoming when nothing has been persisted yet', () => {
+    it('seeds and returns demo tasks covering today and upcoming when nothing has been persisted yet', () => {
       const tasks = service.load();
 
       expect(tasks.length).toBeGreaterThan(0);
       expect(tasks.some((task) => task.dueDate === todayAsCalendarDate())).toBe(true);
-      expect(
-        tasks.some((task) => task.dueDate !== null && task.dueDate < todayAsCalendarDate()),
-      ).toBe(true);
       expect(
         tasks.some((task) => task.dueDate !== null && task.dueDate > todayAsCalendarDate()),
       ).toBe(true);

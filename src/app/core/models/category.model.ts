@@ -17,4 +17,6 @@ export interface Category {
 export const DEFAULT_CATEGORIES: readonly Category[] = [
   { id: 'arbeit', name: 'Arbeit', color: 'violet' },
   { id: 'privat', name: 'Privat', color: 'green' },
+  { id: 'familie', name: 'Familie', color: 'orange' },
+  { id: 'projekte', name: 'Projekte', color: 'blue' },
 ];

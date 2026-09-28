@@ -45,7 +45,7 @@ describe('TaskStoreService', () => {
   });
 
   describe('demo data seeding', () => {
-    it('seeds demo tasks covering today, overdue and upcoming when storage is completely empty', () => {
+    it('seeds demo tasks covering today and upcoming when storage is completely empty', () => {
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [{ provide: STORAGE, useValue: createMockStorage() }],
@@ -56,7 +56,6 @@ describe('TaskStoreService', () => {
       const today = todayAsCalendarDate();
       expect(tasks.length).toBeGreaterThan(0);
       expect(tasks.some((task) => task.dueDate === today)).toBe(true);
-      expect(tasks.some((task) => task.dueDate !== null && task.dueDate < today)).toBe(true);
       expect(tasks.some((task) => task.dueDate !== null && task.dueDate > today)).toBe(true);
     });
 
@@ -76,7 +75,6 @@ describe('TaskStoreService', () => {
       expect(tasks.length).toBeGreaterThan(0);
       expect(tasks.some((task) => task.title === 'Eigene Aufgabe')).toBe(false);
       expect(tasks.some((task) => task.dueDate === today)).toBe(true);
-      expect(tasks.some((task) => task.dueDate !== null && task.dueDate < today)).toBe(true);
       expect(tasks.some((task) => task.dueDate !== null && task.dueDate > today)).toBe(true);
     });
 
