@@ -31,7 +31,7 @@ describe('TaskStoreService', () => {
     // a blank slate instead of the demo tasks that a truly empty storage
     // would be seeded with. Demo seeding itself is covered separately below.
     const storage = createMockStorage();
-    storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+    storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
 
     TestBed.configureTestingModule({
       providers: [{ provide: STORAGE, useValue: storage }],
@@ -547,7 +547,7 @@ describe('TaskStoreService', () => {
       vi.setSystemTime(new Date('2026-09-02T23:59:00'));
 
       const rolloverStorage = createMockStorage();
-      rolloverStorage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+      rolloverStorage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [{ provide: STORAGE, useValue: rolloverStorage }],
@@ -653,7 +653,7 @@ describe('TaskStoreService', () => {
           hasAttachment: false,
         },
       ];
-      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: persisted }));
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: persisted }));
 
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({ providers: [{ provide: STORAGE, useValue: storage }] });
@@ -703,7 +703,7 @@ describe('TaskStoreService', () => {
       vi.runAllTimers();
 
       const raw = storage.getItem('todo-app.tasks');
-      expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [task] });
+      expect(JSON.parse(raw as string)).toEqual({ version: 2, tasks: [task] });
     });
 
     it('flushes an outstanding debounced write synchronously when the page is hidden', () => {
@@ -720,7 +720,7 @@ describe('TaskStoreService', () => {
 
       expect(setItemSpy).toHaveBeenCalledTimes(1);
       const raw = storage.getItem('todo-app.tasks');
-      expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [task] });
+      expect(JSON.parse(raw as string)).toEqual({ version: 2, tasks: [task] });
 
       vi.runAllTimers();
       expect(setItemSpy).toHaveBeenCalledTimes(1);
@@ -739,7 +739,7 @@ describe('TaskStoreService', () => {
 
       expect(setItemSpy).toHaveBeenCalledTimes(1);
       const raw = storage.getItem('todo-app.tasks');
-      expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [task] });
+      expect(JSON.parse(raw as string)).toEqual({ version: 2, tasks: [task] });
     });
   });
 });
