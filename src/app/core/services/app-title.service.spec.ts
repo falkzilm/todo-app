@@ -13,8 +13,8 @@ describe('AppTitleService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should default to "ToDo App"', () => {
-    expect(service.title()).toBe('ToDo App');
+  it('should default to "FocusDay"', () => {
+    expect(service.title()).toBe('FocusDay');
   });
 
   it('should update document.title when the title signal changes', () => {
