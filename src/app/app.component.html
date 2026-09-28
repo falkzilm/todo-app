@@ -2,31 +2,18 @@
 
 <div class="visually-hidden" role="status" aria-live="polite">{{ announcement() }}</div>
 
-<header class="app-shell__header">
-  <div class="app-shell__container">
-    <h1>{{ title() }}</h1>
-    <nav>
-      <a routerLink="/heute" routerLinkActive="is-active" ariaCurrentWhenActive="page">Heute</a>
-      <a routerLink="/kalender" routerLinkActive="is-active" ariaCurrentWhenActive="page"
-        >Kalender</a
-      >
-    </nav>
-    <div class="app-shell__user">
-      <app-avatar [name]="userDisplayName()" [src]="userAvatarSrc()" [decorative]="true" />
-      <span class="app-shell__user-info">
-        <span class="app-shell__user-name">{{ userDisplayName() }}</span>
-        <span class="app-shell__user-email">{{ userEmail() }}</span>
-      </span>
-    </div>
+<div class="app-shell">
+  <app-sidebar />
+
+  <div class="app-shell__content">
+    @if (storageUnavailable()) {
+      <p class="storage-notice" role="status">
+        Änderungen werden in dieser Sitzung nicht gespeichert.
+      </p>
+    }
+
+    <main id="main-content" tabindex="-1">
+      <router-outlet />
+    </main>
   </div>
-</header>
-
-@if (storageUnavailable()) {
-  <p class="storage-notice app-shell__container" role="status">
-    Änderungen werden in dieser Sitzung nicht gespeichert.
-  </p>
-}
-
-<main id="main-content" class="app-shell__container" tabindex="-1">
-  <router-outlet />
-</main>
+</div>

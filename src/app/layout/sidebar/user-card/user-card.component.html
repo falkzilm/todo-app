@@ -1,0 +1,7 @@
+<div class="user-card">
+  <app-avatar [name]="displayName()" [src]="avatarSrc()" [decorative]="true" />
+  <span class="user-card__info">
+    <span class="user-card__name">{{ displayName() }}</span>
+    <span class="user-card__email">{{ email() }}</span>
+  </span>
+</div>
