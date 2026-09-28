@@ -14,9 +14,13 @@ import {
   CalendarDate,
   CreateTaskInput,
   Task,
+  TaskPriority,
+  TimeOfDay,
   clampTaskTextLengths,
   createTask,
   isCalendarDate,
+  isTimeOfDay,
+  isValidTimeRange,
   todayAsCalendarDate,
 } from '../models/task.model';
 import { TaskPersistenceService } from './task-persistence.service';
@@ -25,6 +29,13 @@ export interface UpdateTaskInput {
   title?: string;
   notes?: string | null;
   dueDate?: CalendarDate | null;
+  categoryId?: string | null;
+  priority?: TaskPriority | null;
+  startTime?: TimeOfDay | null;
+  endTime?: TimeOfDay | null;
+  subtitle?: string | null;
+  attendeeCount?: number | null;
+  hasAttachment?: boolean;
 }
 
 /** Aggregated task state for a single calendar day, e.g. for the calendar's day indicators. */
@@ -259,11 +270,38 @@ export class TaskStoreService {
       );
     }
 
+    if (changes.startTime != null && !isTimeOfDay(changes.startTime)) {
+      throw new Error(
+        `Task startTime must be a time-of-day string (HH:mm), got "${changes.startTime}".`,
+      );
+    }
+
+    if (changes.endTime != null && !isTimeOfDay(changes.endTime)) {
+      throw new Error(
+        `Task endTime must be a time-of-day string (HH:mm), got "${changes.endTime}".`,
+      );
+    }
+
+    const startTime = changes.startTime !== undefined ? changes.startTime : task.startTime;
+    const endTime = changes.endTime !== undefined ? changes.endTime : task.endTime;
+    if (!isValidTimeRange(startTime, endTime)) {
+      throw new Error(`Task endTime ("${endTime}") must not be before startTime ("${startTime}").`);
+    }
+
     return clampTaskTextLengths({
       ...task,
       title,
       notes: changes.notes !== undefined ? changes.notes?.trim() || null : task.notes,
       dueDate: changes.dueDate !== undefined ? changes.dueDate : task.dueDate,
+      categoryId: changes.categoryId !== undefined ? changes.categoryId : task.categoryId,
+      priority: changes.priority !== undefined ? changes.priority : task.priority,
+      startTime,
+      endTime,
+      subtitle: changes.subtitle !== undefined ? changes.subtitle?.trim() || null : task.subtitle,
+      attendeeCount:
+        changes.attendeeCount !== undefined ? changes.attendeeCount : task.attendeeCount,
+      hasAttachment:
+        changes.hasAttachment !== undefined ? changes.hasAttachment : task.hasAttachment,
       updatedAt: todayAsCalendarDate(),
     });
   }
