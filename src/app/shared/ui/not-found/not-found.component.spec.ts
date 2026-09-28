@@ -17,12 +17,12 @@ describe('NotFoundComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should link back to /heute', () => {
+  it('should link back to /aufgaben', () => {
     const fixture = TestBed.createComponent(NotFoundComponent);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     const link = compiled.querySelector('a');
-    expect(link?.getAttribute('href')).toBe('/heute');
+    expect(link?.getAttribute('href')).toBe('/aufgaben');
   });
 });

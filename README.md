@@ -26,15 +26,19 @@ Alle Daten liegen ausschließlich im Browser, es gibt kein Backend.
 
 Es sind keine Bilddateien im Repository hinterlegt (um es klein zu halten);
 die App lässt sich stattdessen in unter einer Minute lokal ansehen
-(`npm ci && npm start`, siehe [Setup](#setup)). Die zwei über die Navigation
-erreichbaren Ansichten:
+(`npm ci && npm start`, siehe [Setup](#setup)). Die fünf über die Navigation
+erreichbaren Ansichten (TDP-24):
 
-- **Heute** (`/heute`, Startseite): Fortschrittsanzeige für den Tag, gefolgt
-  von den Gruppen "Heute", "Überfällig" und einem einklappbaren
-  "Erledigt"-Bereich.
+- **Aufgaben** (`/aufgaben`, Startseite): aktuell ein Platzhalter; die
+  inhaltliche Ausgestaltung erfolgt in einem eigenen Item. `/heute` (die
+  bisherige Startseite) leitet auf `/aufgaben` weiter, damit bestehende
+  Links/Bookmarks nicht brechen.
 - **Kalender** (`/kalender`): Monatsraster mit einem Indikator pro Tag
   (offene Aufgaben, komplett erledigt) und einer Tagesliste für den
   ausgewählten Tag.
+- **Dashboard** (`/dashboard`), **Projekte** (`/projekte`) und
+  **Einstellungen** (`/einstellungen`): aktuell Platzhalter; die inhaltliche
+  Ausgestaltung erfolgt in eigenen Items je Feature-Ordner.
 
 ## Setup
 
@@ -93,15 +97,24 @@ Der Code unter `src/app` ist nach Feature-Slices organisiert:
 - `shared/ui/` – wiederverwendbare, feature-übergreifende UI-Bausteine ohne
   eigenen State (z. B. `ButtonComponent`, `CheckboxComponent`,
   `TaskItemComponent`, `MonthGridComponent`, `PageHeaderComponent`).
-- `features/heute/` – Startseite unter `/heute`: Tagesfortschritt, heutige,
-  überfällige und erledigte Aufgaben.
+- `features/aufgaben/` – Startseite unter `/aufgaben` (ersetzt die frühere
+  Startseite `/heute`, siehe unten); aktuell ein Platzhalter, die inhaltliche
+  Ausgestaltung erfolgt in einem eigenen Item.
 - `features/calendar/` – Kalenderansicht unter `/kalender`: Monatsraster
   plus Tagesliste.
-- `features/tasks/` – eine weitere Aufgabenlisten-Ansicht
-  (`TasksPageComponent`/`TASKS_ROUTES`); aktuell **nicht** in
-  `app.routes.ts` eingebunden und über die Navigation nicht erreichbar. Beim
-  Einstieg in den Code nicht mit der tatsächlichen Startseite (`/heute`)
-  verwechseln.
+- `features/dashboard/`, `features/projekte/`, `features/einstellungen/` –
+  Ansichten unter `/dashboard`, `/projekte` bzw. `/einstellungen`; aktuell
+  jeweils ein Platzhalter, die inhaltliche Ausgestaltung erfolgt in eigenen
+  Items je Feature-Ordner.
+- `features/heute/` und `features/tasks/` – zwei frühere
+  Aufgabenlisten-Ansichten (`HeutePageComponent`/`HEUTE_ROUTES` bzw.
+  `TasksPageComponent`/`TASKS_ROUTES`); seit TDP-24 (Umstellung auf die fünf
+  Navigationsziele oben) ist keine der beiden mehr in `app.routes.ts`
+  eingebunden oder über die Navigation erreichbar – `/heute` ist nur noch ein
+  Redirect auf `/aufgaben`. Bekannte Inkonsistenz (kein Produktentscheid,
+  sondern offener Aufräumpunkt): Beide Komponenten enthalten voll
+  ausgestaltete Aufgabenlisten-Logik, die vermutlich als Ausgangspunkt für die
+  inhaltliche Ausgestaltung von `features/aufgaben/` dient.
 
 Es gibt kein Backend und keine Proxy-Konfiguration; alle Daten liegen
 ausschließlich im Client-State (Signals), gespiegelt in `localStorage`.
@@ -494,40 +507,56 @@ CLI-Standardwerte (500 kB/1 MB bzw. 4 kB/8 kB), die bei dieser kleinen App
 Verdopplungen unbemerkt durchließen.
 
 Aktueller Stand eines Produktions-Builds (`npm run build`, Angular
-`21.2.22`, ungzippt/"Raw size"):
+`21.2.22`, ungzippt/"Raw size"), nach Umstellung auf die fünf
+Navigationsziele (TDP-24):
 
 ```
-Initial chunk files   | Names               |  Raw size | Estimated transfer size
-chunk-622DW6YV.js     | -                   | 150.90 kB |                43.96 kB
-chunk-QIWV3FMO.js     | -                   |  88.25 kB |                22.24 kB
-polyfills-5CFQRCPP.js | polyfills           |  34.59 kB |                11.33 kB
-main-KGJAKJB3.js      | main                |   3.73 kB |                 1.36 kB
-styles-UGZUCUP7.css   | styles              |   2.80 kB |               814 bytes
-chunk-44AGDEVN.js     | -                   | 799 bytes |               799 bytes
+Initial chunk files   | Names                |  Raw size | Estimated transfer size
+chunk-GJSBWUDU.js     | -                    | 145.33 kB |                42.65 kB
+chunk-DNWCANIM.js     | -                    |  88.28 kB |                22.24 kB
+polyfills-5CFQRCPP.js | polyfills            |  34.59 kB |                11.33 kB
+main-F76XAF2K.js      | main                 |   9.03 kB |                 2.82 kB
+chunk-FN7PVG4Y.js     | -                    |   5.64 kB |                 1.62 kB
+styles-ZUFYYCRJ.css   | styles               |   4.75 kB |                 1.23 kB
+chunk-YTIKO2FO.js     | -                    |   1.35 kB |               553 bytes
 
-                      | Initial total       | 281.06 kB |                80.51 kB
+                      | Initial total        | 288.96 kB |                82.44 kB
 ```
 
-Das initiale Bundle liegt damit bei rund 281 kB und damit unter der
-320-kB-Warnschwelle bzw. deutlich unter der 450-kB-Fehlerschwelle. Die größte
-kompilierte Komponenten-Stylesheet (`task-item.component.scss`) liegt bei
-rund 2.46 kB und damit unter dem 3-kB/5-kB-Budget für `anyComponentStyle`.
+Das initiale Bundle liegt damit bei rund 289 kB und damit weiterhin unter der
+320-kB-Warnschwelle bzw. deutlich unter der 450-kB-Fehlerschwelle – trotz drei
+zusätzlicher Navigationsziele und einer größeren Navigation blieb genug
+Spielraum, sodass keine Anpassung der Budgets in `angular.json` nötig war. Die
+größte kompilierte Komponenten-Stylesheet (`task-item.component.scss`) liegt
+weiterhin unter dem 3-kB/5-kB-Budget für `anyComponentStyle`.
 
 ### Lazy Loading
 
-Die beiden über die Navigation erreichbaren Feature-Routen werden per
+Alle fünf über die Navigation erreichbaren Feature-Routen werden per
 `loadChildren`-Dynamic-Import lazy geladen (`src/app/app.routes.ts`):
 
 ```ts
-{ path: 'heute', loadChildren: () => import('./features/heute/heute.routes').then(...) },
+{ path: 'dashboard', loadChildren: () => import('./features/dashboard/dashboard.routes').then(...) },
+{ path: 'aufgaben', loadChildren: () => import('./features/aufgaben/aufgaben.routes').then(...) },
 { path: 'kalender', loadChildren: () => import('./features/calendar/calendar.routes').then(...) },
+{ path: 'projekte', loadChildren: () => import('./features/projekte/projekte.routes').then(...) },
+{ path: 'einstellungen', loadChildren: () => import('./features/einstellungen/einstellungen.routes').then(...) },
 ```
 
-Dadurch landet Kalender-spezifischer Code (u. a. `CalendarPageComponent`,
-`MonthGridComponent`) nicht im initialen Bundle, sondern in einem eigenen
-Lazy-Chunk (`calendar-routes`, ca. 7.05 kB Raw-Size / 2.31 kB Transfer-Size
-laut obigem Build), der erst beim Navigieren zu `/kalender` nachgeladen wird.
-Analog gilt das für `/heute` (`heute-routes`-Chunk). Ein zusätzliches
+Dadurch landet Feature-spezifischer Code nicht im initialen Bundle, sondern in
+je einem eigenen Lazy-Chunk (`dashboard-routes`, `aufgaben-routes`,
+`calendar-routes`, `projekte-routes`, `einstellungen-routes`), der erst beim
+Navigieren zur jeweiligen Route nachgeladen wird. Der `calendar-routes`-Chunk
+ist mit ca. 74 kB Raw-Size deutlich größer als die anderen (die drei
+Platzhalter-Chunks liegen jeweils unter 500 Bytes): Er enthält neben
+`CalendarPageComponent`/`MonthGridComponent` inzwischen auch geteilten Code
+(u. a. `TaskItemComponent`, `FormsModule`), der zuvor – als `/heute` noch
+`HeutePageComponent` lud – in gemeinsame Initial-Chunks gehoben wurde. Seit
+`/heute` nur noch auf `/aufgaben` weiterleitet (siehe
+[Architektur und Datenfluss](#architektur-und-datenfluss)) ist `Kalender` die
+einzige verbleibende Route, die diesen Code nutzt, wodurch er vollständig in
+ihren eigenen Lazy-Chunk wandert – das initiale Bundle profitiert davon
+zusätzlich. Ein zusätzliches
 `loadComponent` innerhalb der jeweiligen Routen-Datei wäre hier kein
 weiterer Gewinn: Jede Route hat nur eine einzige Seiten-Komponente, sodass
 das Splitting bereits auf Routen-Ebene vollständig greift.
@@ -689,7 +718,6 @@ Offene Produktfragen:
   separates Folge-Ticket vorgemerkt.
 
 Bekannte Inkonsistenz im Code (kein Produktentscheid, sondern offener
-Aufräumpunkt): `features/tasks/` (`TasksPageComponent`/`TASKS_ROUTES`) ist
-nicht in `app.routes.ts` eingebunden und über die Navigation nicht
-erreichbar – siehe
-[Architektur und Datenfluss](#architektur-und-datenfluss).
+Aufräumpunkt): `features/heute/` und `features/tasks/` sind seit TDP-24 nicht
+mehr in `app.routes.ts` eingebunden und über die Navigation nicht erreichbar –
+siehe [Architektur und Datenfluss](#architektur-und-datenfluss).
