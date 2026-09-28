@@ -75,13 +75,13 @@ describe('TaskPersistenceService', () => {
     });
 
     it('does not insert demo tasks when the user has already saved data, even an empty list', () => {
-      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
 
       expect(service.load()).toEqual([]);
     });
 
     it('returns the persisted tasks for the current schema version', () => {
-      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [exampleTask] }));
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [exampleTask] }));
 
       expect(service.load()).toEqual([exampleTask]);
     });
@@ -97,7 +97,7 @@ describe('TaskPersistenceService', () => {
       delete withoutTitle['title'];
       storage.setItem(
         'todo-app.tasks',
-        JSON.stringify({ version: 1, tasks: [withoutTitle, exampleTask] }),
+        JSON.stringify({ version: 2, tasks: [withoutTitle, exampleTask] }),
       );
 
       expect(service.load()).toEqual([exampleTask]);
@@ -107,7 +107,7 @@ describe('TaskPersistenceService', () => {
       const wrongType = { ...exampleTask, completed: 'yes' };
       storage.setItem(
         'todo-app.tasks',
-        JSON.stringify({ version: 1, tasks: [wrongType, exampleTask] }),
+        JSON.stringify({ version: 2, tasks: [wrongType, exampleTask] }),
       );
 
       expect(service.load()).toEqual([exampleTask]);
@@ -117,7 +117,7 @@ describe('TaskPersistenceService', () => {
       const badDate = { ...exampleTask, createdAt: '01.09.2026' };
       storage.setItem(
         'todo-app.tasks',
-        JSON.stringify({ version: 1, tasks: [badDate, exampleTask] }),
+        JSON.stringify({ version: 2, tasks: [badDate, exampleTask] }),
       );
 
       expect(service.load()).toEqual([exampleTask]);
@@ -131,7 +131,7 @@ describe('TaskPersistenceService', () => {
       storage.setItem(
         'todo-app.tasks',
         JSON.stringify({
-          version: 1,
+          version: 2,
           tasks: [badDueDate, badCompletedAt, badCreatedAt, badUpdatedAt, exampleTask],
         }),
       );
@@ -139,7 +139,7 @@ describe('TaskPersistenceService', () => {
       expect(service.load()).toEqual([exampleTask]);
     });
 
-    it('normalizes a task persisted before the agenda fields existed to explicit null/false defaults', () => {
+    it('migrates a task persisted under the previous schema version (before the agenda fields existed) to explicit null/false defaults', () => {
       const legacyTask = {
         id: 'legacy-task',
         title: 'Alte Aufgabe',
@@ -168,23 +168,39 @@ describe('TaskPersistenceService', () => {
       const invertedRange = { ...exampleTask, startTime: '10:00', endTime: '09:00' };
       storage.setItem(
         'todo-app.tasks',
-        JSON.stringify({ version: 1, tasks: [invertedRange, exampleTask] }),
+        JSON.stringify({ version: 2, tasks: [invertedRange, exampleTask] }),
       );
 
       expect(service.load()).toEqual([exampleTask]);
     });
 
-    it('clamps overly long titles and notes to the defined maximum', () => {
+    it('clamps overly long titles, notes and subtitles to the defined maximum', () => {
       const longTask = {
         ...exampleTask,
         title: 'a'.repeat(500),
         notes: 'b'.repeat(5000),
+        subtitle: 'c'.repeat(500),
       };
-      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [longTask] }));
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [longTask] }));
 
       const [loaded] = service.load();
       expect(loaded.title.length).toBeLessThanOrEqual(200);
       expect(loaded.notes?.length).toBeLessThanOrEqual(2000);
+      expect(loaded.subtitle?.length).toBeLessThanOrEqual(200);
+    });
+
+    it('discards persisted tasks with invalid new fields while keeping valid entries from the same list', () => {
+      const invalidPriority = { ...exampleTask, id: 'invalid-priority', priority: 'urgent' };
+      const invalidStartTime = { ...exampleTask, id: 'invalid-start-time', startTime: '9:00' };
+      storage.setItem(
+        'todo-app.tasks',
+        JSON.stringify({
+          version: 2,
+          tasks: [invalidPriority, invalidStartTime, exampleTask],
+        }),
+      );
+
+      expect(service.load()).toEqual([exampleTask]);
     });
   });
 
@@ -193,7 +209,7 @@ describe('TaskPersistenceService', () => {
       service.save([exampleTask]);
 
       const raw = storage.getItem('todo-app.tasks');
-      expect(JSON.parse(raw as string)).toEqual({ version: 1, tasks: [exampleTask] });
+      expect(JSON.parse(raw as string)).toEqual({ version: 2, tasks: [exampleTask] });
     });
 
     it('round-trips tasks written by save through load', () => {
@@ -219,7 +235,7 @@ describe('TaskPersistenceService', () => {
 
   describe('with a storage that rejects writes (e.g. quota exceeded)', () => {
     beforeEach(() => {
-      storage.setItem('todo-app.tasks', JSON.stringify({ version: 1, tasks: [] }));
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
       vi.spyOn(storage, 'setItem').mockImplementation(() => {
         throw new DOMException('quota exceeded', 'QuotaExceededError');
       });
@@ -263,31 +279,67 @@ describe('TaskPersistenceService', () => {
 
 describe('migrateToCurrentSchema', () => {
   it('passes data that already matches the current version through unchanged', () => {
-    const state = { version: 1, tasks: [exampleTask] };
+    const state = { version: 2, tasks: [exampleTask] };
 
     expect(migrateToCurrentSchema(state)).toEqual(state);
+  });
+
+  it('migrates data from the previous schema version (before the agenda fields existed)', () => {
+    const legacyTask = {
+      id: 'legacy-task',
+      title: 'Alte Aufgabe',
+      notes: null,
+      dueDate: null,
+      completed: false,
+      completedAt: null,
+      createdAt: '2026-08-01',
+      updatedAt: '2026-08-01',
+    };
+    const previous = { version: 1, tasks: [legacyTask] };
+
+    expect(migrateToCurrentSchema(previous)).toEqual({
+      version: 2,
+      tasks: [
+        {
+          ...legacyTask,
+          categoryId: null,
+          priority: null,
+          startTime: null,
+          endTime: null,
+          subtitle: null,
+          attendeeCount: null,
+          hasAttachment: false,
+        },
+      ],
+    });
   });
 
   it('migrates unversioned (legacy) data by treating it as version 0', () => {
     const legacy = { tasks: [exampleTask] };
 
-    expect(migrateToCurrentSchema(legacy)).toEqual({ version: 1, tasks: [exampleTask] });
+    expect(migrateToCurrentSchema(legacy)).toEqual({ version: 2, tasks: [exampleTask] });
   });
 
   it('falls back to an empty task list for an unknown older schema version', () => {
     const unknown = { version: -1, tasks: [exampleTask] };
 
-    expect(migrateToCurrentSchema(unknown)).toEqual({ version: 1, tasks: [] });
+    expect(migrateToCurrentSchema(unknown)).toEqual({ version: 2, tasks: [] });
   });
 
   it('falls back to an empty task list for an unsupported future schema version', () => {
     const future = { version: 99, tasks: [exampleTask] };
 
-    expect(migrateToCurrentSchema(future)).toEqual({ version: 1, tasks: [] });
+    expect(migrateToCurrentSchema(future)).toEqual({ version: 2, tasks: [] });
   });
 
   it('falls back to an empty task list for non-object input', () => {
-    expect(migrateToCurrentSchema('not an object')).toEqual({ version: 1, tasks: [] });
-    expect(migrateToCurrentSchema(null)).toEqual({ version: 1, tasks: [] });
+    expect(migrateToCurrentSchema('not an object')).toEqual({ version: 2, tasks: [] });
+    expect(migrateToCurrentSchema(null)).toEqual({ version: 2, tasks: [] });
+  });
+
+  it('falls back to an empty task list for structurally broken data (tasks not an array)', () => {
+    const broken = { version: 2, tasks: 'not-an-array' };
+
+    expect(migrateToCurrentSchema(broken)).toEqual({ version: 2, tasks: [] });
   });
 });

@@ -10,10 +10,10 @@ import { StorageStatusService } from './storage-status.service';
 import { STORAGE } from './storage.token';
 
 const STORAGE_KEY = 'todo-app.tasks';
-const CURRENT_SCHEMA_VERSION = 1;
+const CURRENT_SCHEMA_VERSION = 2;
 
-export interface PersistedStateV1 {
-  version: 1;
+export interface PersistedStateV2 {
+  version: 2;
   tasks: Task[];
 }
 
@@ -26,10 +26,34 @@ const MIGRATIONS: Record<number, (data: unknown) => unknown> = {
     version: 1,
     tasks: isRecord(data) && Array.isArray(data['tasks']) ? data['tasks'] : [],
   }),
+  // v1 -> v2: introduces the agenda fields (category, priority, time range,
+  // subtitle, attendee count, attachment flag). Lift tasks that predate them
+  // to explicit null/false defaults instead of leaving them absent.
+  1: (data) => ({
+    version: 2,
+    tasks: isRecord(data) && Array.isArray(data['tasks']) ? data['tasks'].map(liftTaskToV2) : [],
+  }),
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function liftTaskToV2(task: unknown): unknown {
+  if (!isRecord(task)) {
+    return task;
+  }
+
+  return {
+    ...task,
+    categoryId: task['categoryId'] ?? null,
+    priority: task['priority'] ?? null,
+    startTime: task['startTime'] ?? null,
+    endTime: task['endTime'] ?? null,
+    subtitle: task['subtitle'] ?? null,
+    attendeeCount: task['attendeeCount'] ?? null,
+    hasAttachment: task['hasAttachment'] ?? false,
+  };
 }
 
 /**
@@ -39,7 +63,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * an empty task list instead of throwing, so a corrupted or foreign
  * payload never breaks app startup.
  */
-export function migrateToCurrentSchema(raw: unknown): PersistedStateV1 {
+export function migrateToCurrentSchema(raw: unknown): PersistedStateV2 {
   if (!isRecord(raw)) {
     return { version: CURRENT_SCHEMA_VERSION, tasks: [] };
   }
@@ -122,7 +146,7 @@ export class TaskPersistenceService {
    * the failure so the UI can show a non-blocking hint instead.
    */
   save(tasks: Task[]): void {
-    const state: PersistedStateV1 = {
+    const state: PersistedStateV2 = {
       version: CURRENT_SCHEMA_VERSION,
       tasks: tasks.map(clampTaskTextLengths),
     };
