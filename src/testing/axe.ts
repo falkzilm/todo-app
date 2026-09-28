@@ -13,12 +13,24 @@ const AXE_OPTIONS: RunOptions = {
   },
 };
 
+// axe-core hält seinen "läuft gerade"-Status in Modul-Scope, nicht pro Aufruf.
+// Da mehrere *.a11y.spec.ts-Dateien im selben Test-Worker nebenläufig laufen
+// können, würden parallele axe.run()-Aufrufe sonst nicht-deterministisch mit
+// "Axe is already running" fehlschlagen. Diese Queue serialisiert sie.
+let axeQueue: Promise<unknown> = Promise.resolve();
+
+function runAxeSerialized(element: HTMLElement, options: RunOptions): Promise<axe.AxeResults> {
+  const result = axeQueue.then(() => axe.run(element, options));
+  axeQueue = result.catch(() => undefined);
+  return result;
+}
+
 /**
  * Rendert `element` durch axe-core und wirft mit einer lesbaren Fehlermeldung,
  * falls WCAG-2-A/AA-Verstöße gefunden werden.
  */
 export async function expectNoA11yViolations(element: HTMLElement): Promise<void> {
-  const results = await axe.run(element, AXE_OPTIONS);
+  const results = await runAxeSerialized(element, AXE_OPTIONS);
 
   if (results.violations.length > 0) {
     const details = results.violations
