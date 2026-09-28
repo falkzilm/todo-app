@@ -3,13 +3,52 @@
   height: 100%;
 }
 
+// Unter 960px (siehe SIDEBAR_COLLAPSE_BREAKPOINT_PX) ist die Sidebar eine
+// ausklappbare Overlay-Leiste statt einer dauerhaften Layoutspalte (TDP-27):
+// standardmäßig aus dem sichtbaren Bereich geschoben, per `--open`-Klasse
+// eingeblendet.
 .sidebar {
   display: flex;
   flex-direction: column;
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  width: var(--layout-sidebar-width);
+  max-width: 85vw;
   height: 100%;
   background: var(--color-surface);
   border-right: var(--border-width-sm) solid var(--color-border);
   padding: var(--space-6);
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform var(--motion-duration-base) var(--motion-easing-standard);
+
+  &--open {
+    transform: translateX(0);
+  }
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: rgb(0 0 0 / 40%);
+}
+
+// Ab 960px ist die Sidebar dauerhaft sichtbarer Teil des Layouts statt
+// Overlay: keine Verschiebung, kein Backdrop, kein Hamburger-Button (siehe
+// page-header.component.scss).
+@media (min-width: 960px) {
+  .sidebar {
+    position: static;
+    max-width: none;
+    transform: none;
+    transition: none;
+  }
+
+  .sidebar-backdrop {
+    display: none;
+  }
 }
 
 .sidebar__brand {

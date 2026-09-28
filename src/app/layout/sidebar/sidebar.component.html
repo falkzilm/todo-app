@@ -1,4 +1,19 @@
-<aside class="sidebar">
+@if (overlay.open()) {
+  <div class="sidebar-backdrop" aria-hidden="true" (click)="onBackdropClick()"></div>
+}
+
+<aside
+  #panel
+  id="app-sidebar"
+  class="sidebar"
+  tabindex="-1"
+  [class.sidebar--open]="overlay.open()"
+  [attr.role]="overlay.open() ? 'dialog' : null"
+  [attr.aria-modal]="overlay.open() ? 'true' : null"
+  [attr.aria-label]="overlay.open() ? 'Navigation' : null"
+  [inert]="!overlay.open() && overlay.narrowViewport()"
+  (keydown)="onPanelKeydown($event)"
+>
   <div class="sidebar__brand">
     <span class="sidebar__logo" aria-hidden="true">
       <app-icon name="check" size="sm" />
@@ -6,7 +21,7 @@
     <h1 class="sidebar__wordmark">{{ title() }}</h1>
   </div>
 
-  <app-sidebar-nav class="sidebar__nav" />
+  <app-sidebar-nav class="sidebar__nav" (linkActivated)="onNavigate()" />
 
   <app-user-card class="sidebar__user" />
 </aside>
