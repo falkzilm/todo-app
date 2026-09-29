@@ -1,4 +1,15 @@
 <div class="page-header">
+  <app-icon-button
+    #sidebarToggle
+    class="page-header__sidebar-toggle"
+    [ariaLabel]="overlay.open() ? 'Navigation schließen' : 'Navigation öffnen'"
+    [expanded]="overlay.open()"
+    controls="app-sidebar"
+    (pressed)="toggleSidebar()"
+  >
+    <app-icon name="menu" size="sm" />
+  </app-icon-button>
+
   @if (greeting()) {
     <p class="page-header__greeting">{{ greeting() }}</p>
   }

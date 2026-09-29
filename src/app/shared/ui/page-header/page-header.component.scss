@@ -15,4 +15,14 @@
     margin: 0;
     color: var(--color-text-muted);
   }
+
+  // Hamburger-Button für die Overlay-Leiste (TDP-27): nur unter 960px
+  // sichtbar, da die Sidebar ab dieser Breite dauerhaft im Layout steht.
+  &__sidebar-toggle {
+    margin-bottom: var(--space-3);
+
+    @media (min-width: 960px) {
+      display: none;
+    }
+  }
 }

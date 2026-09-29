@@ -23,7 +23,8 @@ export type IconName =
   | 'users'
   | 'file'
   | 'trash'
-  | 'plus';
+  | 'plus'
+  | 'menu';
 
 export const ICON_VIEW_BOX = '0 0 24 24';
 
@@ -79,4 +80,5 @@ export const ICONS: Record<IconName, readonly string[]> = {
   file: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2L14 8L20 8'],
   trash: ['M4 6h16M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6'],
   plus: ['M12 5L12 19M5 12L19 12'],
+  menu: ['M3 6L21 6', 'M3 12L21 12', 'M3 18L21 18'],
 };

@@ -3,6 +3,8 @@
   [class.app-icon-button--outline]="variant() === 'outline'"
   type="button"
   [attr.aria-label]="ariaLabel()"
+  [attr.aria-expanded]="expanded() === null ? null : expanded()"
+  [attr.aria-controls]="controls()"
   [attr.aria-describedby]="indicator() ? indicatorId : null"
   [disabled]="disabled()"
   (click)="onClick()"
