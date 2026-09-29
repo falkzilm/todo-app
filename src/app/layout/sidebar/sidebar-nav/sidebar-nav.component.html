@@ -1,16 +1,17 @@
 <nav class="sidebar-nav" aria-label="Hauptnavigation">
-  <a
-    class="sidebar-nav__link"
-    routerLink="/heute"
-    routerLinkActive="is-active"
-    ariaCurrentWhenActive="page"
-    >Heute</a
-  >
-  <a
-    class="sidebar-nav__link"
-    routerLink="/kalender"
-    routerLinkActive="is-active"
-    ariaCurrentWhenActive="page"
-    >Kalender</a
-  >
+  <ul class="sidebar-nav__list">
+    @for (item of items; track item.route) {
+      <li class="sidebar-nav__item">
+        <a
+          class="sidebar-nav__link"
+          [routerLink]="item.route"
+          routerLinkActive="is-active"
+          ariaCurrentWhenActive="page"
+        >
+          <app-icon class="sidebar-nav__icon" [name]="item.icon" size="sm" />
+          <span class="sidebar-nav__label">{{ item.label }}</span>
+        </a>
+      </li>
+    }
+  </ul>
 </nav>
