@@ -28,15 +28,7 @@
 
 <ul class="task-list" role="list" aria-label="Aufgabenliste">
   @for (task of tasks(); track task.id) {
-    <li
-      app-task-item
-      [task]="task"
-      (toggleCompleted)="toggleTask(task.id)"
-      (remove)="removeTask(task.id)"
-      (titleSave)="saveTitle(task.id, $event)"
-      (notesSave)="saveNotes(task.id, $event)"
-      (dueDateSave)="saveDueDate(task.id, $event)"
-    ></li>
+    <li app-task-item [task]="task" (toggleCompleted)="toggleTask(task.id)"></li>
   } @empty {
     <li>Keine Aufgaben vorhanden.</li>
   }

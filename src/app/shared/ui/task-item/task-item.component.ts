@@ -1,22 +1,14 @@
-import {
-  Component,
-  ElementRef,
-  Injector,
-  afterNextRender,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { QuickDueDateToken, resolveQuickDueDate } from '../../../core/date/date-utils';
 import { isTouchDevice } from '../../../core/device/pointer';
-import { CalendarDate, TASK_DRAG_DATA_FORMAT, Task } from '../../../core/models/task.model';
+import { Category, DEFAULT_CATEGORIES } from '../../../core/models/category.model';
+import { TASK_DRAG_DATA_FORMAT, Task } from '../../../core/models/task.model';
 import { CheckboxComponent } from '../checkbox/checkbox.component';
-import { DatePickerComponent } from '../date-picker/date-picker.component';
-import { IconButtonComponent } from '../icon-button/icon-button.component';
+import { IconComponent } from '../icon/icon.component';
+import { PriorityBadgeComponent } from '../priority-badge/priority-badge.component';
+
+/** Category lookup by id, resolved once since `DEFAULT_CATEGORIES` is a fixed constant. */
+const CATEGORY_BY_ID = new Map(DEFAULT_CATEGORIES.map((category) => [category.id, category]));
 
 @Component({
   // Als Attribut-Selektor auf `li` statt als eigenes Element: die Aufgabe wird
@@ -25,14 +17,16 @@ import { IconButtonComponent } from '../icon-button/icon-button.component';
   // "list"/"listitem" – <li> muss direktes Kind von <ul>/<ol> sein).
   selector: 'li[app-task-item]',
   standalone: true,
-  imports: [FormsModule, CheckboxComponent, DatePickerComponent, IconButtonComponent],
+  imports: [FormsModule, CheckboxComponent, IconComponent, PriorityBadgeComponent],
   templateUrl: './task-item.component.html',
   styleUrl: './task-item.component.scss',
   host: {
     class: 'app-task-item',
+    tabindex: '0',
     '[class.app-task-item--completed]': 'task().completed',
     '[attr.draggable]': "dragEnabled ? 'true' : null",
-    '(click)': 'onRowClick($event)',
+    '(click)': 'onCardClick($event)',
+    '(keydown)': 'onCardKeydown($event)',
     '(dragstart)': 'onDragStart($event)',
   },
 })
@@ -40,163 +34,50 @@ export class TaskItemComponent {
   readonly task = input.required<Task>();
 
   readonly toggleCompleted = output<void>();
-  readonly remove = output<void>();
-  readonly titleSave = output<string>();
-  readonly notesSave = output<string | null>();
-  readonly dueDateSave = output<CalendarDate>();
-
-  private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
-  private readonly notesInput = viewChild<ElementRef<HTMLInputElement>>('notesInput');
-  private readonly titleButton = viewChild<ElementRef<HTMLButtonElement>>('titleButton');
-  private readonly notesButton = viewChild<ElementRef<HTMLButtonElement>>('notesButton');
-
-  protected readonly editingTitle = signal(false);
-  protected readonly editingNotes = signal(false);
-  protected titleDraft = '';
-  protected notesDraft = '';
+  /** Card clicked (or opened via keyboard) outside the checkbox; the detail view opens in response. */
+  readonly open = output<void>();
 
   /** Drag & drop rescheduling (DEMOPROJEK-45) is disabled on touch devices so it never interferes with scrolling. */
   protected readonly dragEnabled = !isTouchDevice();
 
-  private readonly injector = inject(Injector);
+  protected readonly category = computed<Category | null>(() => {
+    const categoryId = this.task().categoryId;
+    return categoryId !== null ? (CATEGORY_BY_ID.get(categoryId) ?? null) : null;
+  });
 
-  constructor() {
-    effect(() => {
-      const editing = this.editingTitle();
-      if (editing) {
-        const element = this.titleInput()?.nativeElement;
-        element?.focus();
-        element?.select();
-      }
-    });
-
-    effect(() => {
-      const editing = this.editingNotes();
-      if (editing) {
-        const element = this.notesInput()?.nativeElement;
-        element?.focus();
-        element?.select();
-      }
-    });
-  }
+  protected readonly categoryDotColor = computed(() => {
+    const category = this.category();
+    return category ? `var(--color-category-${category.color})` : null;
+  });
 
   protected onToggle(): void {
     this.toggleCompleted.emit();
   }
 
-  /** The checkbox, delete button and inline-edit fields already act on their own; avoid double-emitting when their click bubbles up. */
-  protected onRowClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    if (
-      target.closest('.app-task-item__checkbox') ||
-      target.closest('.app-task-item__actions') ||
-      target.closest('.app-task-item__title-field') ||
-      target.closest('.app-task-item__notes-field') ||
-      target.closest('.app-task-item__due-date') ||
-      target.closest('.app-task-item__quick-dates')
-    ) {
+  /** The checkbox already acts on its own; avoid also emitting `open` when its click bubbles up. */
+  protected onCardClick(event: MouseEvent): void {
+    if (this.isFromCheckbox(event)) {
       return;
     }
-    this.onToggle();
+    this.open.emit();
   }
 
-  protected onRemove(): void {
-    this.remove.emit();
+  /** Mirrors `onCardClick` for keyboard use; the checkbox already handles Enter/Space itself. */
+  protected onCardKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' || this.isFromCheckbox(event)) {
+      return;
+    }
+    this.open.emit();
   }
 
-  protected onDueDateSelect(date: CalendarDate): void {
-    this.dueDateSave.emit(date);
+  private isFromCheckbox(event: Event): boolean {
+    return (event.target as HTMLElement).closest('.app-task-item__checkbox') !== null;
   }
 
   protected onDragStart(event: DragEvent): void {
     event.dataTransfer?.setData(TASK_DRAG_DATA_FORMAT, this.task().id);
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
-    }
-  }
-
-  /** Quick-action shortcut (DEMOPROJEK-44): sets the due date without opening the calendar popover. */
-  protected setQuickDueDate(token: QuickDueDateToken): void {
-    this.dueDateSave.emit(resolveQuickDueDate(token, new Date()));
-  }
-
-  protected startEditingTitle(): void {
-    this.titleDraft = this.task().title;
-    this.editingTitle.set(true);
-  }
-
-  protected commitTitle(): void {
-    if (!this.editingTitle()) {
-      return;
-    }
-    this.editingTitle.set(false);
-
-    const title = this.titleDraft.trim();
-    if (!title || title === this.task().title) {
-      return;
-    }
-    this.titleSave.emit(title);
-  }
-
-  /** Escape and Enter both return focus to the button that opened the editor; a plain blur (e.g. Tab) leaves the browser's normal focus progression alone. */
-  protected cancelTitleEdit(): void {
-    this.editingTitle.set(false);
-    afterNextRender(() => this.titleButton()?.nativeElement.focus(), {
-      injector: this.injector,
-    });
-  }
-
-  /** Enter has no browser-selected next focus target (unlike Tab-triggered blur), so focus must be moved explicitly or it falls to the document body. */
-  protected onTitleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.commitTitle();
-      afterNextRender(() => this.titleButton()?.nativeElement.focus(), {
-        injector: this.injector,
-      });
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.cancelTitleEdit();
-    }
-  }
-
-  protected startEditingNotes(): void {
-    this.notesDraft = this.task().notes ?? '';
-    this.editingNotes.set(true);
-  }
-
-  protected commitNotes(): void {
-    if (!this.editingNotes()) {
-      return;
-    }
-    this.editingNotes.set(false);
-
-    const notes = this.notesDraft.trim() || null;
-    if (notes === (this.task().notes ?? null)) {
-      return;
-    }
-    this.notesSave.emit(notes);
-  }
-
-  /** Escape and Enter both return focus to the button that opened the editor; a plain blur (e.g. Tab) leaves the browser's normal focus progression alone. */
-  protected cancelNotesEdit(): void {
-    this.editingNotes.set(false);
-    afterNextRender(() => this.notesButton()?.nativeElement.focus(), {
-      injector: this.injector,
-    });
-  }
-
-  /** Enter has no browser-selected next focus target (unlike Tab-triggered blur), so focus must be moved explicitly or it falls to the document body. */
-  protected onNotesKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.commitNotes();
-      afterNextRender(() => this.notesButton()?.nativeElement.focus(), {
-        injector: this.injector,
-      });
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.cancelNotesEdit();
     }
   }
 }
