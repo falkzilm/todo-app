@@ -41,10 +41,18 @@ main:focus-visible {
   outline-offset: 2px;
 }
 
+// Mobile-first: die Sidebar ist unter 960px eine `position: fixed`
+// Overlay-Leiste (siehe sidebar.component.scss) und beansprucht dann keine
+// Grid-Spalte, der Inhalt bekommt die volle Breite. Ab 960px steht sie
+// dauerhaft als eigene Spalte neben dem Inhalt (TDP-27).
 .app-shell {
   display: grid;
-  grid-template-columns: var(--layout-sidebar-width) 1fr;
+  grid-template-columns: 1fr;
   min-height: 100vh;
+
+  @media (min-width: 960px) {
+    grid-template-columns: var(--layout-sidebar-width) 1fr;
+  }
 }
 
 .app-shell__content {

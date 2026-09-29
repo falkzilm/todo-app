@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { IconComponent, IconName } from '../../../shared/ui/icon/icon.component';
 
@@ -25,4 +25,7 @@ const NAV_ITEMS: readonly SidebarNavItem[] = [
 })
 export class SidebarNavComponent {
   protected readonly items = NAV_ITEMS;
+
+  /** Meldet die Auswahl eines Eintrags, damit eine offene Overlay-Leiste (TDP-27) sich schließen kann. */
+  readonly linkActivated = output<void>();
 }

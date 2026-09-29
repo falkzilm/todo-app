@@ -14,6 +14,10 @@ export class IconButtonComponent {
   readonly ariaLabel = input.required<string>();
   readonly disabled = input(false);
   readonly variant = input<IconButtonVariant>('ghost');
+  /** Für Buttons, die eine ausklappbare Fläche steuern (z. B. Hamburger-Button, TDP-27). */
+  readonly expanded = input<boolean | null>(null);
+  /** ID des durch `expanded` gesteuerten Elements, gespiegelt als `aria-controls`. */
+  readonly controls = input<string | null>(null);
   /**
    * Rein visueller Hinweis-Punkt (z. B. ungelesene Benachrichtigungen).
    * `false` blendet ihn aus; ein String zeigt ihn an und liefert zugleich

@@ -40,9 +40,7 @@ describe('SidebarNavComponent', () => {
     await router.navigateByUrl('/kalender');
     fixture.detectChanges();
 
-    const links = fixture.nativeElement.querySelectorAll(
-      'a',
-    ) as NodeListOf<HTMLAnchorElement>;
+    const links = fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>;
     const [, aufgabenLink, kalenderLink] = Array.from(links);
 
     expect(kalenderLink.classList.contains('is-active')).toBe(true);

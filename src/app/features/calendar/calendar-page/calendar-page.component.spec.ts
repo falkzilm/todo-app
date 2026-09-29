@@ -71,7 +71,8 @@ describe('CalendarPageComponent', () => {
     const label = () => fixture.nativeElement.querySelector('.calendar-nav__label').textContent;
     const initialLabel = label();
 
-    const [previousButton, nextButton] = fixture.nativeElement.querySelectorAll('button');
+    const [previousButton, nextButton] =
+      fixture.nativeElement.querySelectorAll('.calendar-nav button');
 
     nextButton.click();
     fixture.detectChanges();
@@ -88,7 +89,7 @@ describe('CalendarPageComponent', () => {
     const initialLabel = label();
 
     const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
+      fixture.nativeElement.querySelectorAll('.calendar-nav button'),
     ) as HTMLButtonElement[];
     const nextButton = buttons[1];
     const todayButton = buttons.find((button) => button.textContent?.trim() === 'Heute')!;
