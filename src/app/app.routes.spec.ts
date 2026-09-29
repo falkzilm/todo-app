@@ -21,7 +21,6 @@ describe('routes', () => {
 
   const destinations: [path: string, title: string][] = [
     ['/dashboard', 'Dashboard'],
-    ['/aufgaben', 'Aufgaben'],
     ['/kalender', 'Kalender'],
     ['/projekte', 'Projekte'],
     ['/einstellungen', 'Einstellungen'],
@@ -39,6 +38,19 @@ describe('routes', () => {
       expect(fixture.nativeElement.querySelector('h2')?.textContent).toContain(title);
     });
   }
+
+  it('renders the Aufgaben page for /aufgaben, in its own lazy chunk', async () => {
+    const fixture = TestBed.createComponent(RouterTestHostComponent);
+    const router = TestBed.inject(Router);
+    fixture.detectChanges();
+
+    await router.navigateByUrl('/aufgaben');
+    fixture.detectChanges();
+
+    // The Aufgaben page's heading is the personalized greeting ("Guten Morgen, Laura! 👋")
+    // rather than a static page title (TDP-34), so it is asserted separately here.
+    expect(fixture.nativeElement.querySelector('h2')?.textContent).toContain('Laura');
+  });
 
   it('redirects / to /aufgaben', async () => {
     const fixture = TestBed.createComponent(RouterTestHostComponent);
