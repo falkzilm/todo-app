@@ -84,10 +84,16 @@ export class UserCardComponent {
     }
   }
 
-  /** Closes without moving focus back to the trigger, since focus already left the menu on its own (e.g. Tab). */
+  /**
+   * Closes without moving focus back to the trigger, since focus already
+   * left the menu on its own (e.g. Tab). Ignores focus moving to the trigger
+   * itself: a mousedown on the trigger moves focus there before its click
+   * fires, so closing here would just have `toggle()` immediately reopen
+   * the menu on that click.
+   */
   protected onMenuFocusOut(event: FocusEvent): void {
     const nextFocus = event.relatedTarget as Node | null;
-    if (nextFocus && this.menu()?.nativeElement.contains(nextFocus)) {
+    if (nextFocus && this.elementRef.nativeElement.contains(nextFocus)) {
       return;
     }
     this.open.set(false);

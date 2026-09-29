@@ -101,6 +101,27 @@ describe('UserCardComponent', () => {
     expect(document.activeElement).toBe(items[0]);
   });
 
+  it('closes on a trigger click even though the mousedown already moved focus there first', () => {
+    const fixture = TestBed.createComponent(UserCardComponent);
+    fixture.detectChanges();
+
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '.user-card__menu-trigger',
+    );
+    trigger.click();
+    fixture.detectChanges();
+
+    const menu: HTMLElement = fixture.nativeElement.querySelector('[role="menu"]');
+    menu.dispatchEvent(new FocusEvent('focusout', { relatedTarget: trigger }));
+    fixture.detectChanges();
+
+    trigger.click();
+    fixture.detectChanges();
+
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).toBeNull();
+  });
+
   it('asks for confirmation before resetting demo data, and only resets when confirmed', () => {
     const taskStore = TestBed.inject(TaskStoreService);
     const resetSpy = vi.spyOn(taskStore, 'reset');
