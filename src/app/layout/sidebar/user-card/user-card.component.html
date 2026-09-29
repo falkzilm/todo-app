@@ -12,7 +12,7 @@
     aria-label="Nutzermenü"
     aria-haspopup="menu"
     [attr.aria-expanded]="open()"
-    [attr.aria-controls]="menuId"
+    [attr.aria-controls]="open() ? menuId : null"
     (click)="toggle()"
   >
     <app-icon name="chevron-down" size="sm" />
