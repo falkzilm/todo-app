@@ -4,4 +4,49 @@
     <span class="user-card__name">{{ displayName() }}</span>
     <span class="user-card__email">{{ email() }}</span>
   </span>
+
+  <button
+    #trigger
+    type="button"
+    class="user-card__menu-trigger"
+    aria-label="Nutzermenü"
+    aria-haspopup="menu"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="open() ? menuId : null"
+    (click)="toggle()"
+  >
+    <app-icon name="chevron-down" size="sm" />
+  </button>
+
+  @if (open()) {
+    <div
+      #menu
+      [id]="menuId"
+      class="user-card__menu"
+      role="menu"
+      tabindex="-1"
+      aria-label="Nutzermenü"
+      (keydown)="onMenuKeydown($event)"
+      (focusout)="onMenuFocusOut($event)"
+    >
+      <a
+        role="menuitem"
+        class="user-card__menu-item"
+        routerLink="/einstellungen"
+        (click)="onSettingsSelect()"
+      >
+        <app-icon name="settings" size="sm" />
+        Einstellungen
+      </a>
+      <button
+        role="menuitem"
+        type="button"
+        class="user-card__menu-item"
+        (click)="onResetDemoData()"
+      >
+        <app-icon name="trash" size="sm" />
+        Demodaten zurücksetzen
+      </button>
+    </div>
+  }
 </div>

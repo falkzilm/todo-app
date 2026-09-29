@@ -88,7 +88,10 @@ describe('AppComponent', () => {
     expect(liveRegion.textContent?.trim()).toBe('');
 
     TestBed.inject(AnnouncerService).announce('„Milch kaufen“ hinzugefügt.');
-    vi.runAllTimers();
+    // Advance by a tick rather than vi.runAllTimers(): the sidebar's user card
+    // pulls in TaskStoreService, which also schedules a self-rescheduling
+    // midnight rollover timer that would make runAllTimers() loop "forever".
+    vi.advanceTimersByTime(0);
     fixture.detectChanges();
 
     expect(liveRegion.textContent?.trim()).toBe('„Milch kaufen“ hinzugefügt.');

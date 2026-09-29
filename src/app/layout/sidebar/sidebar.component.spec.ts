@@ -29,6 +29,10 @@ describe('SidebarComponent', () => {
     return Array.from(fixture.nativeElement.querySelectorAll('.sidebar-nav__link'));
   }
 
+  function userCardMenuTrigger(fixture: ReturnType<typeof setUp>['fixture']): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('.user-card__menu-trigger');
+  }
+
   it('shows the FocusDay wordmark as the page h1', () => {
     const { fixture } = setUp();
 
@@ -112,8 +116,7 @@ describe('SidebarComponent', () => {
     overlay.toggle();
     fixture.detectChanges();
 
-    const links = navLinks(fixture);
-    const last = links[links.length - 1];
+    const last = userCardMenuTrigger(fixture);
     last.focus();
 
     const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
@@ -121,7 +124,7 @@ describe('SidebarComponent', () => {
     fixture.detectChanges();
 
     expect(event.defaultPrevented).toBe(true);
-    expect(fixture.nativeElement.ownerDocument.activeElement).toBe(links[0]);
+    expect(fixture.nativeElement.ownerDocument.activeElement).toBe(navLinks(fixture)[0]);
   });
 
   it('keeps Tab focus inside the panel: wraps from the first to the last focusable element on Shift+Tab', () => {
@@ -143,7 +146,7 @@ describe('SidebarComponent', () => {
     fixture.detectChanges();
 
     expect(event.defaultPrevented).toBe(true);
-    expect(fixture.nativeElement.ownerDocument.activeElement).toBe(links[links.length - 1]);
+    expect(fixture.nativeElement.ownerDocument.activeElement).toBe(userCardMenuTrigger(fixture));
   });
 
   describe('inert bei schmalem, geschlossenem Viewport', () => {
