@@ -107,7 +107,7 @@
         }}</span>
       }
 
-      <fieldset class="task-detail-panel__field task-detail-panel__fieldset">
+      <fieldset class="task-detail-panel__field">
         <legend class="task-detail-panel__label">Kategorie</legend>
         <div class="task-detail-panel__pills">
           @for (category of categories; track category.id) {
@@ -124,7 +124,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="task-detail-panel__field task-detail-panel__fieldset">
+      <fieldset class="task-detail-panel__field">
         <legend class="task-detail-panel__label">Priorität</legend>
         <div class="task-detail-panel__pills">
           @for (option of priorities; track option.value) {
@@ -147,10 +147,8 @@
           Löschen
         </button>
 
-        <div class="task-detail-panel__actions-end">
-          <app-button variant="secondary" type="button" (pressed)="onClose()">Abbrechen</app-button>
-          <app-button variant="primary" type="submit">Speichern</app-button>
-        </div>
+        <app-button variant="secondary" type="button" (pressed)="onClose()">Abbrechen</app-button>
+        <app-button variant="primary" type="submit">Speichern</app-button>
       </div>
     </form>
   </aside>

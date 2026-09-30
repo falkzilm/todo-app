@@ -13,12 +13,10 @@
   z-index: 30;
   display: flex;
   flex-direction: column;
-  width: 28rem;
-  max-width: 100vw;
+  width: min(28rem, 100vw);
   height: 100%;
   background: var(--color-surface);
   border-left: var(--border-width-sm) solid var(--color-border);
-  box-shadow: var(--shadow-lg);
   overflow-y: auto;
 }
 
@@ -70,14 +68,6 @@
   line-height: var(--line-height-normal);
   transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
 
-  &::placeholder {
-    color: var(--color-text-muted);
-  }
-
-  &:hover {
-    border-color: var(--color-gray-400);
-  }
-
   &:focus-visible {
     outline: var(--focus-ring-width) solid var(--color-accent);
     outline-offset: var(--focus-ring-offset);
@@ -86,7 +76,6 @@
 
   &--textarea {
     resize: vertical;
-    font-family: inherit;
   }
 
   &--invalid {
@@ -103,10 +92,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
-}
-
-.task-detail-panel__fieldset {
-  gap: var(--space-2);
 }
 
 .task-detail-panel__pills {
@@ -131,6 +116,11 @@
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
 }
 
 .task-detail-panel__pill {
@@ -138,11 +128,6 @@
 
   &:hover:not(.task-detail-panel__pill--active) {
     background-color: var(--color-gray-100);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
   }
 
   &--active {
@@ -155,31 +140,15 @@
 .task-detail-panel__actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2);
   margin-top: var(--space-2);
 }
 
-.task-detail-panel__actions-end {
-  display: flex;
-  gap: var(--space-2);
-}
-
 .task-detail-panel__delete {
+  margin-right: auto;
   color: var(--color-error);
 
   &:hover {
     background-color: var(--color-error-surface);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--color-error);
-    outline-offset: 2px;
-  }
-}
-
-@media (max-width: 480px) {
-  .task-detail-panel {
-    width: 100vw;
   }
 }

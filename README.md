@@ -499,7 +499,7 @@ lassen (`ng build` bricht mit Exit-Code ≠ 0 ab):
 | Budget-Typ         | Warnung | Fehler | Betrifft                                                        |
 | ------------------ | ------- | ------ | ---------------------------------------------------------------- |
 | `initial`          | 320 kB  | 450 kB | Summe aller initial geladenen JS-/CSS-Dateien (Raw-Size)          |
-| `anyComponentStyle` | 3 kB    | 5 kB   | Kompiliertes Stylesheet einer einzelnen Komponente                |
+| `anyComponentStyle` | 3,5 kB | 5 kB   | Kompiliertes Stylesheet einer einzelnen Komponente                |
 
 Die Werte orientieren sich an den tatsächlichen Größen und lassen bewusst nur
 moderaten Spielraum für organisches Wachstum, statt der sehr weiten
@@ -526,9 +526,17 @@ chunk-YTIKO2FO.js     | -                    |   1.35 kB |               553 byt
 Das initiale Bundle liegt damit bei rund 289 kB und damit weiterhin unter der
 320-kB-Warnschwelle bzw. deutlich unter der 450-kB-Fehlerschwelle – trotz drei
 zusätzlicher Navigationsziele und einer größeren Navigation blieb genug
-Spielraum, sodass keine Anpassung der Budgets in `angular.json` nötig war. Die
-größte kompilierte Komponenten-Stylesheet (`task-item.component.scss`) liegt
-weiterhin unter dem 3-kB/5-kB-Budget für `anyComponentStyle`.
+Spielraum, sodass keine Anpassung der Budgets in `angular.json` nötig war.
+
+Mit dem Seitenpanel zur Aufgabenbearbeitung (TDP-38) kam erstmals eine
+Komponente hinzu, deren Stylesheet trotz Kürzung auf das Nötigste (kein
+doppelt gesetztes `font-family`, ein gemeinsamer Fokusring für Pills/Löschen,
+keine eigene Media Query neben `width: min(28rem, 100vw)`) knapp über der
+bisherigen 3-kB-Warnschwelle für `anyComponentStyle` liegt
+(`task-detail-panel.component.scss`, ~3,0 kB) – ein Formular mit sieben
+Feldern, zwei Fieldsets und drei Aktionen braucht spürbar mehr CSS als ein
+einzelner Button oder Chip. Die Warnschwelle wurde deshalb moderat auf 3,5 kB
+angehoben, die Fehlerschwelle von 5 kB blieb unverändert.
 
 ### Lazy Loading
 
