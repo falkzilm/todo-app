@@ -36,14 +36,33 @@
       <p class="task-form__hint" role="status">Bitte einen Titel eingeben.</p>
     }
 
+    @if (pendingUndo(); as pending) {
+      <p class="undo-notice" role="status">
+        <span>„{{ pending.task.title }}“ gelöscht.</span>
+        <button type="button" class="undo-notice__button" (click)="undoRemove()">Rückgängig</button>
+      </p>
+    }
+
     @if (selectedDayTasks().length === 0) {
       <p class="calendar-page__empty-state">Keine Aufgaben für diesen Tag.</p>
     } @else {
       <ul class="task-list" role="list" [attr.aria-label]="'Aufgaben für ' + selectedDateLabel()">
         @for (task of selectedDayTasks(); track task.id) {
-          <li app-task-item [task]="task" (toggleCompleted)="toggleTask(task.id)"></li>
+          <li
+            app-task-item
+            [task]="task"
+            (toggleCompleted)="toggleTask(task.id)"
+            (open)="openTaskDetail(task.id)"
+          ></li>
         }
       </ul>
     }
   </section>
 </div>
+
+<app-task-detail-panel
+  [task]="selectedTask()"
+  (save)="onPanelSave($event)"
+  (delete)="onPanelDelete()"
+  (closed)="onPanelClosed()"
+/>

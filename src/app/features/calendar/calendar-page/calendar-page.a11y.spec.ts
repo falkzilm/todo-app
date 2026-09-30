@@ -15,11 +15,13 @@ function createMockStore(
   tasks: Task[] = [],
 ): Partial<TaskStoreService> {
   return {
+    tasks: signal(tasks),
     taskSummaryByDate: signal(taskSummaryByDate),
     tasksForDate: (date: CalendarDate): Signal<Task[]> =>
       computed(() => tasks.filter((task) => task.dueDate === date)),
     toggleCompleted: () => undefined,
     remove: () => undefined,
+    restore: () => undefined,
     update: () => undefined,
     add: (input) => createTask(input),
   };
@@ -56,6 +58,40 @@ describe('CalendarPageComponent a11y', () => {
     });
 
     const fixture = TestBed.createComponent(CalendarPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await expectNoA11yViolations(fixture.nativeElement);
+  });
+
+  it('has no WCAG 2 A/AA violations with the detail panel open (TDP-38)', async () => {
+    const today = todayAsCalendarDate();
+    const task = createTask({ title: 'Abhaken', dueDate: today });
+
+    TestBed.configureTestingModule({
+      imports: [CalendarPageComponent],
+      providers: [
+        {
+          provide: TaskStoreService,
+          useValue: createMockStore(
+            new Map([[today, { openCount: 1, allCompleted: false, categoryColors: [] }]]),
+            [task],
+          ),
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(CalendarPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (
+      fixture.nativeElement.querySelector(
+        '.calendar-page__day .app-task-item__content',
+      ) as HTMLElement
+    ).click();
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();

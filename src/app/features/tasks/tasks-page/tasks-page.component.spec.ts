@@ -180,6 +180,44 @@ describe('TasksPageComponent', () => {
       expect(fixture.nativeElement.querySelector('.undo-notice')).toBeNull();
     });
 
+    it('reaches the same result via the detail panel: opening a card, deleting it and undoing restores it at its old position', async () => {
+      const fixture = await createStableFixture();
+      enterTitle(fixture, 'Erste Aufgabe');
+      await submit(fixture);
+      enterTitle(fixture, 'Zu löschen');
+      await submit(fixture);
+      const component = fixture.componentInstance;
+      const firstTask = component['tasks']()[0];
+      const target = component['tasks']()[1];
+
+      const card = fixture.nativeElement.querySelectorAll('.app-task-item')[1] as HTMLElement;
+      card.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).not.toBeNull();
+      expect(
+        (fixture.nativeElement.querySelector('#task-detail-panel-title') as HTMLInputElement).value,
+      ).toBe('Zu löschen');
+
+      (
+        fixture.nativeElement.querySelector('.task-detail-panel__delete') as HTMLButtonElement
+      ).click();
+      fixture.detectChanges();
+
+      expect(component['tasks']()).toHaveLength(1);
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+
+      const undoButton = fixture.nativeElement.querySelector(
+        '.undo-notice__button',
+      ) as HTMLButtonElement;
+      undoButton.click();
+      fixture.detectChanges();
+
+      expect(component['tasks']()).toEqual([firstTask, target]);
+    });
+
     it('hides the undo notice once the undo period elapses', async () => {
       vi.useFakeTimers();
       const fixture = await createStableFixture();
@@ -200,6 +238,99 @@ describe('TasksPageComponent', () => {
 
       expect(fixture.nativeElement.querySelector('.undo-notice')).toBeNull();
       vi.useRealTimers();
+    });
+  });
+
+  describe('Detail-/Bearbeitungsansicht (TDP-38)', () => {
+    it('opens the panel with the clicked task and moves the update straight to the card and the store on save', async () => {
+      const fixture = await createStableFixture();
+      enterTitle(fixture, 'Ursprünglicher Titel');
+      await submit(fixture);
+      const taskId = fixture.componentInstance['tasks']()[0].id;
+
+      const card = fixture.nativeElement.querySelector('.app-task-item__content') as HTMLElement;
+      card.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const titleField = fixture.nativeElement.querySelector(
+        '#task-detail-panel-title',
+      ) as HTMLInputElement;
+      expect(titleField.value).toBe('Ursprünglicher Titel');
+
+      titleField.value = 'Überarbeiteter Titel';
+      titleField.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      fixture.nativeElement
+        .querySelector('.task-detail-panel__form')
+        ?.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance['tasks']().find((task) => task.id === taskId)?.title).toBe(
+        'Überarbeiteter Titel',
+      );
+      expect(
+        fixture.nativeElement.querySelector('.app-task-item__title')?.textContent?.trim(),
+      ).toBe('Überarbeiteter Titel');
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+    });
+
+    it('returns focus to the triggering card once the panel closes via Escape', async () => {
+      const fixture = await createStableFixture();
+      enterTitle(fixture, 'Fokus-Test');
+      await submit(fixture);
+
+      const card = fixture.nativeElement.querySelector('.app-task-item') as HTMLElement;
+      card.focus();
+      card.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(document.activeElement?.id).toBe('task-detail-panel-title');
+
+      const panel = fixture.nativeElement.querySelector('.task-detail-panel') as HTMLElement;
+      panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+      expect(document.activeElement).toBe(card);
+    });
+
+    it('shows a field-linked error instead of throwing when the title is cleared and saved', async () => {
+      const fixture = await createStableFixture();
+      enterTitle(fixture, 'Wird geleert');
+      await submit(fixture);
+
+      const card = fixture.nativeElement.querySelector('.app-task-item') as HTMLElement;
+      card.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const titleField = fixture.nativeElement.querySelector(
+        '#task-detail-panel-title',
+      ) as HTMLInputElement;
+      titleField.value = '';
+      titleField.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(() =>
+        fixture.nativeElement
+          .querySelector('.task-detail-panel__form')
+          ?.dispatchEvent(new Event('submit')),
+      ).not.toThrow();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).not.toBeNull();
+      expect(fixture.nativeElement.textContent).toContain('Titel darf nicht leer sein.');
+      expect(fixture.componentInstance['tasks']()[0].title).toBe('Wird geleert');
     });
   });
 });
