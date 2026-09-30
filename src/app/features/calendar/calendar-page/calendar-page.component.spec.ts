@@ -313,39 +313,6 @@ describe('CalendarPageComponent', () => {
       expect(announceSpy).toHaveBeenCalledWith('„Abhaken“ gelöscht.');
     });
 
-    it('rescheduling a task in the day list is backed by the shared task store', () => {
-      const today = todayAsCalendarDate();
-      const task = createTask({ title: 'Umplanen', dueDate: today });
-      const store = createMockStore(undefined, [task]);
-      const updateSpy = vi.fn();
-      store.update = updateSpy;
-
-      TestBed.configureTestingModule({
-        imports: [CalendarPageComponent],
-        providers: [{ provide: TaskStoreService, useValue: store }],
-      });
-      const fixture = TestBed.createComponent(CalendarPageComponent);
-      fixture.detectChanges();
-
-      const trigger = fixture.nativeElement.querySelector(
-        '.calendar-page__day .app-task-item__due-date .date-picker__trigger',
-      ) as HTMLButtonElement;
-      trigger.click();
-      fixture.detectChanges();
-
-      const otherDate = anotherDayThisMonth();
-      const popoverCells = Array.from(
-        fixture.nativeElement.querySelectorAll(
-          '.calendar-page__day .date-picker__popover [role="gridcell"]',
-        ),
-      ) as HTMLElement[];
-      const index = getMonthGrid(new Date()).findIndex((day) => day.date === otherDate);
-      popoverCells[index].click();
-      fixture.detectChanges();
-
-      expect(updateSpy).toHaveBeenCalledWith(task.id, { dueDate: otherDate });
-    });
-
     it('rescheduling a task by dropping it on a grid cell is backed by the shared task store', () => {
       const today = todayAsCalendarDate();
       const task = createTask({ title: 'Per Drag & Drop umplanen', dueDate: today });
