@@ -16,7 +16,7 @@ test.describe('Kernflüsse', () => {
     await page.getByPlaceholder('Aufgabe für diesen Tag hinzufügen').fill(title);
     await page.getByRole('button', { name: 'Hinzufügen' }).click();
 
-    await expect(page.getByRole('button', { name: title, exact: true })).toBeVisible();
+    await expect(page.locator('li.app-task-item').filter({ hasText: title })).toBeVisible();
   });
 
   test('Aufgabe abhaken', async ({ page }) => {
@@ -68,14 +68,12 @@ test.describe('Kernflüsse', () => {
     const taskItem = todayPanel.getByRole('listitem').filter({ hasText: title });
     await expect(taskItem).toBeVisible();
 
-    // Reschedule the task to tomorrow via the task's calendar date-picker.
-    await taskItem.getByRole('button', { name: 'Fälligkeitsdatum ändern' }).click();
-
+    // Reschedule the task to tomorrow by dragging its card onto tomorrow's calendar cell.
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowLabel = germanDateLabel(tomorrow);
 
-    await page.getByRole('dialog').getByRole('gridcell', { name: tomorrowLabel }).click();
+    await taskItem.dragTo(page.getByRole('gridcell', { name: tomorrowLabel }));
 
     // The task moved away from today's list...
     await expect(todayPanel.getByRole('listitem').filter({ hasText: title })).toHaveCount(0);
