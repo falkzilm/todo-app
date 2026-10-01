@@ -22,6 +22,26 @@ describe('TaskQuickAddComponent', () => {
     }).compileComponents();
   });
 
+  /**
+   * Focuses the title input and waits for the card to expand.
+   * `provideZoneChangeDetection({ eventCoalescing: true })` (see app.config.ts)
+   * schedules the change-detection tick for DOM events via `setTimeout`/
+   * `requestAnimationFrame` outside the Angular zone, so `whenStable()` alone
+   * isn't guaranteed to observe it; flushing one more macrotask turn makes the
+   * expanded category/priority/time pills reliably present before they're queried.
+   */
+  async function focusAndExpand(
+    fixture: ReturnType<typeof TestBed.createComponent<HostComponent>>,
+    input: HTMLInputElement,
+  ): Promise<void> {
+    input.focus();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve));
+    fixture.detectChanges();
+  }
+
   it('emits the trimmed title and clears the field on submit', async () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
@@ -70,10 +90,7 @@ describe('TaskQuickAddComponent', () => {
     fixture.detectChanges();
 
     const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await focusAndExpand(fixture, input);
 
     const categoryPill = Array.from(
       fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
@@ -99,7 +116,7 @@ describe('TaskQuickAddComponent', () => {
     fixture.detectChanges();
 
     const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    await focusAndExpand(fixture, input);
     input.value = 'Design-Review';
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();

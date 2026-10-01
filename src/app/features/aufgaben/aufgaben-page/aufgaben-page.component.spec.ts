@@ -229,6 +229,26 @@ describe('AufgabenPageComponent', () => {
   });
 
   describe('Schnellerfassung (TDP-39)', () => {
+    /**
+     * Focuses the quick-add input and waits for the quick-add card to expand.
+     * `provideZoneChangeDetection({ eventCoalescing: true })` (see app.config.ts)
+     * schedules the change-detection tick for DOM events via `setTimeout`/
+     * `requestAnimationFrame` outside the Angular zone, so `whenStable()` alone
+     * isn't guaranteed to observe it; flushing one more macrotask turn makes the
+     * expanded category/priority/time pills reliably present before they're queried.
+     */
+    async function focusAndExpand(
+      fixture: ReturnType<typeof TestBed.createComponent>,
+      input: HTMLInputElement,
+    ): Promise<void> {
+      input.focus();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      await new Promise((resolve) => setTimeout(resolve));
+      fixture.detectChanges();
+    }
+
     function setUpWithRealStore(): { fixture: ReturnType<typeof TestBed.createComponent> } {
       const storage = createMockStorage();
       storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
@@ -257,10 +277,7 @@ describe('AufgabenPageComponent', () => {
       fixture.detectChanges();
 
       if (time) {
-        input.focus();
-        fixture.detectChanges();
-        await fixture.whenStable();
-        fixture.detectChanges();
+        await focusAndExpand(fixture, input);
         const timeInput = fixture.nativeElement.querySelector(
           '.task-quick-add__time-input',
         ) as HTMLInputElement;
@@ -309,7 +326,7 @@ describe('AufgabenPageComponent', () => {
       const input = fixture.nativeElement.querySelector(
         '.task-quick-add input',
       ) as HTMLInputElement;
-      input.focus();
+      await focusAndExpand(fixture, input);
       input.value = '   ';
       input.dispatchEvent(new Event('input'));
       fixture.detectChanges();
