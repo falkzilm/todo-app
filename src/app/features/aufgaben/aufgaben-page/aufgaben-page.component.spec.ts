@@ -311,6 +311,8 @@ describe('AufgabenPageComponent', () => {
       input.value = '   ';
       input.dispatchEvent(new Event('input'));
       fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
 
       const categoryPill = Array.from(
         fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),

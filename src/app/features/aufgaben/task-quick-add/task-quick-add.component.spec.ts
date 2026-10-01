@@ -72,6 +72,8 @@ describe('TaskQuickAddComponent', () => {
     const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
     input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     const categoryPill = Array.from(
       fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
@@ -101,11 +103,14 @@ describe('TaskQuickAddComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const pills = Array.from(
-      fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
-    ) as HTMLButtonElement[];
-    pills.find((pill) => pill.textContent?.includes('Arbeit'))?.click();
-    pills.find((pill) => pill.textContent?.includes('Hoch'))?.click();
+    const findPill = (label: string): HTMLButtonElement =>
+      Array.from(fixture.nativeElement.querySelectorAll('.task-quick-add__pill')).find((pill) =>
+        (pill as HTMLElement).textContent?.includes(label),
+      ) as HTMLButtonElement;
+
+    findPill('Arbeit').click();
+    fixture.detectChanges();
+    findPill('Hoch').click();
     fixture.detectChanges();
 
     const timeInput = fixture.nativeElement.querySelector(
