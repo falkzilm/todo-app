@@ -40,4 +40,42 @@ describe('DailyProgressCardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Für heute steht nichts an.');
     expect(fixture.nativeElement.querySelector('[role="progressbar"]')).toBeNull();
   });
+
+  describe('Botschaftsvarianten', () => {
+    it('shows a get-started message when nothing is completed yet (0%)', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.componentInstance.completed = 0;
+      fixture.componentInstance.total = 5;
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('Auf geht’s!');
+      expect(fixture.nativeElement.textContent).toContain(
+        'Du hast heute noch keine Aufgabe erledigt. Leg los! 💪',
+      );
+    });
+
+    it('shows an encouraging message for partial progress', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.componentInstance.completed = 3;
+      fixture.componentInstance.total = 5;
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('Tolle Arbeit!');
+      expect(fixture.nativeElement.textContent).toContain(
+        'Du hast 3 von 5 Aufgaben für heute erledigt. 🎉',
+      );
+    });
+
+    it('shows a celebratory message when everything is completed (100%)', () => {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.componentInstance.completed = 5;
+      fixture.componentInstance.total = 5;
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('Geschafft!');
+      expect(fixture.nativeElement.textContent).toContain(
+        'Du hast heute alle 5 Aufgaben erledigt. 🎉',
+      );
+    });
+  });
 });
