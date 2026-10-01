@@ -28,8 +28,20 @@
 
 <ul class="task-list" role="list" aria-label="Aufgabenliste">
   @for (task of tasks(); track task.id) {
-    <li app-task-item [task]="task" (toggleCompleted)="toggleTask(task.id)"></li>
+    <li
+      app-task-item
+      [task]="task"
+      (toggleCompleted)="toggleTask(task.id)"
+      (open)="openTaskDetail(task.id)"
+    ></li>
   } @empty {
     <li>Keine Aufgaben vorhanden.</li>
   }
 </ul>
+
+<app-task-detail-panel
+  [task]="selectedTask()"
+  (save)="onPanelSave($event)"
+  (delete)="onPanelDelete()"
+  (closed)="onPanelClosed()"
+/>

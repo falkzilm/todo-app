@@ -1,27 +1,31 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { getTimeOfDayGreeting } from '../../../core/date/greeting';
-import { createTask } from '../../../core/models/task.model';
+import { Task, createTask } from '../../../core/models/task.model';
 import { AnnouncerService } from '../../../core/services/announcer.service';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
 import { HeutePageComponent } from './heute-page.component';
 
 function createMockStore(
-  todayTasks: ReturnType<typeof createTask>[] = [],
-  overdueTasks: ReturnType<typeof createTask>[] = [],
+  todayTasks: Task[] = [],
+  overdueTasks: Task[] = [],
   todayTotalCount = todayTasks.length,
   todayCompletedCount = 0,
-  todayCompletedTasks: ReturnType<typeof createTask>[] = [],
+  todayCompletedTasks: Task[] = [],
 ): Partial<TaskStoreService> {
+  const allTasks = [...todayTasks, ...overdueTasks, ...todayCompletedTasks];
+
   return {
+    tasks: signal(allTasks),
     todayTasks: signal(todayTasks),
     overdueTasks: signal(overdueTasks),
     todayTotalCount: signal(todayTotalCount),
     todayCompletedCount: signal(todayCompletedCount),
     todayCompletedTasks: signal(todayCompletedTasks),
     toggleCompleted: () => undefined,
-    remove: () => undefined,
+    remove: (id) => allTasks.find((task) => task.id === id),
+    restore: () => undefined,
     update: () => undefined,
   };
 }
@@ -154,7 +158,7 @@ describe('HeutePageComponent', () => {
       expect(announceSpy).toHaveBeenCalledWith('„Heute fällig“ als erledigt markiert.');
     });
 
-    it('announces removing a task via the live region', () => {
+    it('shows an undo notice instead of an announcement when a task is removed', () => {
       const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
 
       TestBed.configureTestingModule({
@@ -170,8 +174,81 @@ describe('HeutePageComponent', () => {
       const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
 
       fixture.componentInstance['removeTask'](todayTask.id);
+      fixture.detectChanges();
 
-      expect(announceSpy).toHaveBeenCalledWith('„Heute fällig“ gelöscht.');
+      expect(announceSpy).not.toHaveBeenCalled();
+      const notice = fixture.nativeElement.querySelector('.undo-notice');
+      expect(notice?.getAttribute('role')).toBe('status');
+      expect(notice?.textContent).toContain('Heute fällig');
+    });
+  });
+
+  describe('Detail-/Bearbeitungsansicht (TDP-38)', () => {
+    it("opens the detail panel with the clicked card's task and saves an edit straight to the store", async () => {
+      const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
+      const store = createMockStore([todayTask], []);
+      const updateSpy = vi.fn();
+      store.update = updateSpy;
+
+      TestBed.configureTestingModule({
+        imports: [HeutePageComponent],
+        providers: [
+          { provide: TaskStoreService, useValue: store },
+          { provide: STORAGE, useValue: createMockStorage() },
+        ],
+      });
+
+      const fixture = TestBed.createComponent(HeutePageComponent);
+      fixture.detectChanges();
+
+      (fixture.nativeElement.querySelector('.app-task-item__content') as HTMLElement).click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const titleField = fixture.nativeElement.querySelector(
+        '#task-detail-panel-title',
+      ) as HTMLInputElement;
+      expect(titleField.value).toBe('Heute fällig');
+
+      fixture.nativeElement
+        .querySelector('.task-detail-panel__form')
+        ?.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        todayTask.id,
+        expect.objectContaining({ title: 'Heute fällig' }),
+      );
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+    });
+
+    it('deletes via the panel using the same undo mechanism as removeTask', () => {
+      const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
+
+      TestBed.configureTestingModule({
+        imports: [HeutePageComponent],
+        providers: [
+          { provide: TaskStoreService, useValue: createMockStore([todayTask], []) },
+          { provide: STORAGE, useValue: createMockStorage() },
+        ],
+      });
+
+      const fixture = TestBed.createComponent(HeutePageComponent);
+      fixture.detectChanges();
+
+      fixture.componentInstance['openTaskDetail'](todayTask.id);
+      fixture.detectChanges();
+
+      (
+        fixture.nativeElement.querySelector('.task-detail-panel__delete') as HTMLButtonElement
+      ).click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.undo-notice')?.textContent).toContain(
+        'Heute fällig',
+      );
     });
   });
 

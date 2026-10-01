@@ -14,12 +14,14 @@ function createMockStore(
   todayCompletedTasks: ReturnType<typeof createTask>[] = [],
 ): Partial<TaskStoreService> {
   return {
+    tasks: signal([...todayTasks, ...overdueTasks, ...todayCompletedTasks]),
     todayTasks: signal(todayTasks),
     overdueTasks: signal(overdueTasks),
     todayTotalCount: signal(todayTotalCount),
     todayCompletedCount: signal(todayCompletedCount),
     todayCompletedTasks: signal(todayCompletedTasks),
     remove: () => undefined,
+    restore: () => undefined,
     update: () => undefined,
   };
 }
@@ -85,5 +87,29 @@ describe('HeutePageComponent a11y', () => {
     fixture.detectChanges();
 
     return expectNoA11yViolations(fixture.nativeElement);
+  });
+
+  it('has no WCAG 2 A/AA violations with the detail panel open (TDP-38)', async () => {
+    const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
+
+    TestBed.configureTestingModule({
+      imports: [HeutePageComponent],
+      providers: [
+        { provide: TaskStoreService, useValue: createMockStore([todayTask], []) },
+        { provide: STORAGE, useValue: createMockStorage() },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(HeutePageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.app-task-item__content') as HTMLElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await expectNoA11yViolations(fixture.nativeElement);
   });
 });

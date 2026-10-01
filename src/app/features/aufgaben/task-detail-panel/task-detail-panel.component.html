@@ -1,0 +1,155 @@
+@if (task(); as currentTask) {
+  <div class="task-detail-panel-backdrop" aria-hidden="true" (click)="onClose()"></div>
+
+  <aside
+    #panel
+    class="task-detail-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="task-detail-panel-heading"
+    (keydown)="onPanelKeydown($event)"
+  >
+    <header class="task-detail-panel__header">
+      <h2 id="task-detail-panel-heading" class="task-detail-panel__heading">Aufgabe bearbeiten</h2>
+      <app-icon-button ariaLabel="Schließen" (pressed)="onClose()">
+        <app-icon name="x" size="sm" />
+      </app-icon-button>
+    </header>
+
+    <form class="task-detail-panel__form" (ngSubmit)="onSave()">
+      <label class="task-detail-panel__field" for="task-detail-panel-title">
+        <span class="task-detail-panel__label">Titel</span>
+        <input
+          #titleField
+          id="task-detail-panel-title"
+          class="task-detail-panel__input"
+          [class.task-detail-panel__input--invalid]="titleError"
+          type="text"
+          name="title"
+          [(ngModel)]="title"
+          [attr.aria-invalid]="titleError ? 'true' : null"
+          [attr.aria-describedby]="titleError ? 'task-detail-panel-title-error' : null"
+        />
+        @if (titleError; as error) {
+          <span id="task-detail-panel-title-error" class="task-detail-panel__error" role="alert">{{
+            error
+          }}</span>
+        }
+      </label>
+
+      <label class="task-detail-panel__field" for="task-detail-panel-subtitle">
+        <span class="task-detail-panel__label">Untertitel</span>
+        <input
+          id="task-detail-panel-subtitle"
+          class="task-detail-panel__input"
+          type="text"
+          name="subtitle"
+          placeholder="z. B. Besprechungsraum 2"
+          [(ngModel)]="subtitle"
+        />
+      </label>
+
+      <label class="task-detail-panel__field" for="task-detail-panel-notes">
+        <span class="task-detail-panel__label">Notiz</span>
+        <textarea
+          id="task-detail-panel-notes"
+          class="task-detail-panel__input task-detail-panel__input--textarea"
+          name="notes"
+          rows="3"
+          [(ngModel)]="notes"
+        ></textarea>
+      </label>
+
+      <div class="task-detail-panel__field">
+        <span class="task-detail-panel__label" id="task-detail-panel-due-date-label"
+          >Fälligkeitsdatum</span
+        >
+        <app-date-picker
+          [value]="dueDate"
+          label="Fälligkeitsdatum auswählen"
+          placeholder="Kein Datum"
+          (dateSelect)="onDueDateSelect($event)"
+        />
+      </div>
+
+      <div class="task-detail-panel__time-row">
+        <label class="task-detail-panel__field" for="task-detail-panel-start-time">
+          <span class="task-detail-panel__label">Startzeit</span>
+          <input
+            id="task-detail-panel-start-time"
+            class="task-detail-panel__input"
+            type="time"
+            name="startTime"
+            [ngModel]="startTime"
+            (ngModelChange)="startTime = $event"
+          />
+        </label>
+
+        <label class="task-detail-panel__field" for="task-detail-panel-end-time">
+          <span class="task-detail-panel__label">Endzeit</span>
+          <input
+            #endTimeField
+            id="task-detail-panel-end-time"
+            class="task-detail-panel__input"
+            [class.task-detail-panel__input--invalid]="timeRangeError"
+            type="time"
+            name="endTime"
+            [ngModel]="endTime"
+            (ngModelChange)="endTime = $event"
+            [attr.aria-invalid]="timeRangeError ? 'true' : null"
+            [attr.aria-describedby]="timeRangeError ? 'task-detail-panel-time-error' : null"
+          />
+        </label>
+      </div>
+      @if (timeRangeError; as error) {
+        <span id="task-detail-panel-time-error" class="task-detail-panel__error" role="alert">{{
+          error
+        }}</span>
+      }
+
+      <fieldset class="task-detail-panel__field">
+        <legend class="task-detail-panel__label">Kategorie</legend>
+        <div class="task-detail-panel__pills">
+          @for (category of categories; track category.id) {
+            <button
+              type="button"
+              class="task-detail-panel__pill"
+              [class.task-detail-panel__pill--active]="categoryId === category.id"
+              [attr.aria-pressed]="categoryId === category.id"
+              (click)="onCategorySelect(category.id)"
+            >
+              {{ category.name }}
+            </button>
+          }
+        </div>
+      </fieldset>
+
+      <fieldset class="task-detail-panel__field">
+        <legend class="task-detail-panel__label">Priorität</legend>
+        <div class="task-detail-panel__pills">
+          @for (option of priorities; track option.value) {
+            <button
+              type="button"
+              class="task-detail-panel__pill"
+              [class.task-detail-panel__pill--active]="priority === option.value"
+              [attr.aria-pressed]="priority === option.value"
+              (click)="onPrioritySelect(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      </fieldset>
+
+      <div class="task-detail-panel__actions">
+        <button type="button" class="task-detail-panel__delete" (click)="onDelete()">
+          <app-icon name="trash" size="sm" />
+          Löschen
+        </button>
+
+        <app-button variant="secondary" type="button" (pressed)="onClose()">Abbrechen</app-button>
+        <app-button variant="primary" type="submit">Speichern</app-button>
+      </div>
+    </form>
+  </aside>
+}

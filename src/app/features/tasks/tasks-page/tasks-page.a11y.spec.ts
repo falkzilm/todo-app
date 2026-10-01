@@ -51,4 +51,25 @@ describe('TasksPageComponent a11y', () => {
 
     await expectNoA11yViolations(fixture.nativeElement);
   });
+
+  it('has no WCAG 2 A/AA violations with the detail panel open (TDP-38)', async () => {
+    const task = createTask({ title: 'Einkaufen', dueDate: null });
+
+    TestBed.configureTestingModule({
+      imports: [TasksPageComponent],
+      providers: [{ provide: TaskStoreService, useValue: createMockStore([task]) }],
+    });
+
+    const fixture = TestBed.createComponent(TasksPageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.app-task-item__content') as HTMLElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await expectNoA11yViolations(fixture.nativeElement);
+  });
 });
