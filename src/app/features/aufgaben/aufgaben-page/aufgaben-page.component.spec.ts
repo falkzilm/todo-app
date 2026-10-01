@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { getTimeOfDayGreeting } from '../../../core/date/greeting';
-import { createTask } from '../../../core/models/task.model';
+import { createTask, todayAsCalendarDate } from '../../../core/models/task.model';
 import { AnnouncerService } from '../../../core/services/announcer.service';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
@@ -200,6 +200,30 @@ describe('AufgabenPageComponent', () => {
         'Du hast 3 von 4 Aufgaben für heute erledigt.',
       );
     });
+
+    it('updates the progress card immediately when a task is toggled as completed', () => {
+      const storage = createMockStorage();
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
+      TestBed.configureTestingModule({
+        imports: [AufgabenPageComponent],
+        providers: [{ provide: STORAGE, useValue: storage }],
+      });
+      const fixture = TestBed.createComponent(AufgabenPageComponent);
+      const store = TestBed.inject(TaskStoreService);
+      const task = store.add({ title: 'Heute fällig', dueDate: todayAsCalendarDate() });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain(
+        'Du hast heute noch keine Aufgabe erledigt.',
+      );
+
+      fixture.componentInstance['toggleTask'](task.id);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain(
+        'Du hast heute alle 1 Aufgaben erledigt.',
+      );
+    });
   });
 
   describe('Detail-/Bearbeitungsansicht (TDP-38)', () => {
@@ -210,9 +234,7 @@ describe('AufgabenPageComponent', () => {
       store.update = updateSpy;
       const fixture = setUp(store);
 
-      (
-        fixture.nativeElement.querySelector('.app-task-item__content') as HTMLElement
-      ).click();
+      (fixture.nativeElement.querySelector('.app-task-item__content') as HTMLElement).click();
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();
