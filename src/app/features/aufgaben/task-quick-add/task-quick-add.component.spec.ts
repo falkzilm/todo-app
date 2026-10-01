@@ -77,8 +77,11 @@ describe('TaskQuickAddComponent', () => {
 
     const categoryPill = Array.from(
       fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
-    ).find((pill) => (pill as HTMLElement).textContent?.includes('Arbeit')) as HTMLButtonElement;
-    categoryPill.click();
+    ).find((pill) => (pill as HTMLElement).textContent?.includes('Arbeit')) as
+      | HTMLButtonElement
+      | undefined;
+    expect(categoryPill).toBeTruthy();
+    categoryPill!.click();
     fixture.detectChanges();
 
     const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
@@ -86,7 +89,7 @@ describe('TaskQuickAddComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.added).toEqual([]);
-    expect(categoryPill.getAttribute('aria-pressed')).toBe('true');
+    expect(categoryPill!.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('emits the selected category, priority and time together with the title', async () => {
@@ -103,10 +106,13 @@ describe('TaskQuickAddComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const findPill = (label: string): HTMLButtonElement =>
-      Array.from(fixture.nativeElement.querySelectorAll('.task-quick-add__pill')).find((pill) =>
-        (pill as HTMLElement).textContent?.includes(label),
-      ) as HTMLButtonElement;
+    const findPill = (label: string): HTMLButtonElement => {
+      const pill = Array.from(
+        fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
+      ).find((candidate) => (candidate as HTMLElement).textContent?.includes(label));
+      expect(pill).toBeTruthy();
+      return pill as HTMLButtonElement;
+    };
 
     findPill('Arbeit').click();
     fixture.detectChanges();

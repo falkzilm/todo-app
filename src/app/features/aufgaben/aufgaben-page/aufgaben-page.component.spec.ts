@@ -316,8 +316,11 @@ describe('AufgabenPageComponent', () => {
 
       const categoryPill = Array.from(
         fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
-      ).find((pill) => (pill as HTMLElement).textContent?.includes('Arbeit')) as HTMLButtonElement;
-      categoryPill.click();
+      ).find((pill) => (pill as HTMLElement).textContent?.includes('Arbeit')) as
+        | HTMLButtonElement
+        | undefined;
+      expect(categoryPill).toBeTruthy();
+      categoryPill!.click();
       fixture.detectChanges();
 
       fixture.nativeElement.querySelector('.task-quick-add')?.dispatchEvent(new Event('submit'));
@@ -326,7 +329,7 @@ describe('AufgabenPageComponent', () => {
       expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
         'Bitte einen Titel eingeben.',
       );
-      expect(categoryPill.getAttribute('aria-pressed')).toBe('true');
+      expect(categoryPill!.getAttribute('aria-pressed')).toBe('true');
       expect(fixture.nativeElement.textContent).not.toContain('Milch kaufen');
     });
 
