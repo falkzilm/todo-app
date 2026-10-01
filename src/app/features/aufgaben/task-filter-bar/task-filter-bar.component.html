@@ -7,5 +7,76 @@
       (pressed)="selectFilter(option.id)"
     />
   }
-  <app-filter-chip-icon icon="sliders" ariaLabel="Weitere Filter" />
+
+  <div class="task-filter-bar__menu">
+    <app-filter-chip-icon
+      icon="sliders"
+      ariaLabel="Weitere Filter"
+      [active]="menuOpen()"
+      [ariaExpanded]="menuOpen()"
+      [ariaControls]="menuId"
+      (pressed)="toggleMenu()"
+    />
+
+    @if (menuOpen()) {
+      <div
+        [id]="menuId"
+        class="task-filter-bar__popover"
+        role="dialog"
+        aria-modal="false"
+        aria-label="Weitere Filter"
+        (keydown)="onMenuKeydown($event)"
+      >
+        <fieldset class="task-filter-bar__group">
+          <legend class="task-filter-bar__group-label">Sortierung</legend>
+          <div class="task-filter-bar__pills">
+            @for (sortOption of sortOptions; track sortOption.value) {
+              <button
+                type="button"
+                class="task-filter-bar__pill"
+                [class.task-filter-bar__pill--active]="sort() === sortOption.value"
+                [attr.aria-pressed]="sort() === sortOption.value"
+                (click)="sortChange.emit(sortOption.value)"
+              >
+                {{ sortOption.label }}
+              </button>
+            }
+          </div>
+        </fieldset>
+
+        <fieldset class="task-filter-bar__group">
+          <legend class="task-filter-bar__group-label">Kategorie</legend>
+          <div class="task-filter-bar__pills">
+            <button
+              type="button"
+              class="task-filter-bar__pill"
+              [class.task-filter-bar__pill--active]="categoryId() === null"
+              [attr.aria-pressed]="categoryId() === null"
+              (click)="selectAllCategories()"
+            >
+              Alle
+            </button>
+            @for (category of categories; track category.id) {
+              <button
+                type="button"
+                class="task-filter-bar__pill"
+                [class.task-filter-bar__pill--active]="categoryId() === category.id"
+                [attr.aria-pressed]="categoryId() === category.id"
+                (click)="selectCategory(category.id)"
+              >
+                {{ category.name }}
+              </button>
+            }
+          </div>
+        </fieldset>
+
+        <app-checkbox
+          class="task-filter-bar__toggle"
+          label="Erledigte anzeigen"
+          [ngModel]="showCompleted()"
+          (ngModelChange)="showCompletedChange.emit($event)"
+        />
+      </div>
+    }
+  </div>
 </div>

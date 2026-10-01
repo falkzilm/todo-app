@@ -9,7 +9,13 @@
 <app-task-filter-bar
   class="aufgaben-page__filter-bar"
   [active]="activeFilter()"
+  [sort]="sortOption()"
+  [categoryId]="categoryFilter()"
+  [showCompleted]="showCompleted()"
   (filterChange)="selectFilter($event)"
+  (sortChange)="sortOption.set($event)"
+  (categoryChange)="categoryFilter.set($event)"
+  (showCompletedChange)="showCompleted.set($event)"
 />
 
 <app-daily-progress-card
