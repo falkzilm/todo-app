@@ -257,7 +257,7 @@ describe('AufgabenPageComponent', () => {
       fixture.detectChanges();
 
       if (time) {
-        input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        input.focus();
         fixture.detectChanges();
         await fixture.whenStable();
         fixture.detectChanges();
@@ -309,7 +309,7 @@ describe('AufgabenPageComponent', () => {
       const input = fixture.nativeElement.querySelector(
         '.task-quick-add input',
       ) as HTMLInputElement;
-      input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      input.focus();
       input.value = '   ';
       input.dispatchEvent(new Event('input'));
       fixture.detectChanges();
