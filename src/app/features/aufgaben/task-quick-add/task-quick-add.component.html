@@ -1,15 +1,79 @@
-<form class="task-quick-add" aria-label="Schnellerfassung" (ngSubmit)="submit()">
-  <input
-    #titleInput
-    type="text"
-    name="newTaskTitle"
-    class="task-quick-add__input"
-    placeholder="Neue Aufgabe für heute hinzufügen"
-    [(ngModel)]="title"
-    (input)="showEmptyTitleHint = false"
-  />
-  <button type="submit" class="task-quick-add__submit">Hinzufügen</button>
+<form
+  #host
+  class="task-quick-add"
+  [class.task-quick-add--expanded]="expanded"
+  aria-label="Schnellerfassung"
+  (ngSubmit)="submit()"
+  (focusin)="onFocusIn()"
+  (focusout)="onFocusOut($event)"
+  (keydown)="onKeydown($event)"
+>
+  <div class="task-quick-add__row">
+    <app-icon name="plus" size="sm" class="task-quick-add__icon" />
+    <input
+      #titleInput
+      type="text"
+      name="newTaskTitle"
+      class="task-quick-add__input"
+      [class.task-quick-add__input--invalid]="showEmptyTitleHint"
+      aria-label="Neue Aufgabe"
+      placeholder="Aufgabe hinzufügen"
+      [(ngModel)]="title"
+      (input)="showEmptyTitleHint = false"
+      [attr.aria-invalid]="showEmptyTitleHint ? 'true' : null"
+      [attr.aria-describedby]="showEmptyTitleHint ? 'task-quick-add-hint' : null"
+    />
+    <button type="submit" class="task-quick-add__submit">
+      <app-icon name="plus" size="sm" />
+      Hinzufügen
+    </button>
+  </div>
+
+  @if (expanded) {
+    <div class="task-quick-add__options">
+      <div class="task-quick-add__pills" role="group" aria-label="Kategorie">
+        @for (category of categories; track category.id) {
+          <button
+            type="button"
+            class="task-quick-add__pill"
+            [class.task-quick-add__pill--active]="categoryId === category.id"
+            [attr.aria-pressed]="categoryId === category.id"
+            (click)="selectCategory(category.id)"
+          >
+            {{ category.name }}
+          </button>
+        }
+      </div>
+
+      <div class="task-quick-add__pills" role="group" aria-label="Priorität">
+        @for (option of priorities; track option.value) {
+          <button
+            type="button"
+            class="task-quick-add__pill"
+            [class.task-quick-add__pill--active]="priority === option.value"
+            [attr.aria-pressed]="priority === option.value"
+            (click)="selectPriority(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+
+      <label class="task-quick-add__time-field">
+        <span class="task-quick-add__time-label">Uhrzeit</span>
+        <input
+          type="time"
+          name="newTaskTime"
+          class="task-quick-add__time-input"
+          [ngModel]="startTime"
+          (ngModelChange)="startTime = $event"
+        />
+      </label>
+    </div>
+  }
 </form>
 @if (showEmptyTitleHint) {
-  <p class="task-quick-add__hint" role="status">Bitte einen Titel eingeben.</p>
+  <p id="task-quick-add-hint" class="task-quick-add__hint" role="status">
+    Bitte einen Titel eingeben.
+  </p>
 }

@@ -226,6 +226,139 @@ describe('AufgabenPageComponent', () => {
     });
   });
 
+  describe('Schnellerfassung (TDP-39)', () => {
+    function setUpWithRealStore(): { fixture: ReturnType<typeof TestBed.createComponent> } {
+      const storage = createMockStorage();
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
+      TestBed.configureTestingModule({
+        imports: [AufgabenPageComponent],
+        providers: [{ provide: STORAGE, useValue: storage }],
+      });
+      const fixture = TestBed.createComponent(AufgabenPageComponent);
+      fixture.detectChanges();
+      return { fixture };
+    }
+
+    async function addViaQuickAdd(
+      fixture: ReturnType<typeof TestBed.createComponent>,
+      title: string,
+      time?: string,
+    ): Promise<void> {
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const input = fixture.nativeElement.querySelector(
+        '.task-quick-add input',
+      ) as HTMLInputElement;
+      input.value = title;
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      if (time) {
+        input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+        fixture.detectChanges();
+        await fixture.whenStable();
+        fixture.detectChanges();
+        const timeInput = fixture.nativeElement.querySelector(
+          '.task-quick-add__time-input',
+        ) as HTMLInputElement;
+        timeInput.value = time;
+        timeInput.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+      }
+
+      fixture.nativeElement.querySelector('.task-quick-add')?.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+    }
+
+    it('creates a task from the title alone, counted by the progress card', async () => {
+      const { fixture } = setUpWithRealStore();
+
+      await addViaQuickAdd(fixture, 'Milch kaufen');
+
+      expect(fixture.nativeElement.textContent).toContain('Milch kaufen');
+      expect(fixture.nativeElement.textContent).toContain(
+        'Du hast heute noch keine Aufgabe erledigt.',
+      );
+    });
+
+    it('inserts a task created with a time at its chronologically correct position in the list', async () => {
+      const { fixture } = setUpWithRealStore();
+      const store = TestBed.inject(TaskStoreService);
+      store.add({ title: 'Nachmittags-Termin', dueDate: todayAsCalendarDate(), startTime: '15:00' });
+      fixture.detectChanges();
+
+      await addViaQuickAdd(fixture, 'Morgens-Termin', '09:00');
+
+      const items = Array.from(
+        fixture.nativeElement.querySelectorAll('.task-list > li'),
+      ) as HTMLElement[];
+      expect(items.map((item) => item.textContent)).toEqual([
+        expect.stringContaining('Morgens-Termin'),
+        expect.stringContaining('Nachmittags-Termin'),
+      ]);
+    });
+
+    it('rejects a whitespace-only title with a visible hint and keeps the entered category', async () => {
+      const { fixture } = setUpWithRealStore();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const input = fixture.nativeElement.querySelector(
+        '.task-quick-add input',
+      ) as HTMLInputElement;
+      input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      input.value = '   ';
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      const categoryPill = Array.from(
+        fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
+      ).find((pill) => (pill as HTMLElement).textContent?.includes('Arbeit')) as HTMLButtonElement;
+      categoryPill.click();
+      fixture.detectChanges();
+
+      fixture.nativeElement.querySelector('.task-quick-add')?.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
+        'Bitte einen Titel eingeben.',
+      );
+      expect(categoryPill.getAttribute('aria-pressed')).toBe('true');
+      expect(fixture.nativeElement.textContent).not.toContain('Milch kaufen');
+    });
+
+    it('defaults a new task to today\'s due date under the "Heute" filter', async () => {
+      const { fixture } = setUpWithRealStore();
+
+      await addViaQuickAdd(fixture, 'Heute erledigen');
+
+      // "Heute" is the default filter; a task showing up here without any explicit
+      // date input can only do so because it was given today's due date.
+      expect(fixture.nativeElement.querySelector('.task-list')?.textContent).toContain(
+        'Heute erledigen',
+      );
+    });
+
+    it('defaults a new task to high priority under the "Wichtig" filter', async () => {
+      const { fixture } = setUpWithRealStore();
+
+      const chips = Array.from(
+        fixture.nativeElement.querySelectorAll('.app-filter-chip'),
+      ) as HTMLButtonElement[];
+      chips.find((chip) => chip.textContent?.includes('Wichtig'))?.click();
+      fixture.detectChanges();
+
+      await addViaQuickAdd(fixture, 'Dringend klären');
+
+      // Only high-priority tasks show up under "Wichtig"; reaching the list here means
+      // it picked up "high" by default even though no priority pill was pressed.
+      expect(fixture.nativeElement.querySelector('.task-list')?.textContent).toContain(
+        'Dringend klären',
+      );
+    });
+  });
+
   describe('Detail-/Bearbeitungsansicht (TDP-38)', () => {
     it('opens the detail panel with the clicked card and saves an edit straight to the store', async () => {
       const task = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });

@@ -9,7 +9,7 @@ import { TaskDetailPanelComponent } from '../task-detail-panel/task-detail-panel
 import { DailyProgressCardComponent } from '../daily-progress-card/daily-progress-card.component';
 import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
 import { TaskFilterBarComponent, TaskFilterId } from '../task-filter-bar/task-filter-bar.component';
-import { TaskQuickAddComponent } from '../task-quick-add/task-quick-add.component';
+import { QuickAddTaskInput, TaskQuickAddComponent } from '../task-quick-add/task-quick-add.component';
 
 /** Shown below the filter bar's chips when the active filter has no matching tasks. */
 const EMPTY_STATE_TEXT_BY_FILTER: Record<TaskFilterId, string> = {
@@ -94,9 +94,24 @@ export class AufgabenPageComponent {
     this.activeFilter.set(filter);
   }
 
-  protected addTask(title: string): void {
-    this.taskStore.add({ title, dueDate: todayAsCalendarDate() });
-    this.announcer.announce(`„${title}“ hinzugefügt.`);
+  /**
+   * A task created via the quick-add card picks up a sensible default from the active
+   * filter so it immediately shows up where it was added (e.g. today's due date under
+   * "Heute", high priority under "Wichtig"); an explicit pill selection always wins.
+   */
+  protected addTask(input: QuickAddTaskInput): void {
+    const filter = this.activeFilter();
+    const dueDate = filter === 'important' ? null : todayAsCalendarDate();
+    const priority = input.priority ?? (filter === 'important' ? 'high' : null);
+
+    this.taskStore.add({
+      title: input.title,
+      dueDate,
+      priority,
+      categoryId: input.categoryId,
+      startTime: input.startTime,
+    });
+    this.announcer.announce(`„${input.title}“ hinzugefügt.`);
   }
 
   protected toggleTask(id: string): void {

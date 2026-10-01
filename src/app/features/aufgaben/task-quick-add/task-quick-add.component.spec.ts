@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { TaskQuickAddComponent } from './task-quick-add.component';
+import { QuickAddTaskInput, TaskQuickAddComponent } from './task-quick-add.component';
 
 @Component({
   standalone: true,
@@ -8,10 +8,10 @@ import { TaskQuickAddComponent } from './task-quick-add.component';
   template: `<app-task-quick-add (add)="onAdd($event)" />`,
 })
 class HostComponent {
-  added: string[] = [];
+  added: QuickAddTaskInput[] = [];
 
-  onAdd(title: string): void {
-    this.added.push(title);
+  onAdd(input: QuickAddTaskInput): void {
+    this.added.push(input);
   }
 }
 
@@ -43,7 +43,9 @@ describe('TaskQuickAddComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.added).toEqual(['Milch kaufen']);
+    expect(fixture.componentInstance.added).toEqual([
+      { title: 'Milch kaufen', categoryId: null, priority: null, startTime: null },
+    ]);
     expect(input.value).toBe('');
   });
 
@@ -59,5 +61,89 @@ describe('TaskQuickAddComponent', () => {
     expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
       'Bitte einen Titel eingeben.',
     );
+  });
+
+  it('keeps an already-entered category/priority when an empty submit is rejected', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    fixture.detectChanges();
+
+    const categoryPill = Array.from(
+      fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
+    ).find((pill) => (pill as HTMLElement).textContent?.includes('Arbeit')) as HTMLButtonElement;
+    categoryPill.click();
+    fixture.detectChanges();
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.added).toEqual([]);
+    expect(categoryPill.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('emits the selected category, priority and time together with the title', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    input.value = 'Design-Review';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const pills = Array.from(
+      fixture.nativeElement.querySelectorAll('.task-quick-add__pill'),
+    ) as HTMLButtonElement[];
+    pills.find((pill) => pill.textContent?.includes('Arbeit'))?.click();
+    pills.find((pill) => pill.textContent?.includes('Hoch'))?.click();
+    fixture.detectChanges();
+
+    const timeInput = fixture.nativeElement.querySelector(
+      '.task-quick-add__time-input',
+    ) as HTMLInputElement;
+    timeInput.value = '09:00';
+    timeInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.added).toEqual([
+      { title: 'Design-Review', categoryId: 'arbeit', priority: 'high', startTime: '09:00' },
+    ]);
+  });
+
+  it('discards the entry and collapses on Escape', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    input.value = 'Verworfen';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(input.value).toBe('');
+    expect(fixture.nativeElement.querySelector('.task-quick-add__options')).toBeNull();
+    expect(fixture.componentInstance.added).toEqual([]);
   });
 });
