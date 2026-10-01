@@ -4,7 +4,7 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { getTimeOfDayGreeting } from '../../../core/date/greeting';
-import { createTask } from '../../../core/models/task.model';
+import { createTask, todayAsCalendarDate } from '../../../core/models/task.model';
 import { AnnouncerService } from '../../../core/services/announcer.service';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
@@ -254,6 +254,30 @@ describe('AufgabenPageComponent', () => {
 
       expect(fixture.nativeElement.textContent).toContain(
         'Du hast 3 von 4 Aufgaben für heute erledigt.',
+      );
+    });
+
+    it('updates the progress card immediately when a task is toggled as completed', () => {
+      const storage = createMockStorage();
+      storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
+      TestBed.configureTestingModule({
+        imports: [AufgabenPageComponent],
+        providers: [{ provide: STORAGE, useValue: storage }],
+      });
+      const fixture = TestBed.createComponent(AufgabenPageComponent);
+      const store = TestBed.inject(TaskStoreService);
+      const task = store.add({ title: 'Heute fällig', dueDate: todayAsCalendarDate() });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain(
+        'Du hast heute noch keine Aufgabe erledigt.',
+      );
+
+      fixture.componentInstance['toggleTask'](task.id);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain(
+        'Du hast heute alle 1 Aufgaben erledigt.',
       );
     });
   });
