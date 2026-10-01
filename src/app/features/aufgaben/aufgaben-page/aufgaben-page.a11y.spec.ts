@@ -4,22 +4,24 @@ import { expectNoA11yViolations } from '../../../../testing/axe';
 import { createTask } from '../../../core/models/task.model';
 import { STORAGE } from '../../../core/services/storage.token';
 import { TaskStoreService } from '../../../core/services/task-store.service';
-import { HeutePageComponent } from './heute-page.component';
+import { AufgabenPageComponent } from './aufgaben-page.component';
 
 function createMockStore(
-  todayTasks: ReturnType<typeof createTask>[] = [],
-  overdueTasks: ReturnType<typeof createTask>[] = [],
-  todayTotalCount = todayTasks.length,
+  tasksToday: ReturnType<typeof createTask>[] = [],
+  tasksThisWeek: ReturnType<typeof createTask>[] = [],
+  importantTasks: ReturnType<typeof createTask>[] = [],
+  todayTotalCount = tasksToday.length,
   todayCompletedCount = 0,
-  todayCompletedTasks: ReturnType<typeof createTask>[] = [],
 ): Partial<TaskStoreService> {
   return {
-    tasks: signal([...todayTasks, ...overdueTasks, ...todayCompletedTasks]),
-    todayTasks: signal(todayTasks),
-    overdueTasks: signal(overdueTasks),
+    tasks: signal([...tasksToday, ...tasksThisWeek, ...importantTasks]),
+    tasksToday: signal(tasksToday),
+    tasksThisWeek: signal(tasksThisWeek),
+    importantTasks: signal(importantTasks),
     todayTotalCount: signal(todayTotalCount),
     todayCompletedCount: signal(todayCompletedCount),
-    todayCompletedTasks: signal(todayCompletedTasks),
+    add: () => createTask({ title: 'x' }),
+    toggleCompleted: () => undefined,
     remove: () => undefined,
     restore: () => undefined,
     update: () => undefined,
@@ -45,62 +47,62 @@ function createMockStorage(): Storage {
   };
 }
 
-describe('HeutePageComponent a11y', () => {
+describe('AufgabenPageComponent a11y', () => {
   it('has no WCAG 2 A/AA violations for the empty state', async () => {
     TestBed.configureTestingModule({
-      imports: [HeutePageComponent],
+      imports: [AufgabenPageComponent],
       providers: [
         { provide: TaskStoreService, useValue: createMockStore() },
         { provide: STORAGE, useValue: createMockStorage() },
       ],
     });
 
-    const fixture = TestBed.createComponent(HeutePageComponent);
+    const fixture = TestBed.createComponent(AufgabenPageComponent);
     fixture.detectChanges();
 
     await expectNoA11yViolations(fixture.nativeElement);
   });
 
-  it('has no WCAG 2 A/AA violations with today/overdue/completed tasks and an expanded completed section', () => {
-    const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
-    const overdueTask = createTask({ title: 'Überfällig', dueDate: '2026-08-30' });
-    const completedTask = createTask({ title: 'Milch kaufen', dueDate: '2026-09-02' });
+  it('has no WCAG 2 A/AA violations with open and completed tasks', async () => {
+    const openTask = createTask({
+      title: 'Heute fällig',
+      dueDate: '2026-09-02',
+      startTime: '09:00',
+    });
+    const completedTask = {
+      ...createTask({ title: 'Milch kaufen', dueDate: '2026-09-02', startTime: '10:00' }),
+      completed: true,
+    };
 
     TestBed.configureTestingModule({
-      imports: [HeutePageComponent],
+      imports: [AufgabenPageComponent],
       providers: [
         {
           provide: TaskStoreService,
-          useValue: createMockStore([todayTask], [overdueTask], 2, 1, [completedTask]),
+          useValue: createMockStore([openTask, completedTask], [], [], 2, 1),
         },
         { provide: STORAGE, useValue: createMockStorage() },
       ],
     });
 
-    const fixture = TestBed.createComponent(HeutePageComponent);
+    const fixture = TestBed.createComponent(AufgabenPageComponent);
     fixture.detectChanges();
 
-    const toggle: HTMLButtonElement = fixture.nativeElement.querySelector(
-      '.heute-page__completed-toggle',
-    );
-    toggle.click();
-    fixture.detectChanges();
-
-    return expectNoA11yViolations(fixture.nativeElement);
+    await expectNoA11yViolations(fixture.nativeElement);
   });
 
   it('has no WCAG 2 A/AA violations with the detail panel open (TDP-38)', async () => {
     const todayTask = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
 
     TestBed.configureTestingModule({
-      imports: [HeutePageComponent],
+      imports: [AufgabenPageComponent],
       providers: [
-        { provide: TaskStoreService, useValue: createMockStore([todayTask], []) },
+        { provide: TaskStoreService, useValue: createMockStore([todayTask], [], []) },
         { provide: STORAGE, useValue: createMockStorage() },
       ],
     });
 
-    const fixture = TestBed.createComponent(HeutePageComponent);
+    const fixture = TestBed.createComponent(AufgabenPageComponent);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();

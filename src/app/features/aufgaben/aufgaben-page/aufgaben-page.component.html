@@ -1,4 +1,52 @@
-<app-page-header
-  title="Aufgaben"
-  subtitle="Diese Ansicht wird in der Aufgaben-Ansicht ausgestaltet."
+<header class="aufgaben-page__header">
+  <div class="aufgaben-page__heading">
+    <h2 class="aufgaben-page__greeting">{{ greeting() }}</h2>
+    <p class="aufgaben-page__subtitle">Hier ist dein Plan für heute.</p>
+  </div>
+  <app-notification-bell />
+</header>
+
+<app-task-filter-bar
+  class="aufgaben-page__filter-bar"
+  [active]="activeFilter()"
+  (filterChange)="selectFilter($event)"
+/>
+
+<app-daily-progress-card
+  class="aufgaben-page__progress-card"
+  [completed]="todayCompletedCount()"
+  [total]="todayTotalCount()"
+/>
+
+@if (pendingUndo(); as pending) {
+  <p class="undo-notice" role="status">
+    <span>„{{ pending.task.title }}“ gelöscht.</span>
+    <button type="button" class="undo-notice__button" (click)="undoRemove()">Rückgängig</button>
+  </p>
+}
+
+<div class="aufgaben-page__list">
+  @if (filteredTasks().length === 0) {
+    <p class="aufgaben-page__empty-state">{{ emptyStateText() }}</p>
+  } @else {
+    <ul class="task-list" role="list" aria-label="Aufgabenliste">
+      @for (task of filteredTasks(); track task.id) {
+        <li
+          app-task-item
+          [task]="task"
+          (toggleCompleted)="toggleTask(task.id)"
+          (open)="openTaskDetail(task.id)"
+        ></li>
+      }
+    </ul>
+  }
+</div>
+
+<app-task-quick-add class="aufgaben-page__quick-add" (add)="addTask($event)" />
+
+<app-task-detail-panel
+  [task]="selectedTask()"
+  (save)="onPanelSave($event)"
+  (delete)="onPanelDelete()"
+  (closed)="onPanelClosed()"
 />

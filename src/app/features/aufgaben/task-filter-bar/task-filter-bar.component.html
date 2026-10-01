@@ -1,0 +1,11 @@
+<div class="task-filter-bar" role="group" aria-label="Aufgaben filtern">
+  @for (option of options; track option.id) {
+    <app-filter-chip
+      [icon]="option.icon"
+      [label]="option.label"
+      [active]="active() === option.id"
+      (pressed)="selectFilter(option.id)"
+    />
+  }
+  <app-filter-chip-icon icon="sliders" ariaLabel="Weitere Filter" />
+</div>

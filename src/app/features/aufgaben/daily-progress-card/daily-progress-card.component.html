@@ -1,0 +1,17 @@
+<section class="daily-progress-card" aria-label="Tagesfortschritt">
+  @if (hasTasks()) {
+    <app-progress-ring
+      class="daily-progress-card__ring"
+      [value]="completed()"
+      [max]="total()"
+      ariaLabel="Tagesfortschritt"
+      [ariaValueText]="progressText()"
+    />
+    <div class="daily-progress-card__copy">
+      <p class="daily-progress-card__title">Tolle Arbeit!</p>
+      <p class="daily-progress-card__text">{{ progressText() }}</p>
+    </div>
+  } @else {
+    <p class="daily-progress-card__text">Für heute steht nichts an.</p>
+  }
+</section>

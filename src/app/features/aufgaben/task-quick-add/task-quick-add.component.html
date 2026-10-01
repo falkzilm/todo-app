@@ -1,0 +1,15 @@
+<form class="task-quick-add" aria-label="Schnellerfassung" (ngSubmit)="submit()">
+  <input
+    #titleInput
+    type="text"
+    name="newTaskTitle"
+    class="task-quick-add__input"
+    placeholder="Neue Aufgabe für heute hinzufügen"
+    [(ngModel)]="title"
+    (input)="showEmptyTitleHint = false"
+  />
+  <button type="submit" class="task-quick-add__submit">Hinzufügen</button>
+</form>
+@if (showEmptyTitleHint) {
+  <p class="task-quick-add__hint" role="status">Bitte einen Titel eingeben.</p>
+}
