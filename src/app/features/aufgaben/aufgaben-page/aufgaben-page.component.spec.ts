@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { getTimeOfDayGreeting } from '../../../core/date/greeting';
 import { createTask, todayAsCalendarDate } from '../../../core/models/task.model';
 import { AnnouncerService } from '../../../core/services/announcer.service';
@@ -230,22 +231,14 @@ describe('AufgabenPageComponent', () => {
 
   describe('Schnellerfassung (TDP-39)', () => {
     /**
-     * Focuses the quick-add input and waits for the quick-add card to expand.
-     * `provideZoneChangeDetection({ eventCoalescing: true })` (see app.config.ts)
-     * schedules the change-detection tick for DOM events via `setTimeout`/
-     * `requestAnimationFrame` outside the Angular zone, so `whenStable()` alone
-     * isn't guaranteed to observe it; flushing one more macrotask turn makes the
-     * expanded category/priority/time pills reliably present before they're queried.
+     * Expands the quick-add card. `triggerEventHandler` invokes the bound
+     * `(focusin)` listener directly instead of dispatching a real DOM focus
+     * event, so there's no dependency on zone-scheduled change detection
+     * (`provideZoneChangeDetection({ eventCoalescing: true })` defers that to a
+     * later macrotask) racing with the assertions that follow.
      */
-    async function focusAndExpand(
-      fixture: ReturnType<typeof TestBed.createComponent>,
-      input: HTMLInputElement,
-    ): Promise<void> {
-      input.focus();
-      fixture.detectChanges();
-      await fixture.whenStable();
-      fixture.detectChanges();
-      await new Promise((resolve) => setTimeout(resolve));
+    function focusAndExpand(fixture: ReturnType<typeof TestBed.createComponent>): void {
+      fixture.debugElement.query(By.css('.task-quick-add')).triggerEventHandler('focusin', {});
       fixture.detectChanges();
     }
 
@@ -277,7 +270,12 @@ describe('AufgabenPageComponent', () => {
       fixture.detectChanges();
 
       if (time) {
-        await focusAndExpand(fixture, input);
+        focusAndExpand(fixture);
+        // The time input's `ngModel` registers with its parent form asynchronously
+        // (to avoid an ExpressionChangedAfterItHasBeenCheckedError), so a freshly
+        // expanded time input needs one more stable tick before it picks up input events.
+        await fixture.whenStable();
+        fixture.detectChanges();
         const timeInput = fixture.nativeElement.querySelector(
           '.task-quick-add__time-input',
         ) as HTMLInputElement;
@@ -326,7 +324,7 @@ describe('AufgabenPageComponent', () => {
       const input = fixture.nativeElement.querySelector(
         '.task-quick-add input',
       ) as HTMLInputElement;
-      await focusAndExpand(fixture, input);
+      focusAndExpand(fixture);
       input.value = '   ';
       input.dispatchEvent(new Event('input'));
       fixture.detectChanges();
