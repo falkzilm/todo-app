@@ -262,7 +262,11 @@ describe('AufgabenPageComponent', () => {
       storage.setItem('todo-app.tasks', JSON.stringify({ version: 2, tasks: [] }));
       TestBed.configureTestingModule({
         imports: [AufgabenPageComponent],
-        providers: [{ provide: STORAGE, useValue: storage }],
+        providers: [
+          { provide: STORAGE, useValue: storage },
+          provideRouter([]),
+          provideLocationMocks(),
+        ],
       });
       const fixture = TestBed.createComponent(AufgabenPageComponent);
       const store = TestBed.inject(TaskStoreService);
