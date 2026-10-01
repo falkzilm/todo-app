@@ -21,6 +21,8 @@ function createMockStore(
     importantTasks: signal(importantTasks),
     todayTotalCount: signal(todayTotalCount),
     todayCompletedCount: signal(todayCompletedCount),
+    overdueTasks: signal([]),
+    todayTasks: signal([]),
     add: () => createTask({ title: 'x' }),
     toggleCompleted: () => undefined,
     remove: () => undefined,
