@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
   Injector,
@@ -86,13 +87,19 @@ export class TaskFilterBarComponent {
   private readonly elementRef: ElementRef<HTMLElement> = inject(ElementRef);
   private readonly injector = inject(Injector);
 
+  /** The pending focus-on-open registration, so a rapid close/reopen can't stack up stale ones. */
+  private pendingFocusRef: { destroy(): void } | undefined;
+
   constructor() {
     /** Moves keyboard focus into the popover's first option as soon as it opens. */
     effect(() => {
+      this.pendingFocusRef?.destroy();
+      this.pendingFocusRef = undefined;
+
       if (!this.menuOpen()) {
         return;
       }
-      afterNextRender(
+      this.pendingFocusRef = afterNextRender(
         () => {
           // The popover can already have been closed again (e.g. a quick Escape)
           // by the time this fires, since it's deferred to the next render.
@@ -106,6 +113,8 @@ export class TaskFilterBarComponent {
         { injector: this.injector },
       );
     });
+
+    inject(DestroyRef).onDestroy(() => this.pendingFocusRef?.destroy());
   }
 
   protected selectFilter(id: TaskFilterId): void {
