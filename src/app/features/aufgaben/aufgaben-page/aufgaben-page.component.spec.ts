@@ -15,6 +15,7 @@ function createMockStore(
   todayCompletedCount = 0,
 ): Partial<TaskStoreService> {
   return {
+    tasks: signal([...tasksToday, ...tasksThisWeek, ...importantTasks]),
     tasksToday: signal(tasksToday),
     tasksThisWeek: signal(tasksThisWeek),
     importantTasks: signal(importantTasks),
@@ -23,6 +24,7 @@ function createMockStore(
     add: () => createTask({ title: 'x' }),
     toggleCompleted: () => undefined,
     remove: () => undefined,
+    restore: () => undefined,
     update: () => undefined,
   };
 }
@@ -150,14 +152,20 @@ describe('AufgabenPageComponent', () => {
       expect(announceSpy).toHaveBeenCalledWith('„Heute fällig“ als erledigt markiert.');
     });
 
-    it('announces removing a task via the live region', () => {
+    it('shows an undo notice instead of an announcement when a task is removed', () => {
       const task = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
-      const fixture = setUp(createMockStore([task], [], []));
+      const store = createMockStore([task], [], []);
+      store.remove = () => task;
+      const fixture = setUp(store);
       const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
 
       fixture.componentInstance['removeTask'](task.id);
+      fixture.detectChanges();
 
-      expect(announceSpy).toHaveBeenCalledWith('„Heute fällig“ gelöscht.');
+      expect(announceSpy).not.toHaveBeenCalled();
+      const notice = fixture.nativeElement.querySelector('.undo-notice');
+      expect(notice?.getAttribute('role')).toBe('status');
+      expect(notice?.textContent).toContain('Heute fällig');
     });
 
     it('announces adding a task via the quick-add form', async () => {
@@ -194,17 +202,56 @@ describe('AufgabenPageComponent', () => {
     });
   });
 
-  describe('Fälligkeitsdatum ändern', () => {
-    it('reschedules a task via its date picker through the shared task store', () => {
+  describe('Detail-/Bearbeitungsansicht (TDP-38)', () => {
+    it('opens the detail panel with the clicked card and saves an edit straight to the store', async () => {
       const task = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
       const store = createMockStore([task], [], []);
       const updateSpy = vi.fn();
       store.update = updateSpy;
       const fixture = setUp(store);
 
-      fixture.componentInstance['saveDueDate'](task.id, '2026-09-12');
+      (
+        fixture.nativeElement.querySelector('.app-task-item__content') as HTMLElement
+      ).click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
 
-      expect(updateSpy).toHaveBeenCalledWith(task.id, { dueDate: '2026-09-12' });
+      const titleField = fixture.nativeElement.querySelector(
+        '#task-detail-panel-title',
+      ) as HTMLInputElement;
+      expect(titleField.value).toBe('Heute fällig');
+
+      fixture.nativeElement
+        .querySelector('.task-detail-panel__form')
+        ?.dispatchEvent(new Event('submit'));
+      fixture.detectChanges();
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        task.id,
+        expect.objectContaining({ title: 'Heute fällig' }),
+      );
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+    });
+
+    it('deletes via the panel using the same undo mechanism as removeTask', () => {
+      const task = createTask({ title: 'Heute fällig', dueDate: '2026-09-02' });
+      const store = createMockStore([task], [], []);
+      store.remove = () => task;
+      const fixture = setUp(store);
+
+      fixture.componentInstance['openTaskDetail'](task.id);
+      fixture.detectChanges();
+
+      (
+        fixture.nativeElement.querySelector('.task-detail-panel__delete') as HTMLButtonElement
+      ).click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.undo-notice')?.textContent).toContain(
+        'Heute fällig',
+      );
     });
   });
 });

@@ -18,11 +18,13 @@ function createMockStore(
   tasks: Task[] = [],
 ): Partial<TaskStoreService> {
   return {
+    tasks: signal(tasks),
     taskSummaryByDate: signal(taskSummaryByDate),
     tasksForDate: (date: CalendarDate): Signal<Task[]> =>
       computed(() => tasks.filter((task) => task.dueDate === date)),
     toggleCompleted: () => undefined,
-    remove: () => undefined,
+    remove: (id) => tasks.find((task) => task.id === id),
+    restore: () => undefined,
     update: () => undefined,
     add: (input) => createTask(input),
   };
@@ -300,7 +302,7 @@ describe('CalendarPageComponent', () => {
       expect(toggleSpy).toHaveBeenCalledWith(task.id);
     });
 
-    it('announces toggling and removing a task via the live region', () => {
+    it('announces toggling a task via the live region', () => {
       const today = todayAsCalendarDate();
       const task = createTask({ title: 'Abhaken', dueDate: today });
       const fixture = setUp(undefined, [task]);
@@ -308,42 +310,21 @@ describe('CalendarPageComponent', () => {
 
       fixture.componentInstance['toggleTask'](task.id);
       expect(announceSpy).toHaveBeenCalledWith('„Abhaken“ als erledigt markiert.');
-
-      fixture.componentInstance['removeTask'](task.id);
-      expect(announceSpy).toHaveBeenCalledWith('„Abhaken“ gelöscht.');
     });
 
-    it('rescheduling a task in the day list is backed by the shared task store', () => {
+    it('shows an undo notice instead of an announcement when a task is removed', () => {
       const today = todayAsCalendarDate();
-      const task = createTask({ title: 'Umplanen', dueDate: today });
-      const store = createMockStore(undefined, [task]);
-      const updateSpy = vi.fn();
-      store.update = updateSpy;
+      const task = createTask({ title: 'Abhaken', dueDate: today });
+      const fixture = setUp(undefined, [task]);
+      const announceSpy = vi.spyOn(TestBed.inject(AnnouncerService), 'announce');
 
-      TestBed.configureTestingModule({
-        imports: [CalendarPageComponent],
-        providers: [{ provide: TaskStoreService, useValue: store }],
-      });
-      const fixture = TestBed.createComponent(CalendarPageComponent);
+      fixture.componentInstance['removeTask'](task.id);
       fixture.detectChanges();
 
-      const trigger = fixture.nativeElement.querySelector(
-        '.calendar-page__day .app-task-item__due-date .date-picker__trigger',
-      ) as HTMLButtonElement;
-      trigger.click();
-      fixture.detectChanges();
-
-      const otherDate = anotherDayThisMonth();
-      const popoverCells = Array.from(
-        fixture.nativeElement.querySelectorAll(
-          '.calendar-page__day .date-picker__popover [role="gridcell"]',
-        ),
-      ) as HTMLElement[];
-      const index = getMonthGrid(new Date()).findIndex((day) => day.date === otherDate);
-      popoverCells[index].click();
-      fixture.detectChanges();
-
-      expect(updateSpy).toHaveBeenCalledWith(task.id, { dueDate: otherDate });
+      expect(announceSpy).not.toHaveBeenCalled();
+      const notice = fixture.nativeElement.querySelector('.undo-notice');
+      expect(notice?.getAttribute('role')).toBe('status');
+      expect(notice?.textContent).toContain('Abhaken');
     });
 
     it('rescheduling a task by dropping it on a grid cell is backed by the shared task store', () => {
@@ -379,6 +360,67 @@ describe('CalendarPageComponent', () => {
       fixture.detectChanges();
 
       expect(updateSpy).toHaveBeenCalledWith(task.id, { dueDate: otherDate });
+    });
+
+    describe('Detail-/Bearbeitungsansicht (TDP-38)', () => {
+      it("opens the detail panel with the clicked card's task and saves an edit straight to the store", async () => {
+        const today = todayAsCalendarDate();
+        const task = createTask({ title: 'Abhaken', dueDate: today });
+        const store = createMockStore(undefined, [task]);
+        const updateSpy = vi.fn();
+        store.update = updateSpy;
+
+        TestBed.configureTestingModule({
+          imports: [CalendarPageComponent],
+          providers: [{ provide: TaskStoreService, useValue: store }],
+        });
+        const fixture = TestBed.createComponent(CalendarPageComponent);
+        fixture.detectChanges();
+
+        (
+          fixture.nativeElement.querySelector(
+            '.calendar-page__day .app-task-item__content',
+          ) as HTMLElement
+        ).click();
+        fixture.detectChanges();
+        await fixture.whenStable();
+        fixture.detectChanges();
+
+        const titleField = fixture.nativeElement.querySelector(
+          '#task-detail-panel-title',
+        ) as HTMLInputElement;
+        expect(titleField.value).toBe('Abhaken');
+
+        fixture.nativeElement
+          .querySelector('.task-detail-panel__form')
+          ?.dispatchEvent(new Event('submit'));
+        fixture.detectChanges();
+
+        expect(updateSpy).toHaveBeenCalledWith(
+          task.id,
+          expect.objectContaining({ title: 'Abhaken' }),
+        );
+        expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+      });
+
+      it('deletes via the panel using the same undo mechanism as removeTask', () => {
+        const today = todayAsCalendarDate();
+        const task = createTask({ title: 'Abhaken', dueDate: today });
+        const fixture = setUp(undefined, [task]);
+
+        fixture.componentInstance['openTaskDetail'](task.id);
+        fixture.detectChanges();
+
+        (
+          fixture.nativeElement.querySelector('.task-detail-panel__delete') as HTMLButtonElement
+        ).click();
+        fixture.detectChanges();
+
+        expect(fixture.nativeElement.querySelector('.task-detail-panel')).toBeNull();
+        expect(fixture.nativeElement.querySelector('.undo-notice')?.textContent).toContain(
+          'Abhaken',
+        );
+      });
     });
   });
 });

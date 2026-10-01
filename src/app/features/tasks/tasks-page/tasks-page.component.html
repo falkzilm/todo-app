@@ -32,12 +32,16 @@
       app-task-item
       [task]="task"
       (toggleCompleted)="toggleTask(task.id)"
-      (remove)="removeTask(task.id)"
-      (titleSave)="saveTitle(task.id, $event)"
-      (notesSave)="saveNotes(task.id, $event)"
-      (dueDateSave)="saveDueDate(task.id, $event)"
+      (open)="openTaskDetail(task.id)"
     ></li>
   } @empty {
     <li>Keine Aufgaben vorhanden.</li>
   }
 </ul>
+
+<app-task-detail-panel
+  [task]="selectedTask()"
+  (save)="onPanelSave($event)"
+  (delete)="onPanelDelete()"
+  (closed)="onPanelClosed()"
+/>

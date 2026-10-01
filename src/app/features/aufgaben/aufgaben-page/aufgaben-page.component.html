@@ -18,6 +18,13 @@
   [total]="todayTotalCount()"
 />
 
+@if (pendingUndo(); as pending) {
+  <p class="undo-notice" role="status">
+    <span>„{{ pending.task.title }}“ gelöscht.</span>
+    <button type="button" class="undo-notice__button" (click)="undoRemove()">Rückgängig</button>
+  </p>
+}
+
 <div class="aufgaben-page__list">
   @if (filteredTasks().length === 0) {
     <p class="aufgaben-page__empty-state">{{ emptyStateText() }}</p>
@@ -28,10 +35,7 @@
           app-task-item
           [task]="task"
           (toggleCompleted)="toggleTask(task.id)"
-          (remove)="removeTask(task.id)"
-          (titleSave)="saveTitle(task.id, $event)"
-          (notesSave)="saveNotes(task.id, $event)"
-          (dueDateSave)="saveDueDate(task.id, $event)"
+          (open)="openTaskDetail(task.id)"
         ></li>
       }
     </ul>
@@ -39,3 +43,10 @@
 </div>
 
 <app-task-quick-add class="aufgaben-page__quick-add" (add)="addTask($event)" />
+
+<app-task-detail-panel
+  [task]="selectedTask()"
+  (save)="onPanelSave($event)"
+  (delete)="onPanelDelete()"
+  (closed)="onPanelClosed()"
+/>

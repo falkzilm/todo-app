@@ -8,9 +8,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CalendarDate, Task, todayAsCalendarDate } from '../../../core/models/task.model';
+import { Task, todayAsCalendarDate } from '../../../core/models/task.model';
 import { AnnouncerService } from '../../../core/services/announcer.service';
-import { TaskStoreService } from '../../../core/services/task-store.service';
+import { TaskStoreService, UpdateTaskInput } from '../../../core/services/task-store.service';
+import { TaskDetailPanelComponent } from '../../aufgaben/task-detail-panel/task-detail-panel.component';
 import { PageHeaderComponent } from '../../../shared/ui/page-header/page-header.component';
 import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.component';
 
@@ -25,7 +26,7 @@ interface PendingUndo {
 @Component({
   selector: 'app-tasks-page',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, TaskItemComponent],
+  imports: [FormsModule, PageHeaderComponent, TaskItemComponent, TaskDetailPanelComponent],
   templateUrl: './tasks-page.component.html',
   styleUrl: './tasks-page.component.scss',
 })
@@ -46,8 +47,41 @@ export class TasksPageComponent {
   protected readonly pendingUndo = signal<PendingUndo | null>(null);
   private undoTimeoutId?: ReturnType<typeof setTimeout>;
 
+  /** Id of the task currently open in the detail panel, or `null` when it's closed (TDP-38). */
+  protected readonly selectedTaskId = signal<string | null>(null);
+
+  protected readonly selectedTask = computed(
+    () => this.tasks().find((task) => task.id === this.selectedTaskId()) ?? null,
+  );
+
+  /** The card that was focused when the panel opened, so focus can return to it on close. */
+  private triggerElement: HTMLElement | null = null;
+
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.undoTimeoutId));
+  }
+
+  protected openTaskDetail(id: string): void {
+    this.triggerElement = document.activeElement as HTMLElement | null;
+    this.selectedTaskId.set(id);
+  }
+
+  protected onPanelSave(changes: UpdateTaskInput): void {
+    const id = this.selectedTaskId();
+    if (!id) {
+      return;
+    }
+    this.taskStore.update(id, changes);
+    this.announcer.announce(`„${changes.title}“ aktualisiert.`);
+  }
+
+  protected onPanelClosed(): void {
+    this.selectedTaskId.set(null);
+    const trigger = this.triggerElement;
+    this.triggerElement = null;
+    if (trigger?.isConnected) {
+      trigger.focus();
+    }
   }
 
   protected addTask(): void {
@@ -97,16 +131,11 @@ export class TasksPageComponent {
     this.taskStore.restore(pending.task, pending.index);
   }
 
-  protected saveTitle(id: string, title: string): void {
-    this.taskStore.update(id, { title });
-  }
-
-  protected saveNotes(id: string, notes: string | null): void {
-    this.taskStore.update(id, { notes });
-  }
-
-  protected saveDueDate(id: string, dueDate: CalendarDate): void {
-    this.taskStore.update(id, { dueDate });
+  protected onPanelDelete(): void {
+    const id = this.selectedTaskId();
+    if (id) {
+      this.removeTask(id);
+    }
   }
 
   protected resetToDemoData(): void {
