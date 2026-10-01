@@ -1,3 +1,35 @@
-<app-icon-button ariaLabel="Benachrichtigungen" [indicator]="indicator()" (pressed)="onClick()">
+<app-icon-button
+  [ariaLabel]="ariaLabel()"
+  [indicator]="indicator()"
+  [expanded]="open()"
+  [controls]="open() ? panelId : null"
+  (pressed)="toggle()"
+>
   <app-icon name="bell" size="sm" />
 </app-icon-button>
+
+@if (open()) {
+  <div
+    [id]="panelId"
+    class="notification-bell__panel"
+    role="dialog"
+    aria-modal="false"
+    aria-label="Benachrichtigungen"
+    tabindex="-1"
+    (keydown)="onPanelKeydown($event)"
+    (focusout)="onPanelFocusOut($event)"
+  >
+    @if (notifications().length === 0) {
+      <p class="notification-bell__empty">Keine Hinweise – du bist auf dem aktuellen Stand.</p>
+    } @else {
+      <ul class="notification-bell__list" role="list">
+        @for (notification of notifications(); track notification.id) {
+          <li class="notification-bell__item">
+            <p class="notification-bell__item-title">{{ notification.title }}</p>
+            <p class="notification-bell__item-reason">{{ notification.reason }}</p>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}
