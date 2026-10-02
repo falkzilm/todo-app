@@ -72,8 +72,13 @@ describe('TaskFilterBarComponent', () => {
     return fixture.nativeElement.querySelector('.task-filter-bar__popover');
   }
 
-  function openMenu(fixture: ReturnType<typeof setUp>): void {
+  /** The popover's `app-checkbox` registers its `ngModel` asynchronously (see the
+   * identical note in task-quick-add.component.spec.ts), so a plain `detectChanges()`
+   * right after opening isn't enough to settle it — wait for stability too. */
+  async function openMenu(fixture: ReturnType<typeof setUp>): Promise<void> {
     trigger(fixture).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
   }
 
@@ -145,10 +150,10 @@ describe('TaskFilterBarComponent', () => {
       expect(popover(fixture)).toBeNull();
     });
 
-    it('opens the popover and links it via aria-controls/aria-expanded', () => {
+    it('opens the popover and links it via aria-controls/aria-expanded', async () => {
       const fixture = setUp();
 
-      openMenu(fixture);
+      await openMenu(fixture);
 
       expect(trigger(fixture).getAttribute('aria-expanded')).toBe('true');
       const controlsId = trigger(fixture).getAttribute('aria-controls');
@@ -156,10 +161,10 @@ describe('TaskFilterBarComponent', () => {
       expect(popover(fixture)?.id).toBe(controlsId);
     });
 
-    it('closes again when the trigger is clicked a second time', () => {
+    it('closes again when the trigger is clicked a second time', async () => {
       const fixture = setUp();
 
-      openMenu(fixture);
+      await openMenu(fixture);
       trigger(fixture).click();
       fixture.detectChanges();
 
@@ -167,10 +172,10 @@ describe('TaskFilterBarComponent', () => {
       expect(popover(fixture)).toBeNull();
     });
 
-    it('closes on Escape and returns focus to the trigger', () => {
+    it('closes on Escape and returns focus to the trigger', async () => {
       const fixture = setUp();
 
-      openMenu(fixture);
+      await openMenu(fixture);
       popover(fixture)!.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
       );
@@ -180,28 +185,28 @@ describe('TaskFilterBarComponent', () => {
       expect(fixture.nativeElement.ownerDocument.activeElement).toBe(trigger(fixture));
     });
 
-    it('closes when clicking outside the bar', () => {
+    it('closes when clicking outside the bar', async () => {
       const fixture = setUp();
 
-      openMenu(fixture);
+      await openMenu(fixture);
       document.body.click();
       fixture.detectChanges();
 
       expect(popover(fixture)).toBeNull();
     });
 
-    it('emits sortChange when a sort pill is clicked', () => {
+    it('emits sortChange when a sort pill is clicked', async () => {
       const fixture = setUp();
-      openMenu(fixture);
+      await openMenu(fixture);
 
       pillByLabel(fixture, 'Priorität').click();
 
       expect(fixture.componentInstance.lastSort).toBe('priority');
     });
 
-    it('emits categoryChange for a category pill, and null when clicked again', () => {
+    it('emits categoryChange for a category pill, and null when clicked again', async () => {
       const fixture = setUp();
-      openMenu(fixture);
+      await openMenu(fixture);
 
       pillByLabel(fixture, 'Arbeit').click();
       expect(fixture.componentInstance.lastCategory).toBe('arbeit');
@@ -212,20 +217,20 @@ describe('TaskFilterBarComponent', () => {
       expect(fixture.componentInstance.lastCategory).toBeNull();
     });
 
-    it('emits null when "Alle" is clicked', () => {
+    it('emits null when "Alle" is clicked', async () => {
       const fixture = setUp();
       fixture.componentInstance.categoryId = 'arbeit';
       fixture.detectChanges();
-      openMenu(fixture);
+      await openMenu(fixture);
 
       pillByLabel(fixture, 'Alle').click();
 
       expect(fixture.componentInstance.lastCategory).toBeNull();
     });
 
-    it('emits showCompletedChange when the toggle changes', () => {
+    it('emits showCompletedChange when the toggle changes', async () => {
       const fixture = setUp();
-      openMenu(fixture);
+      await openMenu(fixture);
 
       const toggle = fixture.nativeElement.querySelector(
         '.task-filter-bar__toggle input[type="checkbox"]',

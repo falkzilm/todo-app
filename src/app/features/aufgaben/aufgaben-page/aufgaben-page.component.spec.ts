@@ -393,16 +393,21 @@ describe('AufgabenPageComponent', () => {
   });
 
   describe('Sliders-Popover (TDP-36)', () => {
-    function openMenu(fixture: ReturnType<typeof setUp>): HTMLButtonElement {
+    /** The popover's `app-checkbox` registers its `ngModel` asynchronously (see the
+     * identical note in task-quick-add.component.spec.ts), so a plain `detectChanges()`
+     * right after opening isn't enough to settle it — wait for stability too. */
+    async function openMenu(fixture: ReturnType<typeof setUp>): Promise<HTMLButtonElement> {
       const trigger = fixture.nativeElement.querySelector(
         '.app-filter-chip-icon',
       ) as HTMLButtonElement;
       trigger.click();
       fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
       return trigger;
     }
 
-    it('toggles aria-expanded and aria-controls on the trigger', () => {
+    it('toggles aria-expanded and aria-controls on the trigger', async () => {
       const fixture = setUp();
       const trigger = fixture.nativeElement.querySelector(
         '.app-filter-chip-icon',
@@ -412,6 +417,7 @@ describe('AufgabenPageComponent', () => {
 
       trigger.click();
       fixture.detectChanges();
+      await fixture.whenStable();
 
       expect(trigger.getAttribute('aria-expanded')).toBe('true');
       const controlsId = trigger.getAttribute('aria-controls');
@@ -419,9 +425,9 @@ describe('AufgabenPageComponent', () => {
       expect(fixture.nativeElement.querySelector(`#${controlsId}`)).not.toBeNull();
     });
 
-    it('closes on Escape and returns focus to the trigger', () => {
+    it('closes on Escape and returns focus to the trigger', async () => {
       const fixture = setUp();
-      const trigger = openMenu(fixture);
+      const trigger = await openMenu(fixture);
 
       const popover = fixture.nativeElement.querySelector('.task-filter-bar__popover');
       popover.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -431,14 +437,14 @@ describe('AufgabenPageComponent', () => {
       expect(fixture.nativeElement.ownerDocument.activeElement).toBe(trigger);
     });
 
-    it('hiding completed tasks visibly narrows the list', () => {
+    it('hiding completed tasks visibly narrows the list', async () => {
       const openTask = createTask({ title: 'Offene Aufgabe', dueDate: '2026-09-02' });
       const completedTask = {
         ...createTask({ title: 'Erledigte Aufgabe', dueDate: '2026-09-02' }),
         completed: true,
       };
       const fixture = setUp(createMockStore([openTask, completedTask], [], []));
-      openMenu(fixture);
+      await openMenu(fixture);
 
       const toggle = fixture.nativeElement.querySelector(
         '.task-filter-bar__toggle input[type="checkbox"]',
@@ -453,11 +459,11 @@ describe('AufgabenPageComponent', () => {
       expect(fixture.nativeElement.textContent).not.toContain('Erledigte Aufgabe');
     });
 
-    it('sorting by title visibly reorders the list', () => {
+    it('sorting by title visibly reorders the list', async () => {
       const taskB = createTask({ title: 'B-Aufgabe', dueDate: '2026-09-02', startTime: '09:00' });
       const taskA = createTask({ title: 'A-Aufgabe', dueDate: '2026-09-02', startTime: '10:00' });
       const fixture = setUp(createMockStore([taskB, taskA], [], []));
-      openMenu(fixture);
+      await openMenu(fixture);
 
       const titlePill = Array.from(
         fixture.nativeElement.querySelectorAll('.task-filter-bar__pill'),
@@ -474,7 +480,7 @@ describe('AufgabenPageComponent', () => {
       ]);
     });
 
-    it('filtering by category visibly narrows the list', () => {
+    it('filtering by category visibly narrows the list', async () => {
       const arbeit = createTask({
         title: 'Arbeitsaufgabe',
         dueDate: '2026-09-02',
@@ -486,7 +492,7 @@ describe('AufgabenPageComponent', () => {
         categoryId: 'privat',
       });
       const fixture = setUp(createMockStore([arbeit, privat], [], []));
-      openMenu(fixture);
+      await openMenu(fixture);
 
       const categoryPill = Array.from(
         fixture.nativeElement.querySelectorAll('.task-filter-bar__pill'),
