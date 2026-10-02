@@ -12,6 +12,9 @@ export class FilterChipIconComponent {
   readonly icon = input.required<IconName>();
   readonly ariaLabel = input.required<string>();
   readonly active = input(false);
+  /** Set to disclose a popover this chip controls; `null` (default) renders a plain icon-only chip. */
+  readonly ariaExpanded = input<boolean | null>(null);
+  readonly ariaControls = input<string | null>(null);
 
   readonly pressed = output<void>();
 

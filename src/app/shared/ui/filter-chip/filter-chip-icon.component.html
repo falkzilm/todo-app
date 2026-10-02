@@ -4,6 +4,9 @@
   [class.app-filter-chip-icon--active]="active()"
   [attr.aria-pressed]="active()"
   [attr.aria-label]="ariaLabel()"
+  [attr.aria-haspopup]="ariaControls() ? 'true' : null"
+  [attr.aria-expanded]="ariaExpanded()"
+  [attr.aria-controls]="ariaControls()"
   (click)="onClick()"
   (keydown)="onKeydown($event)"
 >

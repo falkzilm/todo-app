@@ -1,4 +1,6 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { getTimeOfDayGreeting } from '../../../core/date/greeting';
 import { Task, todayAsCalendarDate } from '../../../core/models/task.model';
 import { AnnouncerService } from '../../../core/services/announcer.service';
@@ -8,7 +10,12 @@ import { TaskItemComponent } from '../../../shared/ui/task-item/task-item.compon
 import { TaskDetailPanelComponent } from '../task-detail-panel/task-detail-panel.component';
 import { DailyProgressCardComponent } from '../daily-progress-card/daily-progress-card.component';
 import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
-import { TaskFilterBarComponent, TaskFilterId } from '../task-filter-bar/task-filter-bar.component';
+import {
+  TaskFilterBarComponent,
+  TaskFilterId,
+  TaskSortOption,
+  isTaskFilterId,
+} from '../task-filter-bar/task-filter-bar.component';
 import { TaskQuickAddComponent } from '../task-quick-add/task-quick-add.component';
 
 /** Shown below the filter bar's chips when the active filter has no matching tasks. */
@@ -16,6 +23,16 @@ const EMPTY_STATE_TEXT_BY_FILTER: Record<TaskFilterId, string> = {
   today: 'Heute steht nichts an.',
   week: 'Diese Woche steht nichts an.',
   important: 'Keine wichtigen Aufgaben.',
+};
+
+/** Query param the active chip filter is mirrored to, so a reload restores the selection (TDP-36). */
+const FILTER_QUERY_PARAM = 'filter';
+
+/** Lower is sorted first; tasks without a priority sort last. */
+const PRIORITY_RANK: Record<'high' | 'medium' | 'low', number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
 };
 
 /** How long the undo notice stays visible before a delete becomes final. */
@@ -44,6 +61,8 @@ export class AufgabenPageComponent {
   private readonly taskStore = inject(TaskStoreService);
   private readonly announcer = inject(AnnouncerService);
   private readonly userProfile = inject(UserProfileService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   private readonly today = signal(new Date());
 
@@ -52,12 +71,24 @@ export class AufgabenPageComponent {
     return `${getTimeOfDayGreeting(this.today())}, ${firstName}! 👋`;
   });
 
-  protected readonly activeFilter = signal<TaskFilterId>('today');
+  /** Mirrors the `filter` query param; an unknown or missing value falls back to "today" (TDP-36). */
+  private readonly queryParamMap = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
+
+  protected readonly activeFilter = computed<TaskFilterId>(() => {
+    const value = this.queryParamMap().get(FILTER_QUERY_PARAM);
+    return isTaskFilterId(value) ? value : 'today';
+  });
+
+  protected readonly sortOption = signal<TaskSortOption>('time');
+  protected readonly categoryFilter = signal<string | null>(null);
+  protected readonly showCompleted = signal(true);
 
   protected readonly todayTotalCount = this.taskStore.todayTotalCount;
   protected readonly todayCompletedCount = this.taskStore.todayCompletedCount;
 
-  protected readonly filteredTasks = computed<readonly Task[]>(() => {
+  private readonly tasksForActiveFilter = computed<readonly Task[]>(() => {
     switch (this.activeFilter()) {
       case 'week':
         return this.taskStore.tasksThisWeek();
@@ -66,6 +97,20 @@ export class AufgabenPageComponent {
       case 'today':
         return this.taskStore.tasksToday();
     }
+  });
+
+  /** The active chip's tasks, further narrowed/sorted by the Sliders popover's options (TDP-36). */
+  protected readonly filteredTasks = computed<readonly Task[]>(() => {
+    const categoryId = this.categoryFilter();
+    const showCompleted = this.showCompleted();
+
+    const narrowed = this.tasksForActiveFilter().filter(
+      (task) =>
+        (categoryId === null || task.categoryId === categoryId) &&
+        (showCompleted || !task.completed),
+    );
+
+    return this.sortTasks(narrowed, this.sortOption());
   });
 
   protected readonly emptyStateText = computed(
@@ -91,7 +136,11 @@ export class AufgabenPageComponent {
   }
 
   protected selectFilter(filter: TaskFilterId): void {
-    this.activeFilter.set(filter);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { [FILTER_QUERY_PARAM]: filter },
+      queryParamsHandling: 'merge',
+    });
   }
 
   protected addTask(title: string): void {
@@ -163,5 +212,22 @@ export class AufgabenPageComponent {
 
   private findTaskById(id: string): Task | undefined {
     return this.taskStore.tasks().find((task) => task.id === id);
+  }
+
+  private sortTasks(tasks: readonly Task[], sort: TaskSortOption): readonly Task[] {
+    switch (sort) {
+      case 'priority':
+        return tasks
+          .slice()
+          .sort(
+            (a, b) =>
+              (a.priority ? PRIORITY_RANK[a.priority] : 3) -
+              (b.priority ? PRIORITY_RANK[b.priority] : 3),
+          );
+      case 'title':
+        return tasks.slice().sort((a, b) => a.title.localeCompare(b.title, 'de'));
+      case 'time':
+        return tasks;
+    }
   }
 }

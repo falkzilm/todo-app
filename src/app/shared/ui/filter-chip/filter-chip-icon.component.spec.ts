@@ -73,4 +73,14 @@ describe('FilterChipIconComponent', () => {
     expect(button.getAttribute('aria-pressed')).toBe('true');
     expect(button.classList.contains('app-filter-chip-icon--active')).toBe(true);
   });
+
+  it('omits aria-haspopup/aria-expanded/aria-controls by default', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.hasAttribute('aria-haspopup')).toBe(false);
+    expect(button.hasAttribute('aria-expanded')).toBe(false);
+    expect(button.hasAttribute('aria-controls')).toBe(false);
+  });
 });

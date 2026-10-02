@@ -1,5 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideLocationMocks } from '@angular/common/testing';
+import { provideRouter } from '@angular/router';
 import { expectNoA11yViolations } from '../../../../testing/axe';
 import { createTask } from '../../../core/models/task.model';
 import { STORAGE } from '../../../core/services/storage.token';
@@ -56,6 +58,8 @@ describe('AufgabenPageComponent a11y', () => {
       providers: [
         { provide: TaskStoreService, useValue: createMockStore() },
         { provide: STORAGE, useValue: createMockStorage() },
+        provideRouter([]),
+        provideLocationMocks(),
       ],
     });
 
@@ -84,6 +88,8 @@ describe('AufgabenPageComponent a11y', () => {
           useValue: createMockStore([openTask, completedTask], [], [], 2, 1),
         },
         { provide: STORAGE, useValue: createMockStorage() },
+        provideRouter([]),
+        provideLocationMocks(),
       ],
     });
 
@@ -101,6 +107,8 @@ describe('AufgabenPageComponent a11y', () => {
       providers: [
         { provide: TaskStoreService, useValue: createMockStore([todayTask], [], []) },
         { provide: STORAGE, useValue: createMockStorage() },
+        provideRouter([]),
+        provideLocationMocks(),
       ],
     });
 
@@ -112,6 +120,26 @@ describe('AufgabenPageComponent a11y', () => {
     (fixture.nativeElement.querySelector('.app-task-item__content') as HTMLElement).click();
     fixture.detectChanges();
     await fixture.whenStable();
+    fixture.detectChanges();
+
+    await expectNoA11yViolations(fixture.nativeElement);
+  });
+
+  it('has no WCAG 2 A/AA violations with the Sliders popover open (TDP-36)', async () => {
+    TestBed.configureTestingModule({
+      imports: [AufgabenPageComponent],
+      providers: [
+        { provide: TaskStoreService, useValue: createMockStore() },
+        { provide: STORAGE, useValue: createMockStorage() },
+        provideRouter([]),
+        provideLocationMocks(),
+      ],
+    });
+
+    const fixture = TestBed.createComponent(AufgabenPageComponent);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.app-filter-chip-icon') as HTMLElement).click();
     fixture.detectChanges();
 
     await expectNoA11yViolations(fixture.nativeElement);
